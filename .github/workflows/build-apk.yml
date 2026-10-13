@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-            - name: Setup Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
@@ -49,3 +49,4 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+concurrency: 
