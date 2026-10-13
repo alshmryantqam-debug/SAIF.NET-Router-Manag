@@ -52,4 +52,3 @@ jobs:
 concurrency:
   group: saif-net-android-build
   cancel-in-progress: true
-defaults:
