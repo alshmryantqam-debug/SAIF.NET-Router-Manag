@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.saifnet.routermanager"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.saifnet.routermanager"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
