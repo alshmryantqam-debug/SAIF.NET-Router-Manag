@@ -15,5 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SAIF-NET-Router-Manager"
-
 include(":app")
