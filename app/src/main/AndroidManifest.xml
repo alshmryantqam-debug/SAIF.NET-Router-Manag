@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.saifnet.routermanager">
 
+    <!-- السماح للتطبيق بالاتصال بالراوتر والإنترنت -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="false"
         android:label="SAIF.NET Router Manager"
