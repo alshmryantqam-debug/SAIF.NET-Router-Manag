@@ -1,24 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.saifnet.routermanager">
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#05070A"
+    android:layoutDirection="rtl">
 
-    <!-- السماح للتطبيق بالاتصال بالراوتر والإنترنت -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-    <application
-        android:allowBackup="false"
-        android:label="SAIF.NET Router Manager"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            <!-- الترويسة الفضائية -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp">
+                <TextView
+                    android:id="@+id/logoText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SAIF.NET OS"
+                    android:textSize="28sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1"/>
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/logoText"
+                    android:text="جاري إنشاء اتصال آمن..."
+                    android:textColor="#00E5FF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"/>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    app:cardBackgroundColor="#11151C"
+                    app:cardCornerRadius="12dp"
+                    app:strokeColor="#33FFFFFF"
+                    app:strokeWidth="1dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_popup_sync"
+                        app:tint="#FFFFFF"/>
+                </com.google.android.material.card.MaterialCardView>
+            </RelativeLayout>
 
-    </application>
-</manifest>
+            <!-- بطاقة الاستهلاك الكلي (Hero Card) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#0A0E17"
+                app:cardCornerRadius="24dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="إجمالي سحب الشبكة الحقيقي"
+                        android:textColor="#8A92A6"
+                        android:textSize="14sp"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="16dp"
+                        android:weightSum="2">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Download"
+                                android:textColor="#00E5FF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:id="@+id/totalDownload"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="-- Mbps"
+                                android:textColor="#FFFFFF"
+                                android:textSize="26sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Upload"
+                                android:textColor="#B388FF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:id="@+id/totalUpload"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="-- Mbps"
+                                android:textColor="#FFFFFF"
+                                android:textSize="26sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- نواة النظام (Core System) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:baselineAligned="false">
+                
+                <!-- المعالج -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:cardBackgroundColor="#0A0E17"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="#1AFFFFFF"
+                    app:strokeWidth="1dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CPU CORE" android:textColor="#8A92A6" android:textSize="12sp" android:textStyle="bold"/>
+                        <TextView android:id="@+id/cpuText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--%" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/cpuBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:indicatorColor="#00E5FF"
+                            app:trackColor="#1A00E5FF"
+                            app:trackCornerRadius="4dp"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- الذاكرة -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    app:cardBackgroundColor="#0A0E17"
+                    app:cardCornerRadius="20dp"
+                    app:strokeColor="#1AFFFFFF"
+                    app:strokeWidth="1dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="RAM USAGE" android:textColor="#8A92A6" android:textSize="12sp" android:textStyle="bold"/>
+                        <TextView android:id="@+id/ramText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--%" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/ramBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:indicatorColor="#B388FF"
+                            app:trackColor="#1AB388FF"
+                            app:trackCornerRadius="4dp"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- مصفوفة الخطوط (PCC Matrix) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PCC LOAD BALANCING MATRIX"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="#0A0E17"
+                app:cardCornerRadius="20dp"
+                app:strokeColor="#1AFFFFFF"
+                app:strokeWidth="1dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    
+                    <!-- Starlink 1 -->
+                    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="12dp">
+                        <androidx.cardview.widget.CardView android:id="@+id/dot1" android:layout_width="10dp" android:layout_height="10dp" android:layout_centerVertical="true" app:cardBackgroundColor="#00E676" app:cardCornerRadius="5dp" app:cardElevation="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toEndOf="@id/dot1" android:layout_marginStart="16dp" android:text="Starlink 1 (Dishy)" android:textColor="#FFFFFF" android:textSize="15sp" android:layout_centerVertical="true"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Active" android:textColor="#00E676" android:textSize="14sp" android:textStyle="bold" android:layout_centerVertical="true"/>
+                    </RelativeLayout>
+                    
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF"/>
+                    
+                    <!-- Starlink 2 -->
+                    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="12dp">
+                        <androidx.cardview.widget.CardView android:id="@+id/dot2" android:layout_width="10dp" android:layout_height="10dp" android:layout_centerVertical="true" app:cardBackgroundColor="#00E676" app:cardCornerRadius="5dp" app:cardElevation="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toEndOf="@id/dot2" android:layout_marginStart="16dp" android:text="Starlink 2" android:textColor="#FFFFFF" android:textSize="15sp" android:layout_centerVertical="true"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Active" android:textColor="#00E676" android:textSize="14sp" android:textStyle="bold" android:layout_centerVertical="true"/>
+                    </RelativeLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1AFFFFFF"/>
+                    
+                    <!-- Turkish Line -->
+                    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="12dp">
+                        <androidx.cardview.widget.CardView android:id="@+id/dot3" android:layout_width="10dp" android:layout_height="10dp" android:layout_centerVertical="true" app:cardBackgroundColor="#00E5FF" app:cardCornerRadius="5dp" app:cardElevation="4dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toEndOf="@id/dot3" android:layout_marginStart="16dp" android:text="Turkish Line (Fiber)" android:textColor="#FFFFFF" android:textSize="15sp" android:layout_centerVertical="true"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="Primary" android:textColor="#00E5FF" android:textSize="14sp" android:textStyle="bold" android:layout_centerVertical="true"/>
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- زر التحكم الخارق -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRefresh"
+                android:layout_width="match_parent"
+                android:layout_height="65dp"
+                android:layout_marginTop="32dp"
+                android:text="مزامنة حية للبيانات"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#05070A"
+                app:backgroundTint="#00E5FF"
+                app:cornerRadius="16dp"
+                app:rippleColor="#FFFFFF"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
