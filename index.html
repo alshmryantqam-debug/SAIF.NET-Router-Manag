@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#100b1c">
+<title>SAIF.NET | إدارة الشبكة</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#100b1c; --panel:#1c142b; --border:#352746;
+  --purple:#a56aff; --text:#f5efff; --muted:#b5a8c8;
+}
+*{box-sizing:border-box}
+body {
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,sans-serif;
+}
+header {
+  padding:22px 18px;background:linear-gradient(135deg,#291544,#130d20);
+  border-bottom:1px solid var(--border);
+}
+.brand{font-size:24px;font-weight:900;letter-spacing:.5px}
+.brand span{color:var(--purple)}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+main{max-width:1050px;margin:auto;padding:18px}
+.section-title{font-size:17px;font-weight:800;margin:24px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:16px;min-width:0;
+}
+.label{color:var(--muted);font-size:13px}
+.value{font-size:27px;font-weight:850;margin:10px 0 5px}
+.note{font-size:12px;color:var(--muted)}
+.pill{
+  display:inline-block;border-radius:20px;padding:5px 9px;
+  font-size:11px;background:#263b30;color:#8ef0b0;
+}
+.pill.demo{background:#382b4c;color:#ddc4ff}
+.bar{height:7px;background:#382a49;border-radius:9px;overflow:hidden;margin:12px 0 5px}
+.bar div{height:100%;width:25%;background:linear-gradient(90deg,#8150ed,#d5a4ff);border-radius:9px}
+.wan{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wan+.wan{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.dot{display:inline-block;width:8px;height:8px;background:#62e99a;border-radius:50%;margin-left:7px}
+.button{
+  border:1px solid #61428a;border-radius:11px;padding:10px 13px;
+  color:white;background:#34204c;font-weight:700;cursor:pointer
+}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:28px 10px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">SAIF<span>.NET</span></div>
+  <div class="sub">مركز إدارة ومراقبة الشبكة</div>
+</header>
+
+<main>
+  <div class="section-title">لوحة المراقبة</div>
+  <span class="pill demo">وضع المعاينة — بيانات تجريبية</span>
+
+  <div class="grid" style="margin-top:14px">
+    <section class="card">
+      <div class="label">استخدام المعالج CPU</div>
+      <div class="value" id="cpu">23%</div>
+      <div class="bar"><div id="cpuBar" style="width:23%"></div></div>
+      <div class="note">قراءة تجريبية</div>
+    </section>
+    <section class="card">
+      <div class="label">استخدام الذاكرة</div>
+      <div class="value" id="ram">42%</div>
+      <div class="bar"><div style="width:42%"></div></div>
+      <div class="note">قراءة تجريبية</div>
+    </section>
+    <section class="card">
+      <div class="label">حرارة الجهاز</div>
+      <div class="value">48°</div>
+      <div class="note">درجة تجريبية وليست قراءة فعلية</div>
+    </section>
+    <section class="card">
+      <div class="label">حالة النظام</div>
+      <div class="value" style="font-size:20px">CCR2116</div>
+      <div class="note">RouterOS 7.x</div>
+    </section>
+  </div>
+
+  <div class="section-title">واجهات الإنترنت WAN</div>
+  <section class="card">
+    <div class="wan">
+      <div><b>ether1</b><div class="note">Starlink 1</div></div>
+      <span class="pill">متصل تجريبياً</span>
+    </div>
+    <div class="wan">
+      <div><b>ether2</b><div class="note">Starlink 2</div></div>
+      <span class="pill">متصل تجريبياً</span>
+    </div>
+    <div class="wan">
+      <div><b>ether3</b><div class="note">الخط التركي</div></div>
+      <span class="pill">متصل تجريبياً</span>
+    </div>
+  </section>
+
+  <div class="section-title">المشتركون والطوابير</div>
+  <div class="grid">
+    <section class="card">
+      <div class="label">المشتركون المتصلون</div>
+      <div class="value">—</div>
+      <div class="note">بانتظار الاتصال الآمن بالراوتر</div>
+    </section>
+    <section class="card">
+      <div class="label">قوائم Queue</div>
+      <div class="value">—</div>
+      <div class="note">بانتظار قراءة البيانات الفعلية</div>
+    </section>
+  </div>
+
+  <div class="actions">
+    <button class="button" onclick="refreshDemo()">تحديث المعاينة</button>
+    <button class="button" onclick="alert('الاتصال الحقيقي سيضاف بعد تجهيز قناة آمنة وصلاحيات القراءة فقط.')">حالة الاتصال</button>
+  </div>
+
+  <footer>
+    SAIF.NET Router Manager<br>
+    المراقبة فقط — لا يتم تعديل إعدادات الراوتر
+  </footer>
+</main>
+
+<script>
+function refreshDemo(){
+  const cpu=Math.floor(Math.random()*35)+10;
+  const ram=Math.floor(Math.random()*20)+35;
+  document.getElementById('cpu').textContent=cpu+'%';
+  document.getElementById('ram').textContent=ram+'%';
+  document.getElementById('cpuBar').style.width=cpu+'%';
+}
+</script>
+</body>
+</html>
