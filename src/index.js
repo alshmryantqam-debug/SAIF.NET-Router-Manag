@@ -159,11 +159,22 @@ export default {
       }
 
       if (url.pathname === "/api/health" && request.method === "GET") {
+        await env.DB.prepare("SELECT 1 AS ok").first();
         return json({
           service: "SAIF.NET",
           status: "online",
           api: "ready",
           databaseConfigured: true
+        });
+      }
+
+      if (url.pathname === "/api/setup/status" && request.method === "GET") {
+        const existing = await env.DB.prepare(
+          "SELECT COUNT(*) AS total FROM users"
+        ).first();
+        return json({
+          setupRequired: Number(existing?.total || 0) === 0,
+          setupConfigured: Boolean(env.SETUP_SECRET)
         });
       }
 
@@ -218,23 +229,45 @@ export default {
           }, 400);
         }
 
+        const existingEmail = await env.DB.prepare(
+          "SELECT id FROM users WHERE email = ? COLLATE NOCASE LIMIT 1"
+        ).bind(email).first();
+        if (existingEmail) {
+          return json({ error: "An account with this email already exists" }, 409);
+        }
+
         const companyId = crypto.randomUUID();
         const userId = crypto.randomUUID();
         const slug = `saif-${crypto.randomUUID()}`;
-
         const passwordHash = await hashPassword(password);
 
-        await env.DB.prepare(
-          "INSERT INTO companies (id, name, slug) VALUES (?, ?, ?)"
-        ).bind(companyId, companyName, slug).run();
+        // D1 batch runs these statements atomically. Only the first request
+        // can create the initial owner; simultaneous setup attempts cannot
+        // create multiple owner accounts.
+        await env.DB.batch([
+          env.DB.prepare(`
+            INSERT INTO companies (id, name, slug)
+            SELECT ?, ?, ?
+            WHERE NOT EXISTS (SELECT 1 FROM users)
+          `).bind(companyId, companyName, slug),
+          env.DB.prepare(`
+            INSERT INTO users
+              (id, company_id, email, display_name, password_hash, role)
+            SELECT ?, ?, ?, ?, ?, 'owner'
+            WHERE EXISTS (SELECT 1 FROM companies WHERE id = ?)
+              AND NOT EXISTS (SELECT 1 FROM users)
+          `).bind(
+            userId, companyId, email, displayName, passwordHash, companyId
+          )
+        ]);
 
-        await env.DB.prepare(`
-          INSERT INTO users
-            (id, company_id, email, display_name, password_hash, role)
-          VALUES (?, ?, ?, ?, ?, 'owner')
-        `).bind(
-          userId, companyId, email, displayName, passwordHash
-        ).run();
+        const created = await env.DB.prepare(
+          "SELECT id FROM users WHERE id = ?"
+        ).bind(userId).first();
+
+        if (!created) {
+          return json({ error: "Initial setup already completed" }, 409);
+        }
 
         return json({
           status: "created",
@@ -254,11 +287,17 @@ export default {
           return json({ error: "Invalid email or password" }, 400);
         }
 
-        const user = await env.DB.prepare(`
+        const matches = await env.DB.prepare(`
           SELECT id, company_id, email, display_name, password_hash,
                  role, status
           FROM users WHERE email = ? COLLATE NOCASE
-        `).bind(email).first();
+          LIMIT 2
+        `).bind(email).all();
+
+        // The schema allows the same email in different companies. Until a
+        // company selector exists, refuse ambiguous identities safely.
+        const candidates = matches.results || [];
+        const user = candidates.length === 1 ? candidates[0] : null;
 
         if (
           !user ||
