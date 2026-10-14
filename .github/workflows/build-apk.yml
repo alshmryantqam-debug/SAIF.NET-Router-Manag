@@ -5,6 +5,11 @@ on:
   push:
     paths:
       - "app/**"
+      - "src/**"
+      - "index.html"
+      - "public/**"
+      - "migrations/**"
+      - "wrangler.jsonc"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - ".github/workflows/build-apk.yml"
@@ -29,6 +34,18 @@ jobs:
         with:
           gradle-version: "8.9"
           
+      - name: Validate Worker and dashboard JavaScript
+        run: |
+          node --check src/index.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("public/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", html, flags=re.S | re.I)
+          Path("/tmp/saif-dashboard.js").write_text("\n;\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/saif-dashboard.js
+
       - name: Build APK
         run: gradle :app:assembleDebug --no-daemon
 
