@@ -3,108 +3,149 @@ package com.saifnet.routermanager
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.Button
+import android.view.View
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
-import com.google.android.material.progressindicator.LinearProgressIndicator
-import okhttp3.*
-import org.json.JSONArray
-import java.io.IOException
 
 class MainActivity : Activity() {
+    private lateinit var webView: WebView
+    private lateinit var progress: ProgressBar
+    private lateinit var message: TextView
 
-    // --- إعدادات سيف نت ---
-    private val ROUTER_IP = "192.168.88.1"
-    private val API_USER = "app_user"
-    private val API_PASS = "123456"
-
-    private lateinit var statusText: TextView
-    private lateinit var cpuText: TextView
-    private lateinit var ramText: TextView
-    private lateinit var totalDownload: TextView
-    private lateinit var totalUpload: TextView
-    private lateinit var cpuBar: LinearProgressIndicator
-    private lateinit var ramBar: LinearProgressIndicator
-    
-    private val client = OkHttpClient()
+    companion object {
+        private const val DASHBOARD_URL =
+            "https://saif-net.alshmryantqam-6e3.workers.dev/"
+        private const val BACKGROUND = 0xFF0B0714.toInt()
+        private const val PURPLE = 0xFFA56AFF.toInt()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // شريط مهام أسود بالكامل ليناسب الهوية الفضائية
-        window.statusBarColor = Color.parseColor("#05070A")
-        window.navigationBarColor = Color.parseColor("#05070A")
+        window.statusBarColor = BACKGROUND
+        window.navigationBarColor = BACKGROUND
 
-        setContentView(R.layout.activity_main)
-
-        statusText = findViewById(R.id.statusText)
-        cpuText = findViewById(R.id.cpuText)
-        ramText = findViewById(R.id.ramText)
-        totalDownload = findViewById(R.id.totalDownload)
-        totalUpload = findViewById(R.id.totalUpload)
-        cpuBar = findViewById(R.id.cpuBar)
-        ramBar = findViewById(R.id.ramBar)
-        
-        findViewById<Button>(R.id.btnRefresh).setOnClickListener {
-            statusText.text = "جاري الاتصال بالخوادم..."
-            statusText.setTextColor(Color.parseColor("#B388FF"))
-            fetchRouterData()
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(BACKGROUND)
         }
 
-        fetchRouterData()
-    }
+        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = false
+            max = 100
+            progress = 0
+            progressTintList = android.content.res.ColorStateList.valueOf(PURPLE)
+            progressBackgroundTintList =
+                android.content.res.ColorStateList.valueOf(0xFF302341.toInt())
+        }
+        message = TextView(this).apply {
+            text = "جارٍ الاتصال بمنصة SAIF.NET..."
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            setPadding(24, 18, 24, 18)
+            setBackgroundColor(BACKGROUND)
+            visibility = View.GONE
+        }
 
-    private fun fetchRouterData() {
-        val url = "http://$ROUTER_IP/rest/system/resource"
-        val credential = Credentials.basic(API_USER, API_PASS)
-        val request = Request.Builder().url(url).header("Authorization", credential).build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread { updateUIOnError() }
+        webView = WebView(this).apply {
+            setBackgroundColor(BACKGROUND)
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.loadsImagesAutomatically = true
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                settings.safeBrowsingEnabled = true
             }
+            CookieManager.getInstance().setAcceptCookie(true)
+            webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                    progress.visibility = View.VISIBLE
+                    message.visibility = View.GONE
+                    progress.progress = 8
+                }
 
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    val responseData = response.body?.string()
-                    try {
-                        val jsonArray = JSONArray(responseData)
-                        val res = jsonArray.getJSONObject(0)
-                        
-                        val cpuLoad = res.getInt("cpu-load")
-                        val totalMem = res.getLong("total-memory")
-                        val freeMem = res.getLong("free-memory")
-                        val ramPercent = (((totalMem - freeMem).toDouble() / totalMem) * 100).toInt()
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    progress.progress = 100
+                    progress.visibility = View.GONE
+                }
 
-                        runOnUiThread {
-                            cpuText.text = "$cpuLoad%"
-                            cpuBar.setProgressCompat(cpuLoad, true) // حركة أنيميشن ناعمة
-                            
-                            ramText.text = "$ramPercent%"
-                            ramBar.setProgressCompat(ramPercent, true)
-                            
-                            statusText.text = "متصل بالراوتر • البث مستقر"
-                            statusText.setTextColor(Color.parseColor("#00E676"))
-
-                            // قيم مؤقتة ريثما نربط واجهة (Interfaces) الخاصة بالـ Traffic
-                            totalDownload.text = "214 Mbps"
-                            totalUpload.text = "48 Mbps"
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread { updateUIOnError() }
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        message.text = "تعذّر الاتصال. تحقق من الإنترنت ثم أعد تحميل الصفحة."
+                        message.visibility = View.VISIBLE
                     }
-                } else {
-                    runOnUiThread { updateUIOnError() }
                 }
             }
-        })
+            webChromeClient = object : WebChromeClient() {
+                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                    progress.progress = newProgress
+                    progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+                }
+            }
+        }
+
+        root.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                3
+            )
+        )
+        root.addView(
+            message,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+        root.addView(
+            webView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+        setContentView(root)
+
+        if (savedInstanceState == null) {
+            webView.loadUrl(DASHBOARD_URL)
+        } else {
+            webView.restoreState(savedInstanceState)
+        }
     }
 
-    private fun updateUIOnError() {
-        statusText.text = "تم فقدان الاتصال بالراوتر (CRITICAL ERROR)"
-        statusText.setTextColor(Color.parseColor("#FF1744"))
-        cpuText.text = "--%"
-        ramText.text = "--%"
-        cpuBar.setProgressCompat(0, true)
-        ramBar.setProgressCompat(0, true)
+    override fun onSaveInstanceState(outState: Bundle) {
+        webView.saveState(outState)
+        super.onSaveInstanceState(outState)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        if (::webView.isInitialized) {
+            webView.stopLoading()
+            webView.destroy()
+        }
+        super.onDestroy()
     }
 }
