@@ -531,8 +531,10 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
    try {
      const status = await api("/api/setup/status");
      if (status.setupRequired) {
-       if (status.setupConfigured) showSetup();
-       else showLogin("إعداد الحساب الأول غير مفعّل في الخادم. اضبط SETUP_SECRET كـ Secret في Cloudflare.");
+       showSetup();
+       if (!status.setupConfigured) {
+         setMessage("قبل إنشاء الحساب: استبدل SETUP_SECRET في Cloudflare بقيمة جديدة طويلة واحفظه كـ Secret. لا تستخدم الرمز القديم المكشوف.");
+       }
      } else {
        showLogin();
      }
