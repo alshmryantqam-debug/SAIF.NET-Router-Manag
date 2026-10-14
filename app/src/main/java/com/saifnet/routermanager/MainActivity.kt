@@ -67,14 +67,14 @@ class MainActivity : Activity() {
             CookieManager.getInstance().setAcceptCookie(true)
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                    progress.visibility = View.VISIBLE
+                    this@MainActivity.progress.visibility = View.VISIBLE
                     message.visibility = View.GONE
-                    progress.progress = 8
+                    this@MainActivity.progress.progress = 8
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    progress.progress = 100
-                    progress.visibility = View.GONE
+                    this@MainActivity.progress.progress = 100
+                    this@MainActivity.progress.visibility = View.GONE
                 }
 
                 override fun onReceivedError(
@@ -90,8 +90,8 @@ class MainActivity : Activity() {
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                    progress.progress = newProgress
-                    progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+                    this@MainActivity.progress.progress = newProgress
+                    this@MainActivity.progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
                 }
             }
         }
