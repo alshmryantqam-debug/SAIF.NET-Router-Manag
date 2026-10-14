@@ -364,6 +364,170 @@ export default {
         });
       }
 
+      // Company-scoped operational APIs. These manage SAIF.NET records only;
+      // they do not execute commands on MikroTik devices.
+      const routeMatch = url.pathname.match(/^\\/api\\/(metrics|plans|subscribers|invoices)$/);
+      if (routeMatch) {
+        const user = await currentUser(request, env);
+        if (!user) return json({ error: "Authentication required" }, 401);
+        const resource = routeMatch[1];
+        const can = roles => roles.includes(user.role);
+        const requireRole = roles => can(roles)
+          ? null
+          : json({ error: "Insufficient permissions" }, 403);
+        const body = request.method === "POST" ? await bodyJson(request) : null;
+        if (request.method === "POST" && !body) return json({ error: "Invalid JSON body" }, 400);
+
+        if (resource === "metrics" && request.method === "GET") {
+          const routerId = url.searchParams.get("routerId");
+          const result = routerId
+            ? await env.DB.prepare(`
+                SELECT m.router_id, m.cpu_percent, m.memory_percent,
+                       m.temperature_c, m.latency_ms, m.packet_loss_percent,
+                       m.rx_bytes_per_second, m.tx_bytes_per_second, m.sampled_at
+                FROM router_metrics m
+                JOIN routers r ON r.id = m.router_id AND r.company_id = ?
+                WHERE m.company_id = ? AND m.router_id = ?
+                ORDER BY m.sampled_at DESC LIMIT 100
+              `).bind(user.company_id, user.company_id, routerId).all()
+            : await env.DB.prepare(`
+                SELECT m.router_id, r.name AS router_name, m.cpu_percent,
+                       m.memory_percent, m.temperature_c, m.latency_ms,
+                       m.packet_loss_percent, m.rx_bytes_per_second,
+                       m.tx_bytes_per_second, m.sampled_at
+                FROM router_metrics m
+                JOIN routers r ON r.id = m.router_id AND r.company_id = ?
+                WHERE m.company_id = ?
+                ORDER BY m.sampled_at DESC LIMIT 100
+              `).bind(user.company_id, user.company_id).all();
+          return json({ metrics: result.results || [], source: "stored_samples",
+            note: "Stored measurements only; this endpoint does not poll MikroTik directly." });
+        }
+
+        if (resource === "plans" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT id, name, download_kbps, upload_kbps, price_minor,
+                   currency, duration_days, status, created_at
+            FROM plans WHERE company_id = ? ORDER BY created_at DESC LIMIT 200
+          `).bind(user.company_id).all();
+          return json({ plans: result.results || [] });
+        }
+        if (resource === "plans" && request.method === "POST") {
+          const denied = requireRole(["owner", "admin"]);
+          if (denied) return denied;
+          const name = typeof body.name === "string" ? body.name.trim() : "";
+          const download = Number(body.download_kbps);
+          const upload = Number(body.upload_kbps);
+          const price = body.price_minor === undefined ? 0 : Number(body.price_minor);
+          const duration = body.duration_days === undefined ? 30 : Number(body.duration_days);
+          const currency = typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "USD";
+          if (!name || name.length > 100 || !Number.isSafeInteger(download) || download < 1 ||
+              !Number.isSafeInteger(upload) || upload < 1 || !Number.isSafeInteger(price) || price < 0 ||
+              !Number.isSafeInteger(duration) || duration < 1 || duration > 3650 ||
+              !/^[A-Z]{3}$/.test(currency)) {
+            return json({ error: "Invalid plan fields" }, 400);
+          }
+          const id = crypto.randomUUID();
+          await env.DB.prepare(`
+            INSERT INTO plans (id, company_id, name, download_kbps, upload_kbps, price_minor, currency, duration_days)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(id, user.company_id, name, download, upload, price, currency, duration).run();
+          await env.DB.prepare(`
+            INSERT INTO audit_events (company_id, actor_user_id, action, resource_type, resource_id)
+            VALUES (?, ?, 'create', 'plan', ?)
+          `).bind(user.company_id, user.id, id).run();
+          return json({ status: "created", id }, 201);
+        }
+
+        if (resource === "subscribers" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT s.id, s.router_id, s.plan_id, s.username, s.full_name,
+                   s.phone, s.service_type, s.status, s.starts_at, s.expires_at,
+                   s.created_at, p.name AS plan_name, r.name AS router_name
+            FROM subscribers s
+            LEFT JOIN plans p ON p.id = s.plan_id AND p.company_id = s.company_id
+            LEFT JOIN routers r ON r.id = s.router_id AND r.company_id = s.company_id
+            WHERE s.company_id = ? ORDER BY s.created_at DESC LIMIT 200
+          `).bind(user.company_id).all();
+          return json({ subscribers: result.results || [] });
+        }
+        if (resource === "subscribers" && request.method === "POST") {
+          const denied = requireRole(["owner", "admin", "technician"]);
+          if (denied) return denied;
+          const username = typeof body.username === "string" ? body.username.trim() : "";
+          const fullName = typeof body.full_name === "string" ? body.full_name.trim() : null;
+          const phone = typeof body.phone === "string" ? body.phone.trim() : null;
+          const type = body.service_type;
+          const status = body.status || "pending";
+          const routerId = typeof body.router_id === "string" && body.router_id ? body.router_id : null;
+          const planId = typeof body.plan_id === "string" && body.plan_id ? body.plan_id : null;
+          if (!username || username.length > 128 || (fullName && fullName.length > 150) ||
+              (phone && phone.length > 40) || !["pppoe", "hotspot", "static"].includes(type) ||
+              !["active", "suspended", "pending", "expired"].includes(status)) {
+            return json({ error: "Invalid subscriber fields" }, 400);
+          }
+          if (routerId) {
+            const r = await env.DB.prepare("SELECT id FROM routers WHERE id = ? AND company_id = ?").bind(routerId, user.company_id).first();
+            if (!r) return json({ error: "Router not found in this company" }, 400);
+          }
+          if (planId) {
+            const p = await env.DB.prepare("SELECT id FROM plans WHERE id = ? AND company_id = ? AND status = 'active'").bind(planId, user.company_id).first();
+            if (!p) return json({ error: "Active plan not found in this company" }, 400);
+          }
+          const id = crypto.randomUUID();
+          try {
+            await env.DB.prepare(`
+              INSERT INTO subscribers (id, company_id, router_id, plan_id, username, full_name, phone, service_type, status, starts_at, expires_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(id, user.company_id, routerId, planId, username, fullName || null, phone || null, type, status,
+              typeof body.starts_at === "string" ? body.starts_at : null,
+              typeof body.expires_at === "string" ? body.expires_at : null).run();
+          } catch (error) {
+            if (String(error).includes("UNIQUE")) return json({ error: "Username already exists in this company" }, 409);
+            throw error;
+          }
+          await env.DB.prepare(`
+            INSERT INTO audit_events (company_id, actor_user_id, action, resource_type, resource_id)
+            VALUES (?, ?, 'create', 'subscriber', ?)
+          `).bind(user.company_id, user.id, id).run();
+          return json({ status: "created", id }, 201);
+        }
+
+        if (resource === "invoices" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT i.id, i.subscriber_id, i.amount_minor, i.currency, i.status,
+                   i.due_at, i.paid_at, i.created_at, s.username, s.full_name
+            FROM invoices i JOIN subscribers s
+              ON s.id = i.subscriber_id AND s.company_id = i.company_id
+            WHERE i.company_id = ? ORDER BY i.created_at DESC LIMIT 200
+          `).bind(user.company_id).all();
+          return json({ invoices: result.results || [] });
+        }
+        if (resource === "invoices" && request.method === "POST") {
+          const denied = requireRole(["owner", "admin", "billing"]);
+          if (denied) return denied;
+          const subscriberId = typeof body.subscriber_id === "string" ? body.subscriber_id : "";
+          const amount = Number(body.amount_minor);
+          const currency = typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "USD";
+          const dueAt = typeof body.due_at === "string" ? body.due_at : null;
+          const subscriber = await env.DB.prepare("SELECT id FROM subscribers WHERE id = ? AND company_id = ?").bind(subscriberId, user.company_id).first();
+          if (!subscriber || !Number.isSafeInteger(amount) || amount < 0 || !/^[A-Z]{3}$/.test(currency)) {
+            return json({ error: "Invalid invoice fields or subscriber" }, 400);
+          }
+          const id = crypto.randomUUID();
+          await env.DB.prepare(`
+            INSERT INTO invoices (id, company_id, subscriber_id, amount_minor, currency, due_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).bind(id, user.company_id, subscriberId, amount, currency, dueAt).run();
+          await env.DB.prepare(`
+            INSERT INTO audit_events (company_id, actor_user_id, action, resource_type, resource_id)
+            VALUES (?, ?, 'create', 'invoice', ?)
+          `).bind(user.company_id, user.id, id).run();
+          return json({ status: "created", id }, 201);
+        }
+        return json({ error: "Method not allowed" }, 405);
+      }
+
       if (url.pathname === "/api/routers" && request.method === "GET") {
         const user = await currentUser(request, env);
         if (!user) {
