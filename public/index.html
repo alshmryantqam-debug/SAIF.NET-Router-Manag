@@ -3,7 +3,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#0b0714">
 <title>SAIF.NET | Network Intelligence</title>
 <style>
@@ -128,9 +128,18 @@ footer{text-align:center;color:#756985;font-size:10px;padding:30px 10px}
 /* Authentication screen */
 .auth-screen[hidden], .layout[hidden], .auth-form[hidden] { display: none !important; }
 .auth-screen {
- min-height:100vh;display:grid;place-items:center;padding:22px;
+ min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:22px;
  background:radial-gradient(ellipse at 50% 0%,#2a1742 0%,#0b0714 58%);
 }
+.auth-screen,.auth-card{overscroll-behavior-y:contain}
+.auth-card{align-self:start;margin:auto 0;max-height:none}
+.auth-form input{font-size:16px;line-height:1.4;scroll-margin-block:24px;touch-action:manipulation}
+.auth-form input:focus{scroll-margin-block:32px}
+.auth-form label:focus-within{color:#f5efff}
+.password-wrap{display:flex;gap:8px;align-items:stretch}
+.password-wrap input{flex:1;min-width:0}
+.password-toggle{flex:0 0 auto;border:1px solid #493164;background:#241832;color:#e7d7ff;border-radius:10px;padding:0 12px;font-size:12px}
+@media(max-width:480px){.auth-card{padding:21px}.auth-screen{padding:14px;place-items:start center}.auth-card{width:100%}}
 .auth-card {
  width:min(100%,440px);background:linear-gradient(145deg,#191128,#100b1b);
  border:1px solid #493164;border-radius:22px;padding:26px;
@@ -165,17 +174,18 @@ footer{text-align:center;color:#756985;font-size:10px;padding:30px 10px}
    <h1>تسجيل الدخول</h1>
    <div class="auth-description">ادخل إلى لوحة إدارة شبكتك بأمان.</div>
    <label>البريد الإلكتروني<input name="email" type="email" autocomplete="username" required maxlength="254" placeholder="name@example.com"></label>
-   <label>كلمة المرور<input name="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل"></label>
+   <label>كلمة المرور<div class="password-wrap"><input name="password" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="كلمة المرور"><button class="password-toggle" type="button" data-toggle-password="password">إظهار</button></div></label>
    <button class="btn primary" type="submit">دخول إلى المنصة</button>
   </form>
   <form id="setupForm" class="auth-form" hidden>
    <h1>إنشاء حساب المالك</h1>
    <div class="auth-description">إعداد أول حساب مسؤول لشركة الشبكة.</div>
-   <label>رمز الإعداد السري<input name="secret" type="password" autocomplete="off" required maxlength="256" placeholder="SETUP_SECRET"></label>
-   <label>اسم المالك<input name="displayName" autocomplete="name" required maxlength="100" placeholder="الاسم الكامل"></label>
+   <div class="auth-note" style="margin:0 0 4px">هذه خطوة تهيئة لمرة واحدة فقط، وليست مطلوبة عند تسجيل الدخول لاحقًا.</div>
+   <label>رمز الإعداد السري<div class="password-wrap"><input name="secret" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="256" placeholder="أدخل رمز الإعداد الذي ضبطته في Cloudflare"><button class="password-toggle" type="button" data-toggle-password="secret">إظهار</button></div></label>
+   <label>اسم المالك<input name="displayName" autocomplete="name" autocapitalize="words" required maxlength="100" placeholder="الاسم الكامل"></label>
    <label>اسم الشركة<input name="companyName" autocomplete="organization" required maxlength="120" placeholder="اسم شركة الشبكة"></label>
-   <label>البريد الإلكتروني<input name="email" type="email" autocomplete="username" required maxlength="254" placeholder="name@example.com"></label>
-   <label>كلمة المرور<input name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل"></label>
+   <label>البريد الإلكتروني<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="name@example.com"></label>
+   <label>كلمة المرور<div class="password-wrap"><input name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder="12 حرفًا على الأقل"><button class="password-toggle" type="button" data-toggle-password="password">إظهار</button></div></label>
    <button class="btn primary" type="submit">إنشاء حساب المالك</button>
    <div class="auth-note">رمز الإعداد يجب أن يكون محفوظًا كـ Secret في Cloudflare. لا تشاركه ولا تستخدم رمزًا سبق نشره.</div>
   </form>
@@ -523,6 +533,22 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
      await loadPlatformStatus(); await loadRouters(); await loadPlans(); await loadSubscribers(); await loadInvoices();
    } catch (error) { setMessage(error.message); }
    finally { button.disabled = false; button.textContent = "دخول إلى المنصة"; }
+ });
+ // Password visibility controls do not steal focus from the active input.
+ document.querySelectorAll("[data-toggle-password]").forEach(toggle => {
+   toggle.addEventListener("click", () => {
+     const input = toggle.parentElement.querySelector("input");
+     const focused = document.activeElement === input;
+     input.type = input.type === "password" ? "text" : "password";
+     toggle.textContent = input.type === "password" ? "إظهار" : "إخفاء";
+     if (focused) input.focus({preventScroll:true});
+   });
+ });
+ // Keep mobile forms stable when Android's virtual keyboard resizes the viewport.
+ document.querySelectorAll(".auth-form input").forEach(input => {
+   input.addEventListener("focus", () => {
+     setTimeout(() => input.scrollIntoView({block:"nearest",behavior:"auto"}), 120);
+   });
  });
  setupForm.addEventListener("submit", async event => {
    event.preventDefault();
