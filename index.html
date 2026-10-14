@@ -1,141 +1,352 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#100b1c">
-<title>SAIF.NET | إدارة الشبكة</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0714">
+<title>SAIF.NET | Network Intelligence</title>
 <style>
-:root {
-  color-scheme: dark;
-  --bg:#100b1c; --panel:#1c142b; --border:#352746;
-  --purple:#a56aff; --text:#f5efff; --muted:#b5a8c8;
+:root{
+ --bg:#0b0714;--panel:#130e20;--panel2:#191229;
+ --line:#302341;--purple:#a56aff;--pink:#df8cff;
+ --text:#f5efff;--muted:#9c90b2;--green:#56e6a5;
+ --red:#ff718b;--amber:#ffc66d;--blue:#77baff;
 }
 *{box-sizing:border-box}
-body {
-  margin:0;background:var(--bg);color:var(--text);
-  font-family:system-ui,-apple-system,sans-serif;
-}
-header {
-  padding:22px 18px;background:linear-gradient(135deg,#291544,#130d20);
-  border-bottom:1px solid var(--border);
-}
-.brand{font-size:24px;font-weight:900;letter-spacing:.5px}
+body{margin:0;background:var(--bg);color:var(--text);
+ font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:245px;flex-shrink:0;background:#100b1b;
+ border-left:1px solid var(--line);padding:22px 14px}
+.brand{font-size:23px;font-weight:950;letter-spacing:.4px;padding:4px 10px}
 .brand span{color:var(--purple)}
-.sub{color:var(--muted);font-size:13px;margin-top:6px}
-main{max-width:1050px;margin:auto;padding:18px}
-.section-title{font-size:17px;font-weight:800;margin:24px 0 12px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:16px;padding:16px;min-width:0;
+.brand-sub{font-size:11px;color:var(--muted);padding:0 11px 25px}
+.nav-title{font-size:10px;color:#817391;padding:15px 12px 8px}
+.nav{display:flex;align-items:center;gap:11px;width:100%;
+ border:1px solid transparent;border-radius:11px;padding:12px;
+ margin:3px 0;background:transparent;color:#bdb0cf;text-align:right}
+.nav:hover,.nav.active{background:#261739;color:#fff;border-color:#493164}
+.nav.active{box-shadow:inset -3px 0 var(--purple)}
+.nav-icon{width:23px;text-align:center;font-size:17px}
+.side-bottom{margin-top:30px;padding:13px;border:1px solid var(--line);
+ border-radius:13px;background:var(--panel);font-size:12px;color:var(--muted)}
+.main{flex:1;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;
+ gap:12px;padding:18px 25px;border-bottom:1px solid var(--line);
+ background:#0e0918;position:sticky;top:0;z-index:5}
+.top-title{font-weight:800;font-size:17px}
+.top-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.top-actions{display:flex;align-items:center;gap:8px}
+.btn{background:#28173d;border:1px solid #4b3267;color:white;
+ padding:10px 13px;border-radius:10px;font-size:12px;font-weight:750}
+.btn.primary{background:linear-gradient(135deg,#8d4cf0,#b66aff);
+ border-color:transparent}
+.btn:hover{filter:brightness(1.15)}
+.content{padding:24px;max-width:1500px;margin:auto}
+.eyebrow{color:var(--purple);font-size:11px;font-weight:800;letter-spacing:1px}
+h1{font-size:25px;margin:7px 0}
+.lead{font-size:12px;color:var(--muted);line-height:1.8}
+.notice{display:flex;align-items:flex-start;gap:12px;margin:20px 0;
+ border:1px solid #62452e;background:#241a18;border-radius:12px;
+ padding:13px;color:#f7d7ad;font-size:12px;line-height:1.8}
+.section-head{display:flex;justify-content:space-between;align-items:center;
+ gap:12px;margin:25px 0 13px}
+.section-head h2{font-size:15px;margin:0}
+.section-head p{font-size:11px;color:var(--muted);margin:5px 0 0}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.card{background:linear-gradient(145deg,#191128,#120d1e);
+ border:1px solid var(--line);border-radius:15px;padding:17px;min-width:0}
+.kpi-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kpi-label{font-size:12px;color:var(--muted)}
+.kpi-icon{width:34px;height:34px;border-radius:10px;
+ display:grid;place-items:center;background:#2c1b43;color:#d7b8ff;font-size:17px}
+.kpi-value{font-size:29px;font-weight:900;margin:15px 0 5px;
+ letter-spacing:-.5px}
+.kpi-foot{font-size:11px;color:var(--muted);line-height:1.7}
+.status{display:inline-flex;align-items:center;gap:6px;
+ border-radius:20px;padding:5px 9px;font-size:10px;
+ background:#193329;color:var(--green);white-space:nowrap}
+.status.warn{background:#392b1c;color:var(--amber)}
+.status.bad{background:#3b1d2a;color:var(--red)}
+.status.demo{background:#30213e;color:#dfc4ff}
+.dot{width:6px;height:6px;background:currentColor;border-radius:50%}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);gap:13px}
+.chart{height:190px;position:relative;margin-top:15px}
+.chart svg{width:100%;height:100%;overflow:visible}
+.chart-labels{display:flex;justify-content:space-between;
+ color:var(--muted);font-size:10px;margin-top:7px}
+.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-left:5px}
+.health-row{display:flex;justify-content:space-between;align-items:center;
+ gap:10px;padding:14px 0;border-bottom:1px solid var(--line);font-size:12px}
+.health-row:last-child{border-bottom:0}
+.health-name{font-weight:750}
+.health-desc{font-size:10px;color:var(--muted);margin-top:5px}
+.progress{height:5px;background:#30213d;border-radius:9px;overflow:hidden;margin-top:9px}
+.progress span{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#8450e8,#d38cff)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}
+th{text-align:right;color:var(--muted);font-weight:650;background:#171021}
+th,td{padding:14px 13px;border-bottom:1px solid var(--line)}
+tbody tr:hover{background:#1b1227}
+.empty{text-align:center;padding:26px;color:var(--muted);font-size:12px}
+.search{background:#100b19;border:1px solid var(--line);color:white;
+ padding:10px 12px;border-radius:10px;min-width:0;width:190px}
+.page{display:none}.page.active{display:block}
+.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.feature{background:var(--panel);border:1px solid var(--line);
+ border-radius:14px;padding:18px}
+.feature .big{font-size:22px;margin-bottom:12px}
+.feature h3{font-size:13px;margin:0 0 8px}
+.feature p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.mobile-menu{display:none}
+footer{text-align:center;color:#756985;font-size:10px;padding:30px 10px}
+@media(max-width:1050px){
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cols{grid-template-columns:1fr}
 }
-.label{color:var(--muted);font-size:13px}
-.value{font-size:27px;font-weight:850;margin:10px 0 5px}
-.note{font-size:12px;color:var(--muted)}
-.pill{
-  display:inline-block;border-radius:20px;padding:5px 9px;
-  font-size:11px;background:#263b30;color:#8ef0b0;
+@media(max-width:700px){
+ .sidebar{display:none;position:fixed;right:0;top:0;bottom:0;z-index:20;
+  width:265px;overflow:auto;box-shadow:0 0 0 100vw #0009}
+ .sidebar.open{display:block}
+ .topbar{padding:13px}
+ .mobile-menu{display:inline-block}
+ .top-title{font-size:14px}
+ .top-sub{font-size:10px}
+ .content{padding:15px}
+ .grid{gap:9px}
+ .card{padding:13px}
+ .kpi-value{font-size:24px}
+ .feature-grid{grid-template-columns:1fr}
+ .search{width:130px}
+ h1{font-size:22px}
 }
-.pill.demo{background:#382b4c;color:#ddc4ff}
-.bar{height:7px;background:#382a49;border-radius:9px;overflow:hidden;margin:12px 0 5px}
-.bar div{height:100%;width:25%;background:linear-gradient(90deg,#8150ed,#d5a4ff);border-radius:9px}
-.wan{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.wan+.wan{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
-.dot{display:inline-block;width:8px;height:8px;background:#62e99a;border-radius:50%;margin-left:7px}
-.button{
-  border:1px solid #61428a;border-radius:11px;padding:10px 13px;
-  color:white;background:#34204c;font-weight:700;cursor:pointer
-}
-.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
-footer{text-align:center;color:var(--muted);font-size:12px;padding:28px 10px}
-@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">SAIF<span>.NET</span></div>
-  <div class="sub">مركز إدارة ومراقبة الشبكة</div>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+ <div class="brand">SAIF<span>.NET</span></div>
+ <div class="brand-sub">NETWORK INTELLIGENCE PLATFORM</div>
+
+ <div class="nav-title">مركز العمليات</div>
+ <button class="nav active" data-page="overview"><span class="nav-icon">◈</span> نظرة عامة</button>
+ <button class="nav" data-page="routers"><span class="nav-icon">▤</span> أجهزة الراوتر</button>
+ <button class="nav" data-page="traffic"><span class="nav-icon">⌁</span> حركة الشبكة</button>
+ <button class="nav" data-page="topology"><span class="nav-icon">◎</span> خريطة الشبكة</button>
+ <button class="nav" data-page="alerts"><span class="nav-icon">♧</span> التنبيهات والحوادث</button>
+
+ <div class="nav-title">إدارة مزوّد الخدمة</div>
+ <button class="nav" data-page="subscribers"><span class="nav-icon">♙</span> المشتركين</button>
+ <button class="nav" data-page="plans"><span class="nav-icon">▦</span> الباقات والسرعات</button>
+ <button class="nav" data-page="hotspot"><span class="nav-icon">⌘</span> كروت Hotspot</button>
+ <button class="nav" data-page="billing"><span class="nav-icon">▤</span> الفواتير والتحصيل</button>
+
+ <div class="nav-title">الأدوات والإدارة</div>
+ <button class="nav" data-page="diagnostics"><span class="nav-icon">⌕</span> تشخيص الشبكة</button>
+ <button class="nav" data-page="security"><span class="nav-icon">⬡</span> الأمان وسجل التدقيق</button>
+ <button class="nav" data-page="integrations"><span class="nav-icon">⛓</span> الربط والتكامل</button>
+ <button class="nav" data-page="settings"><span class="nav-icon">⚙</span> الإعدادات</button>
+
+ <div class="side-bottom">
+  <b style="color:#d8c3f7">SAIF.NET Enterprise</b>
+  <p>منصة إدارة متعددة الشركات</p>
+  <span class="status demo"><i class="dot"></i> وضع الواجهة الأولي</span>
+ </div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+ <div style="display:flex;align-items:center;gap:10px">
+  <button class="btn mobile-menu" id="menuBtn" aria-label="القائمة">☰</button>
+  <div>
+   <div class="top-title" id="topTitle">مركز عمليات الشبكة</div>
+   <div class="top-sub">SAIF.NET / Enterprise Network Manager</div>
+  </div>
+ </div>
+ <div class="top-actions">
+  <span class="status demo">واجهة أولية</span>
+  <button class="btn" id="refreshBtn">↻ تحديث</button>
+ </div>
 </header>
 
-<main>
-  <div class="section-title">لوحة المراقبة</div>
-  <span class="pill demo">وضع المعاينة — بيانات تجريبية</span>
+<main class="content">
+<section class="page active" id="page-overview">
+ <div class="eyebrow">NETWORK OPERATIONS CENTER</div>
+ <h1>مركز قيادة الشبكة</h1>
+ <div class="lead">رؤية موحّدة للأجهزة والخطوط والمشتركين والأحداث التشغيلية.</div>
 
-  <div class="grid" style="margin-top:14px">
-    <section class="card">
-      <div class="label">استخدام المعالج CPU</div>
-      <div class="value" id="cpu">23%</div>
-      <div class="bar"><div id="cpuBar" style="width:23%"></div></div>
-      <div class="note">قراءة تجريبية</div>
-    </section>
-    <section class="card">
-      <div class="label">استخدام الذاكرة</div>
-      <div class="value" id="ram">42%</div>
-      <div class="bar"><div style="width:42%"></div></div>
-      <div class="note">قراءة تجريبية</div>
-    </section>
-    <section class="card">
-      <div class="label">حرارة الجهاز</div>
-      <div class="value">48°</div>
-      <div class="note">درجة تجريبية وليست قراءة فعلية</div>
-    </section>
-    <section class="card">
-      <div class="label">حالة النظام</div>
-      <div class="value" style="font-size:20px">CCR2116</div>
-      <div class="note">RouterOS 7.x</div>
-    </section>
-  </div>
+ <div class="notice">
+  <span style="font-size:20px">ⓘ</span>
+  <div><b>المنصة في وضع الواجهة الأولي.</b><br>
+  لا يوجد اتصال فعلي بقاعدة البيانات أو أجهزة MikroTik حتى الآن.
+  جميع مؤشرات هذه الصفحة توضيحية، ولن تظهر كقراءات حقيقية.</div>
+ </div>
 
-  <div class="section-title">واجهات الإنترنت WAN</div>
-  <section class="card">
-    <div class="wan">
-      <div><b>ether1</b><div class="note">Starlink 1</div></div>
-      <span class="pill">متصل تجريبياً</span>
-    </div>
-    <div class="wan">
-      <div><b>ether2</b><div class="note">Starlink 2</div></div>
-      <span class="pill">متصل تجريبياً</span>
-    </div>
-    <div class="wan">
-      <div><b>ether3</b><div class="note">الخط التركي</div></div>
-      <span class="pill">متصل تجريبياً</span>
-    </div>
-  </section>
+ <div class="section-head">
+  <div><h2>ملخص البنية التحتية</h2><p>مؤشرات ستُربط بمصادر البيانات الفعلية</p></div>
+  <span class="status demo">غير متصل بمصدر بيانات</span>
+ </div>
 
-  <div class="section-title">المشتركون والطوابير</div>
-  <div class="grid">
-    <section class="card">
-      <div class="label">المشتركون المتصلون</div>
-      <div class="value">—</div>
-      <div class="note">بانتظار الاتصال الآمن بالراوتر</div>
-    </section>
-    <section class="card">
-      <div class="label">قوائم Queue</div>
-      <div class="value">—</div>
-      <div class="note">بانتظار قراءة البيانات الفعلية</div>
-    </section>
-  </div>
+ <div class="grid">
+  <article class="card"><div class="kpi-top"><span class="kpi-label">أجهزة الراوتر</span><span class="kpi-icon">▤</span></div><div class="kpi-value">—</div><div class="kpi-foot">بانتظار تسجيل الأجهزة</div></article>
+  <article class="card"><div class="kpi-top"><span class="kpi-label">المشتركون النشطون</span><span class="kpi-icon">♙</span></div><div class="kpi-value">—</div><div class="kpi-foot">PPPoE وHotspot</div></article>
+  <article class="card"><div class="kpi-top"><span class="kpi-label">حالة الاتصالات</span><span class="kpi-icon">⌁</span></div><div class="kpi-value">—</div><div class="kpi-foot">WAN وVPN والروابط</div></article>
+  <article class="card"><div class="kpi-top"><span class="kpi-label">الحوادث المفتوحة</span><span class="kpi-icon">♧</span></div><div class="kpi-value">—</div><div class="kpi-foot">تُحسب بعد تفعيل نظام التنبيهات</div></article>
+ </div>
 
-  <div class="actions">
-    <button class="button" onclick="refreshDemo()">تحديث المعاينة</button>
-    <button class="button" onclick="alert('الاتصال الحقيقي سيضاف بعد تجهيز قناة آمنة وصلاحيات القراءة فقط.')">حالة الاتصال</button>
-  </div>
+ <div class="section-head"><div><h2>حركة الشبكة</h2><p>رسم بياني توضيحي — ليس قياساً حقيقياً</p></div><span class="status demo">تجريبي</span></div>
+ <div class="cols">
+  <article class="card">
+   <div class="legend"><span><i style="background:#a56aff"></i>التنزيل</span><span><i style="background:#62d9c1"></i>الرفع</span></div>
+   <div class="chart">
+    <svg viewBox="0 0 600 190" preserveAspectRatio="none" role="img" aria-label="رسم توضيحي لحركة الشبكة">
+     <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#a56aff" stop-opacity=".30"/><stop offset="100%" stop-color="#a56aff" stop-opacity="0"/></linearGradient></defs>
+     <g stroke="#302341" stroke-width="1"><path d="M0 25H600 M0 65H600 M0 105H600 M0 145H600 M0 185H600"/></g>
+     <path d="M0 135 L50 120 L100 130 L150 75 L200 95 L250 48 L300 75 L350 35 L400 65 L450 25 L500 55 L550 32 L600 45 L600 190 L0 190Z" fill="url(#area)"/>
+     <path d="M0 135 L50 120 L100 130 L150 75 L200 95 L250 48 L300 75 L350 35 L400 65 L450 25 L500 55 L550 32 L600 45" fill="none" stroke="#a56aff" stroke-width="3" stroke-linecap="round"/>
+     <path d="M0 165 L50 155 L100 168 L150 140 L200 150 L250 125 L300 145 L350 115 L400 135 L450 108 L500 128 L550 118 L600 126" fill="none" stroke="#62d9c1" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+   </div>
+   <div class="chart-labels"><span>قبل 60 دقيقة</span><span>قبل 45 دقيقة</span><span>قبل 30 دقيقة</span><span>قبل 15 دقيقة</span><span>الآن</span></div>
+  </article>
+  <article class="card">
+   <h3 style="font-size:13px;margin:0">حالة مكونات المنصة</h3>
+   <div class="health-row"><div><div class="health-name">واجهة الويب</div><div class="health-desc">هذه الصفحة تعمل محلياً في المتصفح</div></div><span class="status">جاهزة</span></div>
+   <div class="health-row"><div><div class="health-name">خلفية API</div><div class="health-desc">لم يتم ربطها بعد</div></div><span class="status warn">غير مربوطة</span></div>
+   <div class="health-row"><div><div class="health-name">قاعدة البيانات</div><div class="health-desc">تحتاج إلى إعداد وربط</div></div><span class="status warn">غير مربوطة</span></div>
+   <div class="health-row"><div><div class="health-name">أجهزة MikroTik</div><div class="health-desc">لا توجد جلسة اتصال مُهيأة</div></div><span class="status warn">غير مربوطة</span></div>
+  </article>
+ </div>
 
-  <footer>
-    SAIF.NET Router Manager<br>
-    المراقبة فقط — لا يتم تعديل إعدادات الراوتر
-  </footer>
+ <div class="section-head"><div><h2>آخر الأحداث</h2><p>سيظهر هنا سجل الأحداث بعد تفعيل الخلفية</p></div></div>
+ <div class="card"><div class="empty">لا توجد أحداث فعلية مسجلة بعد.</div></div>
+</section>
+
+<section class="page" id="page-routers">
+ <div class="eyebrow">INFRASTRUCTURE</div><h1>إدارة أجهزة الراوتر</h1>
+ <p class="lead">تسجيل الأجهزة ومراقبة حالة الاتصال والموارد والإصدارات.</p>
+ <div class="notice">قائمة الأجهزة فارغة حتى يتم إعداد قاعدة البيانات ونظام تسجيل الراوترات.</div>
+ <div class="card"><div class="empty">لا توجد أجهزة مسجلة. سيُضاف تسجيل الجهاز وفحص الاتصال في مرحلة الخلفية الآمنة.</div></div>
+</section>
+
+<section class="page" id="page-traffic">
+ <div class="eyebrow">TRAFFIC ANALYTICS</div><h1>تحليلات حركة الشبكة</h1>
+ <p class="lead">سرعة التنزيل والرفع، استهلاك الخطوط، زمن الاستجابة، فقد الحزم وسجل القياسات.</p>
+ <div class="feature-grid">
+  <div class="feature"><div class="big">⌁</div><h3>مراقبة WAN</h3><p>قياس كل واجهة وخط بصورة مستقلة بعد تفعيل جامع البيانات.</p></div>
+  <div class="feature"><div class="big">◷</div><h3>Latency وJitter</h3><p>متوسط زمن الاستجابة وتذبذبه وفقد الحزم عبر الزمن.</p></div>
+  <div class="feature"><div class="big">▥</div><h3>تقارير الاستهلاك</h3><p>تحليل الاستهلاك حسب الجهاز والخط والفترة.</p></div>
+ </div>
+</section>
+
+<section class="page" id="page-topology">
+ <div class="eyebrow">NETWORK MAP</div><h1>خريطة الشبكة</h1>
+ <p class="lead">عرض بصري للراوترات والروابط والمواقع ونقاط الوصول.</p>
+ <div class="card"><div class="empty">ستُرسم الخريطة من الأجهزة والروابط المسجلة، ولن يتم اختلاق أجهزة أو روابط.</div></div>
+</section>
+
+<section class="page" id="page-alerts">
+ <div class="eyebrow">INCIDENT MANAGEMENT</div><h1>التنبيهات والحوادث</h1>
+ <p class="lead">سياسات التنبيه، الانقطاع، ارتفاع الموارد، وفقد الحزم.</p>
+ <div class="card"><div class="empty">لا توجد تنبيهات فعلية لأن مراقبة الأجهزة لم تُفعّل بعد.</div></div>
+</section>
+
+<section class="page" id="page-subscribers">
+ <div class="eyebrow">SUBSCRIBER MANAGEMENT</div><h1>إدارة المشتركين</h1>
+ <p class="lead">إدارة الحسابات والخدمات والجلسات والسرعات وحالة الاشتراك.</p>
+ <div class="card"><div class="empty">إدارة المشتركين تحتاج إلى API وقاعدة بيانات وصلاحيات محددة لكل شركة.</div></div>
+</section>
+
+<section class="page" id="page-plans">
+ <div class="eyebrow">SERVICE CATALOG</div><h1>الباقات والسرعات</h1>
+ <p class="lead">كتالوج الباقات والسعات وسياسات السرعة ومدة الاشتراك.</p>
+ <div class="card"><div class="empty">ستُحفظ الباقات في قاعدة البيانات وتُربط بسياسات الراوتر بعد التحقق.</div></div>
+</section>
+
+<section class="page" id="page-hotspot">
+ <div class="eyebrow">HOTSPOT VOUCHERS</div><h1>كروت Hotspot</h1>
+ <p class="lead">توليد الكروت والطباعة وQR والاستيراد والتصدير.</p>
+ <div class="card"><div class="empty">توليد الحسابات الحقيقية يتطلب تحديد الراوتر والصلاحيات وسياسة إصدار الكروت.</div></div>
+</section>
+
+<section class="page" id="page-billing">
+ <div class="eyebrow">BILLING & COLLECTION</div><h1>الفواتير والتحصيل</h1>
+ <p class="lead">دورات الفوترة والمدفوعات والديون والتجديدات والتقارير المالية.</p>
+ <div class="card"><div class="empty">لا توجد سجلات مالية؛ ستُحفظ المعاملات في قاعدة البيانات مع سجل تدقيق.</div></div>
+</section>
+
+<section class="page" id="page-diagnostics">
+ <div class="eyebrow">NETWORK DIAGNOSTICS</div><h1>تشخيص الشبكة</h1>
+ <p class="lead">فحص DNS وFirewall وNAT وMangle وQueues وPCC وMulti-WAN.</p>
+ <div class="feature-grid">
+  <div class="feature"><div class="big">⌕</div><h3>فحص الاتصال</h3><p>اختبارات موجهة للروابط والخدمات من خلال قناة آمنة.</p></div>
+  <div class="feature"><div class="big">⬡</div><h3>تدقيق الإعدادات</h3><p>اكتشاف المخاطر والتعارضات مع شرح سبب كل نتيجة.</p></div>
+  <div class="feature"><div class="big">↶</div><h3>خطة التغيير والتراجع</h3><p>معاينة التغييرات قبل التنفيذ مع النسخ الاحتياطي حيثما أمكن.</p></div>
+ </div>
+</section>
+
+<section class="page" id="page-security">
+ <div class="eyebrow">SECURITY & AUDIT</div><h1>الأمان وسجل التدقيق</h1>
+ <p class="lead">الصلاحيات والجلسات وسجل العمليات والتغييرات الحساسة.</p>
+ <div class="card"><div class="empty">تفعيل هذه الوظائف يتطلب نظام مصادقة وخلفية آمنة؛ هذه الواجهة وحدها لا تحمي البيانات.</div></div>
+</section>
+
+<section class="page" id="page-integrations">
+ <div class="eyebrow">INTEGRATIONS</div><h1>الربط والتكامل</h1>
+ <p class="lead">ربط الراوترات وواجهات API وأنظمة المصادقة والفوترة والتنبيهات.</p>
+ <div class="feature-grid">
+  <div class="feature"><div class="big">▤</div><h3>MikroTik RouterOS</h3><p>REST API أو API عبر شبكة خاصة محمية وبحساب محدود الصلاحيات.</p></div>
+  <div class="feature"><div class="big">⛓</div><h3>RADIUS</h3><p>تكامل مصادقة المشتركين عند تجهيز الخادم والإعدادات.</p></div>
+  <div class="feature"><div class="big">♧</div><h3>Telegram والتنبيهات</h3><p>إشعارات الأعطال بعد إعداد أسرار التكامل في الخادم، وليس في الواجهة.</p></div>
+ </div>
+</section>
+
+<section class="page" id="page-settings">
+ <div class="eyebrow">PLATFORM SETTINGS</div><h1>إعدادات المنصة</h1>
+ <p class="lead">إعداد الشركة والمنطقة الزمنية وسياسات الاحتفاظ بالبيانات.</p>
+ <div class="card">
+  <div class="health-row"><div><div class="health-name">اللغة</div><div class="health-desc">واجهة عربية من اليمين إلى اليسار</div></div><span>العربية</span></div>
+  <div class="health-row"><div><div class="health-name">نمط البيانات</div><div class="health-desc">لا توجد بيانات حقيقية متصلة حالياً</div></div><span class="status demo">واجهة أولية</span></div>
+  <div class="health-row"><div><div class="health-name">تطبيق الهاتف</div><div class="health-desc">مشروع Android موجود في المستودع</div></div><span class="status demo">مرحلة مستقلة</span></div>
+ </div>
+</section>
+
+<footer>SAIF.NET Enterprise · Network Intelligence & Management</footer>
 </main>
-
+</div>
+</div>
 <script>
-function refreshDemo(){
-  const cpu=Math.floor(Math.random()*35)+10;
-  const ram=Math.floor(Math.random()*20)+35;
-  document.getElementById('cpu').textContent=cpu+'%';
-  document.getElementById('ram').textContent=ram+'%';
-  document.getElementById('cpuBar').style.width=cpu+'%';
+const titles={
+ overview:"مركز عمليات الشبكة",routers:"أجهزة الراوتر",
+ traffic:"تحليلات حركة الشبكة",topology:"خريطة الشبكة",
+ alerts:"التنبيهات والحوادث",subscribers:"إدارة المشتركين",
+ plans:"الباقات والسرعات",hotspot:"كروت Hotspot",
+ billing:"الفواتير والتحصيل",diagnostics:"تشخيص الشبكة",
+ security:"الأمان وسجل التدقيق",integrations:"الربط والتكامل",
+ settings:"إعدادات المنصة"
+};
+function showPage(name){
+ document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+name));
+ document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+ document.getElementById("topTitle").textContent=titles[name]||"SAIF.NET";
+ document.getElementById("sidebar").classList.remove("open");
+ window.scrollTo({top:0,behavior:"smooth"});
 }
+document.querySelectorAll(".nav").forEach(b=>{
+ b.addEventListener("click",()=>showPage(b.dataset.page));
+});
+document.getElementById("menuBtn").addEventListener("click",()=>{
+ document.getElementById("sidebar").classList.toggle("open");
+});
+document.getElementById("refreshBtn").addEventListener("click",()=>{
+ const b=document.getElementById("refreshBtn");
+ b.textContent="✓ لا توجد بيانات متصلة";
+ setTimeout(()=>b.textContent="↻ تحديث",1800);
+});
 </script>
 </body>
 </html>
