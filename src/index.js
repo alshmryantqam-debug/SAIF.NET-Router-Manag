@@ -754,4 +754,54 @@ export default {
       return json({ error: "Internal server error" }, 500);
     }
   }
-};
+};// ---- GET /api/routers/:id/metrics (live from MikroTik, read-only) ----
+const metricsMatch = url.pathname.match(/^\/api\/routers\/([^/]+)\/metrics$/);
+if (metricsMatch && request.method === "GET") {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: "Authentication required" }, 401);
+
+  if (!env.ROUTER_SECRET_KEY) {
+    return json({
+      error: "Router credentials are not configured on the server.",
+      code: "SERVER_NOT_READY"
+    }, 503);
+  }
+
+  const routerId = metricsMatch[1];
+  const router = await env.DB.prepare(`
+    SELECT id, name, api_endpoint, api_username, api_password_enc
+    FROM routers
+    WHERE id = ? AND company_id = ?
+  `).bind(routerId, user.company_id).first();
+
+  if (!router) return json({ error: "Router not found" }, 404);
+
+  if (!router.api_endpoint || !router.api_username || !router.api_password_enc) {
+    return json({
+      error: "Router connection is not configured yet.",
+      code: "ROUTER_NOT_CONFIGURED"
+    }, 501);
+  }
+
+  try {
+    const metrics = await fetchRouterMetrics(router, env);
+    return json({
+      routerId: router.id,
+      routerName: router.name,
+      metrics
+    });
+  } catch (err) {
+    await writeAudit(env, {
+      companyId: user.company_id,
+      userId: user.id,
+      eventType: "router_metrics_failed",
+      meta: { routerId: router.id, reason: String(err?.message || err) }
+    });
+    return json({
+      error: "Could not reach the router.",
+      code: "ROUTER_UNREACHABLE",
+      detail: String(err?.message || err)
+    }, 502);
+  }
+}
+
