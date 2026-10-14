@@ -316,13 +316,29 @@ footer{text-align:center;color:#756985;font-size:10px;padding:30px 10px}
 <section class="page" id="page-subscribers">
  <div class="eyebrow">SUBSCRIBER MANAGEMENT</div><h1>إدارة المشتركين</h1>
  <p class="lead">إدارة الحسابات والخدمات والجلسات والسرعات وحالة الاشتراك.</p>
- <div class="card"><div class="empty">إدارة المشتركين تحتاج إلى API وقاعدة بيانات وصلاحيات محددة لكل شركة.</div></div>
+ <div class="card">
+  <div class="section-head" style="margin-top:0"><div><h2>إضافة مشترك</h2><p>يحفظ السجل في المنصة فقط؛ لا يغيّر إعدادات الراوتر.</p></div></div>
+  <form id="subscriberForm" class="auth-form" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end">
+   <label>اسم المستخدم<input name="username" required maxlength="128"></label><label>الاسم الكامل<input name="full_name" maxlength="150"></label><label>رقم الهاتف<input name="phone" maxlength="40"></label>
+   <label>نوع الخدمة<select name="service_type"><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option><option value="static">Static</option></select></label>
+   <label>الحالة<select name="status"><option value="pending">قيد الإعداد</option><option value="active">نشط</option><option value="suspended">موقوف</option></select></label><button class="btn primary" type="submit">حفظ سجل المشترك</button>
+  </form><div id="subscriberMessage" class="auth-message" role="status"></div>
+  <div class="section-head"><div><h2>سجلات المشتركين</h2><p id="subscriberCount">—</p></div><button class="btn" id="loadSubscribersBtn" type="button">تحديث</button></div>
+  <div class="table-wrap"><table><thead><tr><th>المستخدم</th><th>الاسم</th><th>الخدمة</th><th>الحالة</th><th>الباقة</th><th>المعرّف</th></tr></thead><tbody id="subscribersRows"><tr><td colspan="6" class="empty">سجّل الدخول لعرض البيانات.</td></tr></tbody></table></div>
+ </div>
 </section>
 
 <section class="page" id="page-plans">
  <div class="eyebrow">SERVICE CATALOG</div><h1>الباقات والسرعات</h1>
  <p class="lead">كتالوج الباقات والسعات وسياسات السرعة ومدة الاشتراك.</p>
- <div class="card"><div class="empty">ستُحفظ الباقات في قاعدة البيانات وتُربط بسياسات الراوتر بعد التحقق.</div></div>
+ <div class="card">
+  <div class="section-head" style="margin-top:0"><div><h2>إنشاء باقة</h2><p>تسجيل الباقة في المنصة فقط؛ لا يغيّر سرعات الراوتر.</p></div></div>
+  <form id="planForm" class="auth-form" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end">
+   <label>اسم الباقة<input name="name" required maxlength="100"></label><label>تنزيل (Kbps)<input name="download_kbps" type="number" min="1" required></label><label>رفع (Kbps)<input name="upload_kbps" type="number" min="1" required></label><label>السعر بوحدة العملة الصغرى<input name="price_minor" type="number" min="0" value="0" required></label><label>العملة<input name="currency" value="USD" minlength="3" maxlength="3" required></label><label>المدة بالأيام<input name="duration_days" type="number" min="1" max="3650" value="30" required></label><button class="btn primary" type="submit">حفظ الباقة</button>
+  </form><div id="planMessage" class="auth-message" role="status"></div>
+  <div class="section-head"><div><h2>الباقات المسجلة</h2><p id="planCount">—</p></div><button class="btn" id="loadPlansBtn" type="button">تحديث</button></div>
+  <div class="table-wrap"><table><thead><tr><th>الباقة</th><th>تنزيل</th><th>رفع</th><th>السعر</th><th>المدة</th><th>الحالة</th></tr></thead><tbody id="plansRows"><tr><td colspan="6" class="empty">سجّل الدخول لعرض البيانات.</td></tr></tbody></table></div>
+ </div>
 </section>
 
 <section class="page" id="page-hotspot">
@@ -334,7 +350,14 @@ footer{text-align:center;color:#756985;font-size:10px;padding:30px 10px}
 <section class="page" id="page-billing">
  <div class="eyebrow">BILLING & COLLECTION</div><h1>الفواتير والتحصيل</h1>
  <p class="lead">دورات الفوترة والمدفوعات والديون والتجديدات والتقارير المالية.</p>
- <div class="card"><div class="empty">لا توجد سجلات مالية؛ ستُحفظ المعاملات في قاعدة البيانات مع سجل تدقيق.</div></div>
+ <div class="card">
+  <div class="section-head" style="margin-top:0"><div><h2>إنشاء فاتورة</h2><p>استخدم معرّف المشترك الظاهر في جدول إدارة المشتركين.</p></div></div>
+  <form id="invoiceForm" class="auth-form" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end">
+   <label>معرّف المشترك<input name="subscriber_id" required></label><label>المبلغ بوحدة العملة الصغرى<input name="amount_minor" type="number" min="0" value="0" required></label><label>العملة<input name="currency" value="USD" minlength="3" maxlength="3" required></label><label>تاريخ الاستحقاق<input name="due_at" type="date"></label><button class="btn primary" type="submit">إنشاء الفاتورة</button>
+  </form><div id="invoiceMessage" class="auth-message" role="status"></div>
+  <div class="section-head"><div><h2>الفواتير</h2><p id="invoiceCount">—</p></div><button class="btn" id="loadInvoicesBtn" type="button">تحديث</button></div>
+  <div class="table-wrap"><table><thead><tr><th>المشترك</th><th>المبلغ</th><th>العملة</th><th>الحالة</th><th>الاستحقاق</th><th>المعرّف</th></tr></thead><tbody id="invoicesRows"><tr><td colspan="6" class="empty">سجّل الدخول لعرض البيانات.</td></tr></tbody></table></div>
+ </div>
 </section>
 
 <section class="page" id="page-diagnostics">
@@ -404,7 +427,7 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
  const b=document.getElementById("refreshBtn");
  b.textContent="جارٍ التحديث...";
  await loadPlatformStatus();
- await loadRouters();
+ await loadRouters(); await loadPlans(); await loadSubscribers(); await loadInvoices();
  b.textContent="✓ تم التحديث";
  setTimeout(()=>b.textContent="↻ تحديث",1800);
 });
@@ -497,7 +520,7 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
      const values = Object.fromEntries(new FormData(loginForm).entries());
      await api("/api/login", { method:"POST", body:JSON.stringify(values) });
      authScreen.hidden = true; dashboard.hidden = false;
-     await loadPlatformStatus(); await loadRouters();
+     await loadPlatformStatus(); await loadRouters(); await loadPlans(); await loadSubscribers(); await loadInvoices();
    } catch (error) { setMessage(error.message); }
    finally { button.disabled = false; button.textContent = "دخول إلى المنصة"; }
  });
@@ -513,6 +536,17 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
    } catch (error) { setMessage(error.message); }
    finally { button.disabled = false; button.textContent = "إنشاء حساب المالك"; }
  });
+
+ function showFormMessage(id,text,ok=false){const el=document.getElementById(id);if(el){el.textContent=text;el.className="auth-message show"+(ok?" ok":"");}}
+ function tableRows(id,items,keys,empty){const body=document.getElementById(id);if(!body)return;if(!items.length){body.innerHTML='<tr><td colspan="'+keys.length+'" class="empty"></td></tr>';body.querySelector(".empty").textContent=empty;return;}body.replaceChildren(...items.map(item=>{const tr=document.createElement("tr");keys.forEach(k=>{const td=document.createElement("td");td.textContent=item[k]===null||item[k]===undefined||item[k]===""?"—":String(item[k]);tr.appendChild(td);});return tr;}));}
+ async function loadPlans(){try{const d=await api("/api/plans"),a=d.plans||[];document.getElementById("planCount").textContent=a.length+" باقة";tableRows("plansRows",a.map(x=>({...x,download_kbps:x.download_kbps+" Kbps",upload_kbps:x.upload_kbps+" Kbps",price_minor:x.price_minor+" "+x.currency,duration_days:x.duration_days+" يوم"})),["name","download_kbps","upload_kbps","price_minor","duration_days","status"],"لا توجد باقات مسجلة.");}catch(e){showFormMessage("planMessage",e.message);}}
+ async function loadSubscribers(){try{const d=await api("/api/subscribers"),a=d.subscribers||[];document.getElementById("subscriberCount").textContent=a.length+" مشترك";tableRows("subscribersRows",a,["username","full_name","service_type","status","plan_name","id"],"لا توجد سجلات مشتركين.");}catch(e){showFormMessage("subscriberMessage",e.message);}}
+ async function loadInvoices(){try{const d=await api("/api/invoices"),a=d.invoices||[];document.getElementById("invoiceCount").textContent=a.length+" فاتورة";tableRows("invoicesRows",a,["username","amount_minor","currency","status","due_at","id"],"لا توجد فواتير.");}catch(e){showFormMessage("invoiceMessage",e.message);}}
+ document.getElementById("planForm")?.addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector("button");b.disabled=true;try{const v=Object.fromEntries(new FormData(form));["download_kbps","upload_kbps","price_minor","duration_days"].forEach(k=>v[k]=Number(v[k]));await api("/api/plans",{method:"POST",body:JSON.stringify(v)});form.reset();showFormMessage("planMessage","تم حفظ الباقة في المنصة فقط.",true);await loadPlans();}catch(x){showFormMessage("planMessage",x.message);}finally{b.disabled=false;}});
+ document.getElementById("subscriberForm")?.addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector("button");b.disabled=true;try{const v=Object.fromEntries(new FormData(form));await api("/api/subscribers",{method:"POST",body:JSON.stringify(v)});form.reset();showFormMessage("subscriberMessage","تم حفظ سجل المشترك دون إرسال أوامر للراوتر.",true);await loadSubscribers();}catch(x){showFormMessage("subscriberMessage",x.message);}finally{b.disabled=false;}});
+ document.getElementById("invoiceForm")?.addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector("button");b.disabled=true;try{const v=Object.fromEntries(new FormData(form));v.amount_minor=Number(v.amount_minor);if(!v.due_at)delete v.due_at;await api("/api/invoices",{method:"POST",body:JSON.stringify(v)});form.reset();showFormMessage("invoiceMessage","تم إنشاء الفاتورة في المنصة.",true);await loadInvoices();}catch(x){showFormMessage("invoiceMessage",x.message);}finally{b.disabled=false;}});
+ document.getElementById("loadPlansBtn")?.addEventListener("click",loadPlans);document.getElementById("loadSubscribersBtn")?.addEventListener("click",loadSubscribers);document.getElementById("loadInvoicesBtn")?.addEventListener("click",loadInvoices);
+
  const logout = document.createElement("button");
  logout.className = "btn"; logout.type = "button"; logout.textContent = "تسجيل الخروج";
  logout.addEventListener("click", async () => {
@@ -525,7 +559,7 @@ document.getElementById("refreshBtn").addEventListener("click",async()=>{
    try {
      await api("/api/me");
      authScreen.hidden = true; dashboard.hidden = false;
-     await loadPlatformStatus(); await loadRouters();
+     await loadPlatformStatus(); await loadRouters(); await loadPlans(); await loadSubscribers(); await loadInvoices();
      return;
    } catch {}
    try {
