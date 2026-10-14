@@ -366,7 +366,7 @@ export default {
 
       // Company-scoped operational APIs. These manage SAIF.NET records only;
       // they do not execute commands on MikroTik devices.
-      const routeMatch = url.pathname.match(/^\\/api\\/(metrics|plans|subscribers|invoices)$/);
+      const routeMatch = url.pathname.match(/^\/api\/(metrics|plans|subscribers|invoices)$/);
       if (routeMatch) {
         const user = await currentUser(request, env);
         if (!user) return json({ error: "Authentication required" }, 401);
