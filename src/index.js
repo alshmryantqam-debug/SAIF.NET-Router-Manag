@@ -12,6 +12,9 @@ const json = (data, status = 200, extraHeaders = {}) =>
 
 const cookieName = "__Host-saif_session";
 const sessionDays = 7;
+// This setup value was exposed in the conversation; never accept it as a live secret.
+const exposedSetupSecret = "SAIF-NET-Setup-9vK4mR7xQ2pL8wT6zB5nH3cF";
+const isSafeSetupSecret = value => typeof value === "string" && value.length >= 32 && value !== exposedSetupSecret;
 
 function readCookie(request, name) {
   const cookies = request.headers.get("Cookie") || "";
@@ -174,7 +177,7 @@ export default {
         ).first();
         return json({
           setupRequired: Number(existing?.total || 0) === 0,
-          setupConfigured: Boolean(env.SETUP_SECRET)
+          setupConfigured: isSafeSetupSecret(env.SETUP_SECRET)
         });
       }
 
@@ -183,8 +186,8 @@ export default {
       }
 
       if (url.pathname === "/api/setup" && request.method === "POST") {
-        if (!env.SETUP_SECRET) {
-          return json({ error: "Initial setup is not configured" }, 503);
+        if (!isSafeSetupSecret(env.SETUP_SECRET)) {
+          return json({ error: "Rotate SETUP_SECRET in Cloudflare before initial setup" }, 503);
         }
 
         const body = await bodyJson(request);
