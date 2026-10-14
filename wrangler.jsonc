@@ -7,5 +7,12 @@
     "directory": ".",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "saif-net-db",
+      "database_id": "47baed2a-8feb-4421-b73f-cd4a574b0729"
+    }
+  ]
 }
