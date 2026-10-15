@@ -1,0 +1,1 @@
+import 'package:flutter/material.dart';class SettingsScreen extends StatelessWidget{const SettingsScreen({super.key});@override Widget build(BuildContext c)=>ListView(children:const [ListTile(leading:Icon(Icons.info_outline),title:Text('TikPlus ULTRA'),subtitle:Text('v1.0.0 • وضع القراءة'))]);}
