@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart';
+class AppTheme { static const bgDeep=Color(0xFF05080F),bgCard=Color(0xFF0B1220),bgSurface=Color(0xFF111B2E),primary=Color(0xFF00D9FF),secondary=Color(0xFF7C3AED),accent=Color(0xFF06FFA5),textSecondary=Color(0xFF94A3B8); static final dark=ThemeData(useMaterial3:true,brightness:Brightness.dark,scaffoldBackgroundColor:bgDeep,colorScheme:const ColorScheme.dark(primary:primary,secondary:secondary,surface:bgCard),fontFamily:'Cairo',cardTheme:CardTheme(color:bgCard,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18)))); }
