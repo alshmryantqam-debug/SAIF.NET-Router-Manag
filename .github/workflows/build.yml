@@ -20,7 +20,7 @@ jobs:
           cache: true
       - name: Ensure Android project
         run: |
-          if [ ! -f android/gradlew ]; then flutter create --platforms=android --org com.tikplus.ultra .; fi
+          if [ ! -f android/gradlew ]; then flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .; fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/src/main/AndroidManifest.xml')
