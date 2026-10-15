@@ -29,6 +29,14 @@ jobs:
               if permission not in s:
                   s=s.replace('<application', f'<uses-permission android:name="{permission}"/>\n    <application', 1)
           p.write_text(s)
+
+          # Use Android SDK 35 required by current Flutter plugins.
+          for build_file in [Path('android/app/build.gradle'), Path('android/app/build.gradle.kts')]:
+              if build_file.exists():
+                  build_text = build_file.read_text()
+                  build_text = build_text.replace('compileSdkVersion flutter.compileSdkVersion', 'compileSdkVersion 35')
+                  build_text = build_text.replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 35')
+                  build_file.write_text(build_text)
           PY
       - run: flutter pub get
       - run: flutter analyze --no-pub
