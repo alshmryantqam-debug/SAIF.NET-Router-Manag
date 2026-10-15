@@ -1,0 +1,1 @@
+import 'package:flutter/material.dart';class TerminalScreen extends StatelessWidget{const TerminalScreen({super.key});@override Widget build(BuildContext c)=>const Scaffold(appBar:AppBar(title:Text('Terminal')),body:Center(child:Text('الطرفية معطّلة لحماية الراوتر.')));}
