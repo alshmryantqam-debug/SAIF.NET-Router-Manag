@@ -1,0 +1,1 @@
+class HotspotUser {final String name,profile,uptime;final bool active;const HotspotUser({required this.name,this.profile='default',this.uptime='—',this.active=false});factory HotspotUser.fromJson(Map<String,dynamic> j)=>HotspotUser(name:'${j['name']??'—'}',profile:'${j['profile']??'default'}',uptime:'${j['uptime']??'—'}',active:j['active']=='true'||j['active']==true);}
