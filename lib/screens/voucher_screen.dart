@@ -1,0 +1,1 @@
+import 'package:flutter/material.dart';class VoucherScreen extends StatelessWidget{const VoucherScreen({super.key});@override Widget build(BuildContext c)=>const Center(child:Text('الكروت والقسائم\nإنشاء وتعديل الكروت غير مفعّل في نسخة القراءة فقط.',textAlign:TextAlign.center));}
