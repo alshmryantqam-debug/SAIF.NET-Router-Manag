@@ -21,16 +21,6 @@ class RouterOsRestApi {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.badCertificateCallback = (cert, host, port) {
-          if (host.startsWith('192.168.') ||
-              host.startsWith('10.') ||
-              host.startsWith('172.') ||
-              host == 'localhost' ||
-              host == '127.0.0.1') {
-            return true;
-          }
-          return false;
-        };
         client.connectionTimeout = const Duration(seconds: 8);
         return client;
       },
@@ -71,9 +61,7 @@ class RouterOsRestApi {
     final response = await _dio.get<dynamic>('/rest/system/identity');
     if (response.statusCode != 200) throw _httpError(response);
     final data = response.data;
-    if (data is Map) {
-      return Map<String, dynamic>.from(data);
-    }
+    if (data is Map) return Map<String, dynamic>.from(data);
     if (data is List && data.isNotEmpty && data.first is Map) {
       return Map<String, dynamic>.from(data.first as Map);
     }
@@ -88,14 +76,9 @@ class RouterOsRestApi {
     return [];
   }
 
-  Future<List<dynamic>> hotspotUsers() =>
-      getList('/rest/ip/hotspot/user');
-
-  Future<List<dynamic>> hotspotActive() =>
-      getList('/rest/ip/hotspot/active');
-
-  Future<List<dynamic>> hotspotProfiles() =>
-      getList('/rest/ip/hotspot/user/profile');
+  Future<List<dynamic>> hotspotUsers() => getList('/rest/ip/hotspot/user');
+  Future<List<dynamic>> hotspotActive() => getList('/rest/ip/hotspot/active');
+  Future<List<dynamic>> hotspotProfiles() => getList('/rest/ip/hotspot/user/profile');
 
   Future<void> addHotspotUser({
     required String name,
@@ -109,8 +92,7 @@ class RouterOsRestApi {
       'profile': profile,
       if (comment != null) 'comment': comment,
     };
-    final response =
-        await _dio.put<dynamic>('/rest/ip/hotspot/user', data: body);
+    final response = await _dio.put<dynamic>('/rest/ip/hotspot/user', data: body);
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw _httpError(response);
     }
@@ -123,16 +105,34 @@ class RouterOsRestApi {
     }
   }
 
-  Future<List<dynamic>> pppUsers() =>
-      getList('/rest/ppp/secret');
-
-  Future<List<dynamic>> pppActive() =>
-      getList('/rest/ppp/active');
-
+  Future<List<dynamic>> pppUsers() => getList('/rest/ppp/secret');
+  Future<List<dynamic>> pppActive() => getList('/rest/ppp/active');
   Future<List<dynamic>> interfaces() => getList('/rest/interface');
+  Future<List<dynamic>> interfaceListMembers() => getList('/rest/interface/list/member');
+
+  Future<List<dynamic>> monitorTraffic(List<String> interfaceNames) async {
+    final names = interfaceNames.map((n) => n.trim()).where((n) => n.isNotEmpty).toList();
+    if (names.isEmpty) return [];
+    final response = await _dio.post<dynamic>(
+      '/rest/interface/monitor-traffic',
+      data: {
+        'interface': names.join(','),
+        'once': '',
+        '.proplist': 'name,rx-bits-per-second,tx-bits-per-second',
+      },
+    );
+    if (response.statusCode != 200) throw _httpError(response);
+    if (response.data is List) return response.data as List<dynamic>;
+    if (response.data is Map) return [response.data];
+    return [];
+  }
 
   Future<List<dynamic>> ipAddresses() => getList('/rest/ip/address');
-
-  Future<List<dynamic>> dhcpLeases() =>
-      getList('/rest/ip/dhcp-server/lease');
+  Future<List<dynamic>> dhcpLeases() => getList('/rest/ip/dhcp-server/lease');
+  Future<List<dynamic>> simpleQueues() => getList('/rest/queue/simple');
+  Future<List<dynamic>> firewallFilterRules() => getList('/rest/ip/firewall/filter');
+  Future<List<dynamic>> firewallNatRules() => getList('/rest/ip/firewall/nat');
+  Future<List<dynamic>> firewallMangleRules() => getList('/rest/ip/firewall/mangle');
+  Future<List<dynamic>> routes() => getList('/rest/ip/route');
+  Future<List<dynamic>> logs() => getList('/rest/log');
 }
