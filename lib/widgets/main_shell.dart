@@ -62,39 +62,46 @@ class _MainShellState extends State<MainShell> {
             ],
           ),
           actions: [
-            IconButton(
-              tooltip: 'إدارة أجهزة الراوتر',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RoutersListScreen()),
-              ),
-              icon: const Icon(Icons.router_rounded),
+            PopupMenuButton<String>(
+              tooltip: 'أدوات الشبكة',
+              icon: const Icon(Icons.apps_rounded),
+              onSelected: (value) {
+                final Widget page;
+                switch (value) {
+                  case 'routers':
+                    page = const RoutersListScreen();
+                    break;
+                  case 'diagnostics':
+                    page = const NetworkDiagnosticsScreen();
+                    break;
+                  case 'backups':
+                    page = const RouterBackupScreen();
+                    break;
+                  default:
+                    page = const TerminalScreen();
+                }
+                Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'routers',
+                  child: Row(children: [Icon(Icons.router_rounded), SizedBox(width: 10), Text('أجهزة الراوتر')]),
+                ),
+                PopupMenuItem(
+                  value: 'diagnostics',
+                  child: Row(children: [Icon(Icons.monitor_heart_rounded), SizedBox(width: 10), Text('مراقبة الشبكة')]),
+                ),
+                PopupMenuItem(
+                  value: 'backups',
+                  child: Row(children: [Icon(Icons.enhanced_encryption_rounded), SizedBox(width: 10), Text('النسخ المشفّرة')]),
+                ),
+                PopupMenuItem(
+                  value: 'terminal',
+                  child: Row(children: [Icon(Icons.terminal_rounded), SizedBox(width: 10), Text('الطرفية')]),
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: 'مراقبة الشبكة',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NetworkDiagnosticsScreen()),
-              ),
-              icon: const Icon(Icons.monitor_heart_rounded),
-            ),
-            IconButton(
-              tooltip: 'النسخ المشفّرة',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RouterBackupScreen()),
-              ),
-              icon: const Icon(Icons.enhanced_encryption_rounded),
-            ),
-            IconButton(
-              tooltip: 'الطرفية',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TerminalScreen()),
-              ),
-              icon: const Icon(Icons.terminal_rounded),
-            ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
           ],
         ),
         body: SafeArea(
