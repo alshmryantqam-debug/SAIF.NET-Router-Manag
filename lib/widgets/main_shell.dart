@@ -7,6 +7,8 @@ import '../screens/voucher_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/routers_list_screen.dart';
 import '../screens/terminal_screen.dart';
+import '../screens/network_diagnostics_screen.dart';
+import '../screens/router_backup_screen.dart';
 import '../theme.dart';
 
 class MainShell extends StatefulWidget {
@@ -67,6 +69,22 @@ class _MainShellState extends State<MainShell> {
                 MaterialPageRoute(builder: (_) => const RoutersListScreen()),
               ),
               icon: const Icon(Icons.router_rounded),
+            ),
+            IconButton(
+              tooltip: 'مراقبة الشبكة',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NetworkDiagnosticsScreen()),
+              ),
+              icon: const Icon(Icons.monitor_heart_rounded),
+            ),
+            IconButton(
+              tooltip: 'النسخ المشفّرة',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RouterBackupScreen()),
+              ),
+              icon: const Icon(Icons.enhanced_encryption_rounded),
             ),
             IconButton(
               tooltip: 'الطرفية',
