@@ -121,6 +121,25 @@ class RouterOsRestApi {
 
   Future<List<dynamic>> interfaces() => getList('/rest/interface');
 
+  Future<List<dynamic>> interfaceListMembers() => getList('/rest/interface/list/member');
+
+  Future<List<dynamic>> monitorTraffic(List<String> interfaceNames) async {
+    final names = interfaceNames.map((name) => name.trim()).where((name) => name.isNotEmpty).toList();
+    if (names.isEmpty) return [];
+    final response = await _dio.post<dynamic>(
+      '/rest/interface/monitor-traffic',
+      data: {
+        'interface': names.join(','),
+        'once': '',
+        '.proplist': 'name,rx-bits-per-second,tx-bits-per-second',
+      },
+    );
+    if (response.statusCode != 200) throw _httpError(response);
+    if (response.data is List) return response.data as List<dynamic>;
+    if (response.data is Map) return [response.data];
+    return [];
+  }
+
   Future<List<dynamic>> ipAddresses() => getList('/rest/ip/address');
 
   Future<List<dynamic>> dhcpLeases() =>

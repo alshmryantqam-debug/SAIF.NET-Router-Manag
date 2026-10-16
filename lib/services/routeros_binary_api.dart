@@ -369,6 +369,22 @@ class RouterOsBinaryApi {
   }
 
   Future<List<Map<String, String>>> interfaces() => getList('/interface/print');
+  Future<List<Map<String, String>>> interfaceListMembers() => getList('/interface/list/member/print');
+
+  Future<List<Map<String, String>>> monitorTraffic(List<String> interfaceNames) async {
+    final names = interfaceNames.map((name) => name.trim()).where((name) => name.isNotEmpty).toList();
+    if (names.isEmpty) return [];
+    final res = await send([
+      '/interface/monitor-traffic',
+      '=interface=${names.join(',')}',
+      '=once=',
+    ]);
+    final trap = res.where((m) => m['!type'] == '!trap').toList();
+    if (trap.isNotEmpty) {
+      throw Exception(trap.map((m) => m['message'] ?? 'RouterOS traffic monitor error').join('; '));
+    }
+    return res.where((m) => m['!type'] == '!re').toList();
+  }
   Future<List<Map<String, String>>> hotspotActive() => getList('/ip/hotspot/active/print');
   Future<List<Map<String, String>>> pppUsers() => getList('/ppp/secret/print');
   Future<List<Map<String, String>>> pppActive() => getList('/ppp/active/print');
