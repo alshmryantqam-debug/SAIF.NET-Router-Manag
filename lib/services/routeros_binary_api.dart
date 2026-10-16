@@ -37,7 +37,6 @@ class RouterOsBinaryApi {
     if (useSsl) {
       _socket = await SecureSocket.connect(
         host, port,
-        onBadCertificate: (_) => true,
         timeout: timeout,
       );
     } else {
@@ -341,6 +340,31 @@ class RouterOsBinaryApi {
     final res = await send(['/ip/hotspot/user/print']);
     return res.where((m) => m['!type'] == '!re').toList();
   }
+
+  Future<List<Map<String, String>>> getList(String command) async {
+    if (!command.startsWith('/') || !command.endsWith('/print')) {
+      throw ArgumentError.value(command, 'command', 'Only explicit read-only /print commands are allowed.');
+    }
+    final res = await send([command]);
+    final trap = res.where((m) => m['!type'] == '!trap').toList();
+    if (trap.isNotEmpty) {
+      throw Exception(trap.map((m) => m['message'] ?? 'RouterOS API error').join('; '));
+    }
+    return res.where((m) => m['!type'] == '!re').toList();
+  }
+
+  Future<List<Map<String, String>>> interfaces() => getList('/interface/print');
+  Future<List<Map<String, String>>> hotspotActive() => getList('/ip/hotspot/active/print');
+  Future<List<Map<String, String>>> pppUsers() => getList('/ppp/secret/print');
+  Future<List<Map<String, String>>> pppActive() => getList('/ppp/active/print');
+  Future<List<Map<String, String>>> dhcpLeases() => getList('/ip/dhcp-server/lease/print');
+  Future<List<Map<String, String>>> simpleQueues() => getList('/queue/simple/print');
+  Future<List<Map<String, String>>> ipAddresses() => getList('/ip/address/print');
+  Future<List<Map<String, String>>> firewallFilterRules() => getList('/ip/firewall/filter/print');
+  Future<List<Map<String, String>>> firewallNatRules() => getList('/ip/firewall/nat/print');
+  Future<List<Map<String, String>>> firewallMangleRules() => getList('/ip/firewall/mangle/print');
+  Future<List<Map<String, String>>> routes() => getList('/ip/route/print');
+  Future<List<Map<String, String>>> logs() => getList('/log/print');
 
   Future<void> addHotspotUser({
     required String name,
