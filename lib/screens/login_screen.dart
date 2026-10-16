@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../models/router_config.dart';
 import '../providers/connection_provider.dart';
 import '../services/storage_service.dart';
+import '../theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -81,6 +82,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (_passCtrl.text.isEmpty) {
       setState(() => _error = 'أدخل كلمة المرور');
       return;
+    }
+
+    // HTTP / non-TLS API can expose credentials and management traffic.
+    // Require an explicit, per-attempt acknowledgement before proceeding.
+    if (!_ssl) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 34),
+          title: const Text('الاتصال غير مشفّر'),
+          content: const Text(
+            'قد تُكشف بيانات الدخول وحركة الإدارة على الشبكة. لا تتابع إلا على شبكة محلية موثوقة. الأفضل تفعيل TLS والتحقق من شهادة الراوتر.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.warning, foregroundColor: AppTheme.bgDeep),
+              child: const Text('متابعة على مسؤوليتي'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
     }
 
     setState(() {
@@ -199,14 +227,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.all(22),
             children: [
               const SizedBox(height: 20),
-              const Icon(
-                Icons.router,
-                size: 70,
-                color: Color(0xFF00D9FF),
+              Center(
+                child: Container(
+                  width: 82,
+                  height: 82,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(color: AppTheme.secondary.withOpacity(0.28), blurRadius: 28, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: const Icon(Icons.hub_rounded, size: 42, color: Colors.white),
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
-                'TikPlus ULTRA',
+                'SAIF.NET',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -215,11 +252,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'المنصة الاحترافية لإدارة MikroTik',
+                'إدارة شبكات MikroTik باحتراف وأمان',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF94A3B8),
+                  color: AppTheme.textSecondary,
                 ),
               ),
               const SizedBox(height: 28),
@@ -267,7 +304,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : const Text(
                         '⚠️ غير آمن — للشبكات المحلية فقط',
                         style: TextStyle(
-                          color: Color(0xFFFFB020),
+                          color: AppTheme.warning,
                           fontSize: 11,
                         ),
                       ),
@@ -289,12 +326,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // Error box
               if (_error != null)
-                _statusBox(_error!, const Color(0xFFFF3B5C),
+                _statusBox(_error!, AppTheme.danger,
                     Icons.error_outline),
 
               // Status box
               if (_status != null && _error == null)
-                _statusBox(_status!, const Color(0xFF00D9FF),
+                _statusBox(_status!, AppTheme.primary,
                     Icons.sync_rounded),
 
               const SizedBox(height: 16),
@@ -327,10 +364,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'TikPlus ULTRA · v1.0.0',
+                  'SAIF.NET · ROUTER MANAGER',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: AppTheme.textMuted,
                   ),
                 ),
               ),
