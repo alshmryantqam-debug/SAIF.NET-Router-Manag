@@ -84,6 +84,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
+    // HTTP / non-TLS API can expose credentials and management traffic.
+    // Require an explicit, per-attempt acknowledgement before proceeding.
+    if (!_ssl) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 34),
+          title: const Text('الاتصال غير مشفّر'),
+          content: const Text(
+            'قد تُكشف بيانات الدخول وحركة الإدارة على الشبكة. لا تتابع إلا على شبكة محلية موثوقة. الأفضل تفعيل TLS والتحقق من شهادة الراوتر.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.warning, foregroundColor: AppTheme.bgDeep),
+              child: const Text('متابعة على مسؤوليتي'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+
     setState(() {
       _busy = true;
       _error = null;
