@@ -12,6 +12,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final interfaces = ref.watch(interfacesProvider);
     final interfaceMembers = ref.watch(interfaceListMembersProvider);
+    final wanTraffic = ref.watch(wanTrafficProvider);
     final resource = ref.watch(resourceProvider);
     final hotspot = ref.watch(hotspotActiveProvider);
     final ppp = ref.watch(pppActiveProvider);
@@ -27,6 +28,7 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
     void refresh() {
       ref.invalidate(interfacesProvider);
       ref.invalidate(interfaceListMembersProvider);
+      ref.invalidate(wanTrafficProvider);
       ref.invalidate(resourceProvider);
       ref.invalidate(hotspotActiveProvider);
       ref.invalidate(pppActiveProvider);
@@ -89,6 +91,8 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
             ))
           else
             const _AlertUnavailable(),
+          const SizedBox(height: 12),
+          _TrafficPanel(data: wanTraffic),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _CountCard(title: 'واجهات الشبكة', icon: Icons.lan_rounded, value: interfaces, runningOnly: true)),
@@ -320,6 +324,72 @@ class _AlertPanel extends StatelessWidget {
           )),
         const SizedBox(height: 8),
         const Text('التنبيهات إرشادية فقط ولا تنفّذ إصلاحات تلقائية.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+      ]),
+    );
+  }
+}
+
+String _formatBitRate(dynamic raw) {
+  final value = double.tryParse(raw?.toString() ?? '');
+  if (value == null || value < 0) return '—';
+  if (value >= 1000000000) return '${(value / 1000000000).toStringAsFixed(2)} Gbps';
+  if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(2)} Mbps';
+  if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)} kbps';
+  return '${value.toStringAsFixed(0)} bps';
+}
+
+class _TrafficPanel extends StatelessWidget {
+  final AsyncValue<List<dynamic>> data;
+  const _TrafficPanel({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.speed_rounded, color: AppTheme.primary, size: 21),
+          SizedBox(width: 8),
+          Expanded(child: Text('حركة خطوط WAN', style: TextStyle(color: AppTheme.textPrimary, fontSize: 15, fontWeight: FontWeight.w900))),
+          Text('عينة لحظية', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+        ]),
+        const SizedBox(height: 10),
+        data.when(
+          loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))),
+          error: (_, __) => const Text('تعذّر قراءة معدل الحركة. تحقق من صلاحيات API ودعم monitor-traffic.', style: TextStyle(color: AppTheme.warning, fontSize: 11, height: 1.5)),
+          data: (rows) {
+            if (rows.isEmpty) {
+              return const Text('لا توجد واجهات في قائمة WAN أو لا تتوفر عينة حركة.', style: TextStyle(color: AppTheme.textMuted, fontSize: 11, height: 1.5));
+            }
+            return Column(children: rows.take(8).map((row) {
+              if (row is! Map) return const SizedBox.shrink();
+              final name = row['name']?.toString() ?? row['interface']?.toString() ?? 'واجهة';
+              final rx = _formatBitRate(row['rx-bits-per-second']);
+              final tx = _formatBitRate(row['tx-bits-per-second']);
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: AppTheme.border.withOpacity(0.7)))),
+                child: Row(children: [
+                  Container(width: 38, height: 38, decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.cable_rounded, color: AppTheme.primary, size: 19)),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(name, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w800))),
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('RX  $rx', style: const TextStyle(color: AppTheme.success, fontSize: 11, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text('TX  $tx', style: const TextStyle(color: AppTheme.secondary, fontSize: 11, fontWeight: FontWeight.w800)),
+                  ]),
+                ]),
+              );
+            }).toList()),
+          },
+        ),
+        const SizedBox(height: 6),
+        const Text('RX/TX هي معدلات استقبال وإرسال على واجهة الراوتر، وليست اختبار سرعة إنترنت كامل.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10, height: 1.5)),
       ]),
     );
   }
