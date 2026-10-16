@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/connection_provider.dart';
+import '../models/network_alert_engine.dart';
 import '../theme.dart';
 
 class NetworkDiagnosticsScreen extends ConsumerWidget {
@@ -10,6 +11,8 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final interfaces = ref.watch(interfacesProvider);
+    final interfaceMembers = ref.watch(interfaceListMembersProvider);
+    final resource = ref.watch(resourceProvider);
     final hotspot = ref.watch(hotspotActiveProvider);
     final ppp = ref.watch(pppActiveProvider);
     final leases = ref.watch(dhcpLeasesProvider);
@@ -73,6 +76,17 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+          if (interfaces.hasValue && interfaceMembers.hasValue && resource.hasValue)
+            _AlertPanel(alerts: NetworkAlertEngine.evaluate(
+              interfaces: interfaces.valueOrNull ?? const [],
+              interfaceListMembers: interfaceMembers.valueOrNull ?? const [],
+              cpuPercent: int.tryParse((resource.valueOrNull as Map?)?['cpu-load']?.toString() ?? ''),
+              memoryPercent: _memoryPercent(resource.valueOrNull),
+              temperatureCelsius: int.tryParse((resource.valueOrNull as Map?)?['cpu-temperature']?.toString() ?? ''),
+            ))
+          else
+            const _AlertUnavailable(),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _CountCard(title: 'واجهات الشبكة', icon: Icons.lan_rounded, value: interfaces, runningOnly: true)),
@@ -210,6 +224,101 @@ class _DataSection extends StatelessWidget {
                 }).toList(growable: false),
         ),
       ),
+    );
+  }
+}
+
+int? _memoryPercent(dynamic resource) {
+  if (resource is! Map) return null;
+  final total = int.tryParse(resource['total-memory']?.toString() ?? '');
+  final free = int.tryParse(resource['free-memory']?.toString() ?? '');
+  if (total == null || free == null || total <= 0 || free < 0 || free > total) return null;
+  return (((total - free) / total) * 100).round();
+}
+
+class _AlertUnavailable extends StatelessWidget {
+  const _AlertUnavailable();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppTheme.bgCard,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: AppTheme.border),
+    ),
+    child: const Row(children: [
+      Icon(Icons.hourglass_top_rounded, color: AppTheme.textMuted),
+      SizedBox(width: 10),
+      Expanded(child: Text('جارٍ جمع بيانات WAN وموارد الجهاز؛ لا يمكن إعلان سلامة الشبكة قبل توفر القراءات.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.5))),
+    ]),
+  );
+}
+
+class _AlertPanel extends StatelessWidget {
+  final List<NetworkAlert> alerts;
+  const _AlertPanel({required this.alerts});
+
+  Color _color(NetworkAlertSeverity severity) {
+    switch (severity) {
+      case NetworkAlertSeverity.info:
+        return AppTheme.primary;
+      case NetworkAlertSeverity.warning:
+        return AppTheme.warning;
+      case NetworkAlertSeverity.critical:
+        return AppTheme.danger;
+    }
+  }
+
+  IconData _icon(NetworkAlertSeverity severity) {
+    switch (severity) {
+      case NetworkAlertSeverity.info:
+        return Icons.info_outline_rounded;
+      case NetworkAlertSeverity.warning:
+        return Icons.warning_amber_rounded;
+      case NetworkAlertSeverity.critical:
+        return Icons.error_outline_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final critical = alerts.where((a) => a.severity == NetworkAlertSeverity.critical).length;
+    final warnings = alerts.where((a) => a.severity == NetworkAlertSeverity.warning).length;
+    final color = critical > 0 ? AppTheme.danger : warnings > 0 ? AppTheme.warning : AppTheme.primary;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.notifications_active_outlined, color: color, size: 21),
+          const SizedBox(width: 8),
+          const Expanded(child: Text('تنبيهات الشبكة', style: TextStyle(color: AppTheme.textPrimary, fontSize: 15, fontWeight: FontWeight.w900))),
+          Text('${critical} حرج · ${warnings} تحذير', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 10),
+        if (alerts.isEmpty)
+          const Text('لا توجد تنبيهات حسب القراءات الحالية. هذا فحص محلي وليس ضماناً بأن الإنترنت يعمل end-to-end.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.5))
+        else
+          ...alerts.take(6).map((alert) => Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(_icon(alert.severity), color: _color(alert.severity), size: 17),
+              const SizedBox(width: 8),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(alert.title, style: TextStyle(color: _color(alert.severity), fontSize: 12, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(alert.detail, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10, height: 1.45)),
+              ])),
+            ]),
+          )),
+        const SizedBox(height: 8),
+        const Text('التنبيهات إرشادية فقط ولا تنفّذ إصلاحات تلقائية.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+      ]),
     );
   }
 }
