@@ -121,6 +121,8 @@ class RouterOsRestApi {
 
   Future<List<dynamic>> interfaces() => getList('/rest/interface');
 
+  Future<List<dynamic>> interfaceListMembers() => getList('/rest/interface/list/member');
+
   Future<List<dynamic>> ipAddresses() => getList('/rest/ip/address');
 
   Future<List<dynamic>> dhcpLeases() =>
