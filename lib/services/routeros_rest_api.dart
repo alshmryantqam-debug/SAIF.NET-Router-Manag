@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 class RouterOsRestApi {
   RouterOsRestApi(String baseUrl, String username, String password)
@@ -17,12 +18,10 @@ class RouterOsRestApi {
           },
           validateStatus: (status) => status != null && status < 500,
         )) {
-    // ✅ Allow MikroTik self-signed certificates on local networks only
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
         client.badCertificateCallback = (cert, host, port) {
-          // Only trust self-signed for private/local networks
           if (host.startsWith('192.168.') ||
               host.startsWith('10.') ||
               host.startsWith('172.') ||
@@ -40,9 +39,6 @@ class RouterOsRestApi {
 
   final Dio _dio;
 
-  // ═══════════════════════════════════════════════
-  //  ERROR HANDLING
-  // ═══════════════════════════════════════════════
   Exception _httpError(Response<dynamic> response) {
     final code = response.statusCode;
     if (code == 401 || code == 403) {
@@ -54,17 +50,13 @@ class RouterOsRestApi {
     if (code == 405) {
       return Exception('الطريقة غير مسموحة — تحقق من إصدار RouterOS');
     }
-    return Exception('RouterOS HTTP $code — ${response.data}');
+    return Exception('RouterOS HTTP $code');
   }
 
-  // ═══════════════════════════════════════════════
-  //  SYSTEM
-  // ═══════════════════════════════════════════════
   Future<Map<String, dynamic>> resource() async {
     final response = await _dio.get<dynamic>('/rest/system/resource');
     if (response.statusCode != 200) throw _httpError(response);
     final data = response.data;
-
     if (data is Map) {
       final result = Map<String, dynamic>.from(data);
       if (result.isNotEmpty) return result;
@@ -79,7 +71,6 @@ class RouterOsRestApi {
     final response = await _dio.get<dynamic>('/rest/system/identity');
     if (response.statusCode != 200) throw _httpError(response);
     final data = response.data;
-
     if (data is Map) {
       return Map<String, dynamic>.from(data);
     }
@@ -89,9 +80,6 @@ class RouterOsRestApi {
     throw Exception('وصل رد غير متوقع من الراوتر (identity)');
   }
 
-  // ═══════════════════════════════════════════════
-  //  GENERIC LIST
-  // ═══════════════════════════════════════════════
   Future<List<dynamic>> getList(String path) async {
     final response = await _dio.get<dynamic>(path);
     if (response.statusCode != 200) throw _httpError(response);
@@ -100,9 +88,6 @@ class RouterOsRestApi {
     return [];
   }
 
-  // ═══════════════════════════════════════════════
-  //  HOTSPOT
-  // ═══════════════════════════════════════════════
   Future<List<dynamic>> hotspotUsers() =>
       getList('/rest/ip/hotspot/user');
 
@@ -138,21 +123,16 @@ class RouterOsRestApi {
     }
   }
 
-  // ═══════════════════════════════════════════════
-  //  PPP
-  // ═══════════════════════════════════════════════
   Future<List<dynamic>> pppUsers() =>
       getList('/rest/ppp/secret');
 
   Future<List<dynamic>> pppActive() =>
       getList('/rest/ppp/active');
 
-  // ═══════════════════════════════════════════════
-  //  INTERFACES
-  // ═══════════════════════════════════════════════
   Future<List<dynamic>> interfaces() => getList('/rest/interface');
 
   Future<List<dynamic>> ipAddresses() => getList('/rest/ip/address');
 
-  Future<List<dynamic>> dhcpLeases() => getList('/rest/ip/dhcp-server/lease');
+  Future<List<dynamic>> dhcpLeases() =>
+      getList('/rest/ip/dhcp-server/lease');
 }
