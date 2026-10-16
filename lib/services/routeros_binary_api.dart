@@ -7,6 +7,7 @@
 /// - Legacy MD5 challenge/response (RouterOS < 6.43)
 ///
 /// Note: For v7, prefer REST API. This is required for v6.
+/// TLS connections use platform certificate validation; invalid certificates fail closed.
 library;
 
 import 'dart:async';
@@ -37,7 +38,6 @@ class RouterOsBinaryApi {
     if (useSsl) {
       _socket = await SecureSocket.connect(
         host, port,
-        onBadCertificate: (_) => true,
         timeout: timeout,
       );
     } else {
