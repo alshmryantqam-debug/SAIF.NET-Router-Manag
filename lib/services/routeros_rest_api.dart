@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 
+/// RouterOS REST client. TLS certificate validation uses Dart's secure defaults.
+/// Self-signed router certificates must be installed/trusted explicitly; this
+/// client deliberately does not silently accept invalid certificates.
 class RouterOsRestApi {
   RouterOsRestApi(String baseUrl, String username, String password)
       : _dio = Dio(BaseOptions(
@@ -21,16 +24,8 @@ class RouterOsRestApi {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.badCertificateCallback = (cert, host, port) {
-          if (host.startsWith('192.168.') ||
-              host.startsWith('10.') ||
-              host.startsWith('172.') ||
-              host == 'localhost' ||
-              host == '127.0.0.1') {
-            return true;
-          }
-          return false;
-        };
+        // Do not set badCertificateCallback: invalid/untrusted TLS certificates
+        // must fail closed, including on private LAN addresses.
         client.connectionTimeout = const Duration(seconds: 8);
         return client;
       },
@@ -71,9 +66,7 @@ class RouterOsRestApi {
     final response = await _dio.get<dynamic>('/rest/system/identity');
     if (response.statusCode != 200) throw _httpError(response);
     final data = response.data;
-    if (data is Map) {
-      return Map<String, dynamic>.from(data);
-    }
+    if (data is Map) return Map<String, dynamic>.from(data);
     if (data is List && data.isNotEmpty && data.first is Map) {
       return Map<String, dynamic>.from(data.first as Map);
     }
@@ -88,12 +81,8 @@ class RouterOsRestApi {
     return [];
   }
 
-  Future<List<dynamic>> hotspotUsers() =>
-      getList('/rest/ip/hotspot/user');
-
-  Future<List<dynamic>> hotspotActive() =>
-      getList('/rest/ip/hotspot/active');
-
+  Future<List<dynamic>> hotspotUsers() => getList('/rest/ip/hotspot/user');
+  Future<List<dynamic>> hotspotActive() => getList('/rest/ip/hotspot/active');
   Future<List<dynamic>> hotspotProfiles() =>
       getList('/rest/ip/hotspot/user/profile');
 
@@ -109,8 +98,7 @@ class RouterOsRestApi {
       'profile': profile,
       if (comment != null) 'comment': comment,
     };
-    final response =
-        await _dio.put<dynamic>('/rest/ip/hotspot/user', data: body);
+    final response = await _dio.put<dynamic>('/rest/ip/hotspot/user', data: body);
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw _httpError(response);
     }
@@ -123,16 +111,9 @@ class RouterOsRestApi {
     }
   }
 
-  Future<List<dynamic>> pppUsers() =>
-      getList('/rest/ppp/secret');
-
-  Future<List<dynamic>> pppActive() =>
-      getList('/rest/ppp/active');
-
+  Future<List<dynamic>> pppUsers() => getList('/rest/ppp/secret');
+  Future<List<dynamic>> pppActive() => getList('/rest/ppp/active');
   Future<List<dynamic>> interfaces() => getList('/rest/interface');
-
   Future<List<dynamic>> ipAddresses() => getList('/rest/ip/address');
-
-  Future<List<dynamic>> dhcpLeases() =>
-      getList('/rest/ip/dhcp-server/lease');
+  Future<List<dynamic>> dhcpLeases() => getList('/rest/ip/dhcp-server/lease');
 }
