@@ -20,6 +20,7 @@ class RouterOsBinaryApi {
   Socket? _socket;
   final List<int> _buffer = [];
   final Map<String, Completer<List<Map<String, String>>>> _pending = {};
+  final Map<String, List<Map<String, String>>> _responses = {};
   int _tagCounter = 1;
   bool _connected = false;
 
@@ -125,6 +126,7 @@ class RouterOsBinaryApi {
     final tag = (_tagCounter++).toString();
     final completer = Completer<List<Map<String, String>>>();
     _pending[tag] = completer;
+    _responses[tag] = <Map<String, String>>[];
 
     _socket!.add(_encodeSentence([...words, '.tag=$tag']));
     await _socket!.flush();
@@ -133,6 +135,7 @@ class RouterOsBinaryApi {
       timeout,
       onTimeout: () {
         _pending.remove(tag);
+        _responses.remove(tag);
         throw TimeoutException('انتهت مهلة الأمر');
       },
     );
@@ -188,11 +191,19 @@ class RouterOsBinaryApi {
       if (!c.isCompleted) c.completeError(e);
     }
     _pending.clear();
+    _responses.clear();
     _connected = false;
   }
 
   void _onDone() {
     _connected = false;
+    for (final completer in _pending.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(StateError('انقطع الاتصال بالراوتر'));
+      }
+    }
+    _pending.clear();
+    _responses.clear();
   }
 
   void _drain() {
@@ -222,7 +233,11 @@ class RouterOsBinaryApi {
 
       if (isTerminal) {
         _pending.remove(tag);
-        completer.complete(sentence);
+        final response = _responses.remove(tag) ?? <Map<String, String>>[];
+        response.addAll(sentence);
+        completer.complete(response);
+      } else {
+        _responses.putIfAbsent(tag, () => <Map<String, String>>[]).addAll(sentence);
       }
     }
   }
@@ -391,5 +406,6 @@ class RouterOsBinaryApi {
       if (!c.isCompleted) c.completeError(StateError('انقطع الاتصال'));
     }
     _pending.clear();
+    _responses.clear();
   }
 }
