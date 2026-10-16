@@ -1,7 +1,7 @@
 name: tikplus_ultra
-description: TikPlus ULTRA - المنصة الاحترافية لإدارة شبكات MikroTik
+description: SAIF.NET Router Manager - المنصة الاحترافية لإدارة ومراقبة شبكات MikroTik
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -18,10 +18,11 @@ dependencies:
   fl_chart: ^0.69.2
   google_fonts: ^6.2.1
   uuid: ^4.5.1
-  intl: ^0.19.0
+  intl: any
   crypto: ^3.0.5
   cryptography: ^2.7.0
   path_provider: ^2.1.4
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:
