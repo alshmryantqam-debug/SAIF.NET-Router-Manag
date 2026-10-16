@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../models/router_config.dart';
+import '../models/routeros_port_resolver.dart';
 import 'routeros_rest_api.dart';
 import 'routeros_binary_api.dart';
 
@@ -70,7 +71,7 @@ class MikrotikService {
     RouterConfigModel c,
     Stopwatch sw,
   ) async {
-    final port = c.port == 8728 ? 443 : c.port;
+    final port = RouterOsPortResolver.restPort(configuredPort: c.port, tls: c.ssl);
     final rest = RouterOsRestApi(
       '${c.ssl ? 'https' : 'http'}://${c.host}:$port',
       c.username,
@@ -99,7 +100,7 @@ class MikrotikService {
     RouterConfigModel c,
     Stopwatch sw,
   ) async {
-    final port = c.port == 443 || c.port == 80 ? 8728 : c.port;
+    final port = RouterOsPortResolver.binaryPort(configuredPort: c.port, tls: c.ssl);
     final binary = RouterOsBinaryApi();
 
     await binary.connect(
