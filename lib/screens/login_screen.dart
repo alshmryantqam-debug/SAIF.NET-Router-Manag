@@ -200,18 +200,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.all(22),
             children: [
               const SizedBox(height: 20),
-              Container(
-                width: 82,
-                height: 82,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(color: AppTheme.secondary.withOpacity(0.28), blurRadius: 28, offset: const Offset(0, 10)),
-                  ],
+              Center(
+                child: Container(
+                  width: 82,
+                  height: 82,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(color: AppTheme.secondary.withOpacity(0.28), blurRadius: 28, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: const Icon(Icons.hub_rounded, size: 42, color: Colors.white),
                 ),
-                child: const Icon(Icons.hub_rounded, size: 42, color: Colors.white),
               ),
               const SizedBox(height: 12),
               const Text(
