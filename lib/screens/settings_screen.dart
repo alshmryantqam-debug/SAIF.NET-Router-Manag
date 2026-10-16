@@ -45,9 +45,9 @@ class SettingsScreen extends ConsumerWidget {
           title: 'عن التطبيق',
           icon: Icons.info_outline,
           children: const [
-            _StaticRow(label: 'التطبيق', value: 'TikPlus ULTRA'),
-            _StaticRow(label: 'الإصدار', value: 'v1.0.0'),
-            _StaticRow(label: 'الوضع', value: 'قراءة فقط'),
+            _StaticRow(label: 'التطبيق', value: 'SAIF.NET Router Manager'),
+            _StaticRow(label: 'الإصدار', value: 'نسخة تجريبية'),
+            _StaticRow(label: 'الوضع', value: 'مراقبة وقراءة — التعديلات غير مفعّلة'),
           ],
         ),
         const SizedBox(height: 20),
