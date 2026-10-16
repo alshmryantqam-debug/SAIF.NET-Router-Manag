@@ -53,7 +53,7 @@ jobs:
           text = p.read_text()
           for permission in ['android.permission.INTERNET', 'android.permission.USE_BIOMETRIC']:
               if permission not in text:
-                  text = text.replace('<application', f'<uses-permission android:name="{permission}"/>\\n    <application', 1)
+                  text = text.replace('<application', f'<uses-permission android:name="{permission}"/>\n    <application', 1)
           p.write_text(text)
           PY
 
