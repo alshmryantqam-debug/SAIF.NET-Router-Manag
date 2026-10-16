@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
+import 'package:crypto/crypto.dart' as crypto;
 
 /// Local, sanitized snapshot metadata for comparing router exports.
 ///
@@ -35,7 +35,7 @@ class RouterConfigSnapshot {
       routerLabel: routerLabel.trim(),
       capturedAt: capturedAt ?? DateTime.now().toUtc(),
       sanitizedConfig: safe,
-      sha256: sha256.convert(utf8.encode(canonical)).toString(),
+      sha256: crypto.sha256.convert(utf8.encode(canonical)).toString(),
     );
   }
 
@@ -60,7 +60,7 @@ class RouterConfigSnapshot {
     }).toList(growable: false);
   }
 
-  static const _secretKey = RegExp(
+  static final _secretKey = RegExp(
     r'(password|secret|token|private.?key|credential|community|api.?key)',
     caseSensitive: false,
   );
