@@ -21,16 +21,6 @@ class RouterOsRestApi {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.badCertificateCallback = (cert, host, port) {
-          if (host.startsWith('192.168.') ||
-              host.startsWith('10.') ||
-              host.startsWith('172.') ||
-              host == 'localhost' ||
-              host == '127.0.0.1') {
-            return true;
-          }
-          return false;
-        };
         client.connectionTimeout = const Duration(seconds: 8);
         return client;
       },
@@ -135,4 +125,20 @@ class RouterOsRestApi {
 
   Future<List<dynamic>> dhcpLeases() =>
       getList('/rest/ip/dhcp-server/lease');
+
+  Future<List<dynamic>> simpleQueues() =>
+      getList('/rest/queue/simple');
+
+  Future<List<dynamic>> firewallFilterRules() =>
+      getList('/rest/ip/firewall/filter');
+
+  Future<List<dynamic>> firewallNatRules() =>
+      getList('/rest/ip/firewall/nat');
+
+  Future<List<dynamic>> firewallMangleRules() =>
+      getList('/rest/ip/firewall/mangle');
+
+  Future<List<dynamic>> routes() => getList('/rest/ip/route');
+
+  Future<List<dynamic>> logs() => getList('/rest/log');
 }
