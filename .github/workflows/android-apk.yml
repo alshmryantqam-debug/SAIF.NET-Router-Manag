@@ -33,7 +33,6 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
           channel: stable
           cache: true
 
@@ -91,6 +90,31 @@ jobs:
 
       - name: Build debug APK
         run: flutter build apk --debug
+
+      - name: Install Android emulator
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'emulator platform-tools platforms;android-35 system-images;android-35;google_apis;x86_64'
+
+      - name: Smoke test app startup on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          script: |
+            set -e
+            adb install -r build/app/outputs/flutter-apk/app-debug.apk
+            adb logcat -c
+            adb shell monkey -p net.saifnet.routermanager 1
+            sleep 12
+            if ! adb shell pidof net.saifnet.routermanager >/dev/null; then
+              adb logcat -d -t 1200
+              echo 'SAIF.NET startup smoke test failed: app process exited.'
+              exit 1
+            fi
+            adb shell dumpsys activity activities | grep -E 'net.saifnet.routermanager|mResumedActivity'
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
