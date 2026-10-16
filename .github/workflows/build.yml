@@ -15,7 +15,6 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
           channel: stable
           cache: true
       - name: Ensure Android project
@@ -38,6 +37,7 @@ jobs:
                   build_text = build_text.replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 35')
                   build_file.write_text(build_text)
           PY
+      - run: flutter --version
       - run: flutter pub get
       - run: flutter analyze --no-pub
         continue-on-error: true
