@@ -1,31 +1,20 @@
 # SAIF.NET Router Manager · ULTRA v1.1
 
-منصة Android عربية لإدارة ومراقبة شبكات **MikroTik** — واجهة RTL داكنة فخمة، أمان أولاً، وتشخيصات قراءة فقط.
+منصة Flutter عربية لإدارة ومراقبة **MikroTik RouterOS** — واجهة RTL داكنة، أمان أولاً، وتشخيصات قراءة فقط.
 
-## الميزات
+## ما يشمله `main` الآن
 
-| المجال | التفاصيل |
-|--------|----------|
-| **لوحة القيادة** | CPU / ذاكرة / حرارة مع تقييم صحة حتمي، بدون أرقام وهمية |
-| **الاتصال** | REST (v7) + Binary API (v6) مع كشف تلقائي |
-| **TLS** | تحذير وموافقة صريحة قبل أي اتصال غير مشفّر |
-| **Safe Apply** | معاينة خطط تغيير منظمة + إخفاء الأسرار |
-| **تنبيهات WAN** | كشف توقف واجهات WAN وعتبات الموارد |
-| **الطرفية** | معطّلة عمداً لحماية الراوتر |
-| **البصمة الحيوية** | `local_auth` لفتح الإجراءات الحساسة |
+- اتصال **REST (v7)** + **Binary API (v6)** مع كشف تلقائي
+- لوحة قيادة + Hotspot / PPPoE / كروت
+- **مركز مراقبة الشبكة** (واجهات، جلسات، DHCP، Queues، Firewall، Routes، Logs)
+- تنبيهات WAN و CPU / ذاكرة / حرارة
+- **خزنة نسخ مشفّرة AES-256-GCM** محلية
+- **Safe Apply** (معاينة خطط فقط)
+- تحذير TLS / عدم قبول الشهادات التالفة تلقائياً في Binary API
+- شاشة طرفية مقفلة عمداً
+- `local_auth` + workflow بناء APK
 
-## الفروع
-
-- **`main`** — الأساس المستقر + طبقة ULTRA (صحة الجهاز، النماذج، الواجهة).
-- **`release/v1.1-ultra`** / **`feature/saif-integrated-platform`** — النسخة المتكاملة الكاملة (تشخيصات الشبكة، النسخ المشفّرة AES-GCM، مركز المراقبة، اختبارات، بناء APK).
-
-للميزات الكاملة (Diagnostics / Backup Vault / APK pipeline) استخدم الفرع:
-
-```text
-release/v1.1-ultra
-```
-
-## تشغيل محلي
+## تشغيل
 
 ```bash
 flutter pub get
@@ -33,18 +22,14 @@ flutter test
 flutter run
 ```
 
-## بناء APK
+## APK
 
-من تبويب **Actions** → workflow الخاص بـ Android → اختر فرع `release/v1.1-ultra`.
+Actions → **SAIF.NET Android APK** → Run workflow على `main`.
+
+Artifact: `saif-net-router-manager-debug-apk`
 
 ## أمان
 
-- لا أوامر حرة على الراوتر.
-- لا قبول شهادات TLS تالفة تلقائياً.
-- النسخ المشفّرة محلية (مفتاح الجهاز)؛ فقدان بيانات التطبيق قد يمنع الاسترداد.
-
-## وثائق
-
-- `docs/secure-router-access.md`
-- `docs/encrypted-backups.md`
-- `docs/android-apk-build.md`
+- لا أوامر طرفية حرة
+- Safe Apply لا ينفّذ على الراوتر
+- النسخ المشفّرة محلية على الجهاز
