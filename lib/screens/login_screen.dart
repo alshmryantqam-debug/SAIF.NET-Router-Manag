@@ -203,7 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Container(
                 width: 82,
                 height: 82,
-                margin: const EdgeInsets.symmetric(horizontal: 120),
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
                   borderRadius: BorderRadius.circular(28),
