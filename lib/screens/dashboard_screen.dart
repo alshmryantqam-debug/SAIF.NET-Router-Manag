@@ -61,7 +61,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'استخدام المعالج',
-                      value: '$cpuPercent',
+                      value: cpuReading == null ? '—' : '$cpuPercent',
                       unit: '%',
                       icon: Icons.memory_rounded,
                       color: _loadColor(cpuPercent),
@@ -72,7 +72,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'الذاكرة المستخدمة',
-                      value: '$memoryPercent',
+                      value: memoryReading == null ? '—' : '$memoryPercent',
                       unit: '%',
                       icon: Icons.developer_board_rounded,
                       color: _loadColor(memoryPercent),
@@ -97,7 +97,7 @@ class DashboardScreen extends ConsumerWidget {
                     _InfoRow(
                       icon: Icons.storage_rounded,
                       label: 'الذاكرة الحرة',
-                      value: _formatBytes(freeMem),
+                      value: resource['free-memory'] == null ? '—' : _formatBytes(freeMem),
                       last: true,
                     ),
                   ],
