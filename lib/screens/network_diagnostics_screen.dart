@@ -26,6 +26,8 @@ class NetworkDiagnosticsScreen extends ConsumerWidget {
 
     void refresh() {
       ref.invalidate(interfacesProvider);
+      ref.invalidate(interfaceListMembersProvider);
+      ref.invalidate(resourceProvider);
       ref.invalidate(hotspotActiveProvider);
       ref.invalidate(pppActiveProvider);
       ref.invalidate(dhcpLeasesProvider);
