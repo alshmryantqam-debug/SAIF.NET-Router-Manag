@@ -369,6 +369,7 @@ class RouterOsBinaryApi {
   }
 
   Future<List<Map<String, String>>> interfaces() => getList('/interface/print');
+  Future<List<Map<String, String>>> interfaceListMembers() => getList('/interface/list/member/print');
   Future<List<Map<String, String>>> hotspotActive() => getList('/ip/hotspot/active/print');
   Future<List<Map<String, String>>> pppUsers() => getList('/ppp/secret/print');
   Future<List<Map<String, String>>> pppActive() => getList('/ppp/active/print');
