@@ -200,10 +200,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.all(22),
             children: [
               const SizedBox(height: 20),
-              const Icon(
-                Icons.router,
-                size: 70,
-                color: Color(0xFF00D9FF),
+              Container(
+                width: 82,
+                height: 82,
+                margin: const EdgeInsets.symmetric(horizontal: 120),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppTheme.secondary, AppTheme.primary]),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(color: AppTheme.secondary.withOpacity(0.28), blurRadius: 28, offset: const Offset(0, 10)),
+                  ],
+                ),
+                child: const Icon(Icons.hub_rounded, size: 42, color: Colors.white),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -220,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF94A3B8),
+                  color: AppTheme.textSecondary,
                 ),
               ),
               const SizedBox(height: 28),
@@ -268,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : const Text(
                         '⚠️ غير آمن — للشبكات المحلية فقط',
                         style: TextStyle(
-                          color: Color(0xFFFFB020),
+                          color: AppTheme.warning,
                           fontSize: 11,
                         ),
                       ),
@@ -331,7 +339,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   'SAIF.NET · ROUTER MANAGER',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: AppTheme.textMuted,
                   ),
                 ),
               ),
