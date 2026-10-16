@@ -108,3 +108,9 @@ final logsProvider = FutureProvider.autoDispose((ref) async {
   if (!service.isConnected) throw Exception('غير متصل بالراوتر');
   return service.logs();
 });
+
+final interfaceListMembersProvider = FutureProvider.autoDispose((ref) async {
+  final service = ref.watch(mikrotikProvider);
+  if (!service.isConnected) throw Exception('غير متصل بالراوتر');
+  return service.interfaceListMembers();
+});
