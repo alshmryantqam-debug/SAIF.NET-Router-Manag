@@ -180,6 +180,12 @@ class MikrotikService {
     throw Exception('اتصل بالراوتر أولاً');
   }
 
+  Future<List<dynamic>> interfaceListMembers() async {
+    if (_rest != null) return _rest!.interfaceListMembers();
+    if (_binary != null) return _binary!.interfaceListMembers();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
   Future<List<dynamic>> hotspotActive() async {
     if (_rest != null) return _rest!.hotspotActive();
     if (_binary != null) return _binary!.hotspotActive();
