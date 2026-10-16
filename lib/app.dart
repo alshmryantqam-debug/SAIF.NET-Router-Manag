@@ -15,19 +15,18 @@ class TikPlusApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'TikPlus ULTRA',
       debugShowCheckedModeBanner: false,
-      theme: UltraTheme.dark,
+      theme: AppTheme.dark,
       routerConfig: router,
       locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar'), Locale('en')],
+      supportedLocales: const [
+        Locale('ar'),
+        Locale('en'),
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: child ?? const SizedBox(),
-      ),
     );
   }
 }
