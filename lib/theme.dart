@@ -1,41 +1,39 @@
 import 'package:flutter/material.dart';
 
+/// Premium dark visual system for SAIF.NET Router Manager.
 class AppTheme {
-  // ─── الخلفيات ───
-  static const bgDeep = Color(0xFF05080F);
-  static const bgCard = Color(0xFF0B1220);
-  static const bgSurface = Color(0xFF111B2E);
+  static const bgDeep = Color(0xFF090611);
+  static const bgCard = Color(0xFF151021);
+  static const bgSurface = Color(0xFF20182F);
+  static const primary = Color(0xFFB78CFF);
+  static const secondary = Color(0xFF6D5BFF);
+  static const accent = Color(0xFF53E5D5);
+  static const success = Color(0xFF47D7A0);
+  static const warning = Color(0xFFFFC46B);
+  static const danger = Color(0xFFFF6B86);
+  static const textPrimary = Color(0xFFF8F4FF);
+  static const textSecondary = Color(0xFFB5AACB);
+  static const textMuted = Color(0xFF7C718F);
+  static const border = Color(0xFF342847);
 
-  // ─── الألوان الأساسية ───
-  static const primary = Color(0xFF00D9FF);
-  static const secondary = Color(0xFF7C3AED);
-  static const accent = Color(0xFF06FFA5);
-
-  // ─── حالات ───
-  static const success = Color(0xFF10B981);
-  static const warning = Color(0xFFFFB020);
-  static const danger = Color(0xFFFF3B5C);
-
-  // ─── النصوص ───
-  static const textPrimary = Color(0xFFF8FAFC);
-  static const textSecondary = Color(0xFF94A3B8);
-  static const textMuted = Color(0xFF64748B);
-
-  // ─── الحدود ───
-  static const border = Color(0xFF1E2A44);
+  static const gradient = LinearGradient(
+    begin: Alignment.topRight,
+    end: Alignment.bottomLeft,
+    colors: [Color(0xFF33214E), Color(0xFF171127), Color(0xFF11101D)],
+  );
 
   static final dark = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: bgDeep,
     primaryColor: primary,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.dark,
       primary: primary,
-      secondary: secondary,
+      secondary: accent,
       surface: bgCard,
       error: danger,
-      onPrimary: bgDeep,
-      onSurface: textPrimary,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -44,14 +42,16 @@ class AppTheme {
       iconTheme: IconThemeData(color: textPrimary),
       titleTextStyle: TextStyle(
         color: textPrimary,
-        fontSize: 17,
-        fontWeight: FontWeight.bold,
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: bgCard,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
+        side: const BorderSide(color: border),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -62,19 +62,19 @@ class AppTheme {
       hintStyle: const TextStyle(color: textMuted),
       prefixIconColor: textSecondary,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: primary, width: 1.8),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: danger),
       ),
     ),
@@ -82,14 +82,9 @@ class AppTheme {
       style: ElevatedButton.styleFrom(
         backgroundColor: primary,
         foregroundColor: bgDeep,
-        minimumSize: const Size(double.infinity, 54),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        textStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
+        minimumSize: const Size(double.infinity, 52),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
       ),
     ),
     dividerTheme: const DividerThemeData(color: border, thickness: 1),

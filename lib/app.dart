@@ -13,7 +13,7 @@ class TikPlusApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
 
     return MaterialApp.router(
-      title: 'TikPlus ULTRA',
+      title: 'SAIF.NET Router Manager',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: router,
