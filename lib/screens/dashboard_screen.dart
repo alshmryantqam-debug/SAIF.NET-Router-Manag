@@ -35,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
           final version = resource['version']?.toString() ?? '—';
           final board = resource['board-name']?.toString() ?? '—';
           final architecture = resource['architecture-name']?.toString() ?? '—';
-          final cpuPercent = cpu.clamp(0, 100);
+          final cpuPercent = cpu.clamp(0, 100).toInt();
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
