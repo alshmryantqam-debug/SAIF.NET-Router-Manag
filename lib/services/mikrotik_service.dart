@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../models/router_config.dart';
+import '../models/routeros_port_resolver.dart';
 import 'routeros_rest_api.dart';
 import 'routeros_binary_api.dart';
 
@@ -31,25 +32,14 @@ class MikrotikService {
   String? get activeProtocol =>
       _rest != null ? 'REST' : _binary != null ? 'Binary' : null;
 
-  // ═══════════════════════════════════════════════
-  //  CONNECT — with auto-detection
-  // ═══════════════════════════════════════════════
   Future<ConnectionResult> connect(RouterConfigModel c) async {
     await disconnect();
     _config = c;
     final sw = Stopwatch()..start();
 
-    // Explicit v6
-    if (c.version == 'v6') {
-      return _connectBinary(c, sw);
-    }
+    if (c.version == 'v6') return _connectBinary(c, sw);
+    if (c.version == 'v7') return _connectRest(c, sw);
 
-    // Explicit v7
-    if (c.version == 'v7') {
-      return _connectRest(c, sw);
-    }
-
-    // Auto: try REST first, fall back to Binary
     try {
       return await _connectRest(c, sw);
     } catch (restError) {
@@ -66,11 +56,8 @@ class MikrotikService {
     }
   }
 
-  Future<ConnectionResult> _connectRest(
-    RouterConfigModel c,
-    Stopwatch sw,
-  ) async {
-    final port = c.port == 8728 ? 443 : c.port;
+  Future<ConnectionResult> _connectRest(RouterConfigModel c, Stopwatch sw) async {
+    final port = RouterOsPortResolver.restPort(configuredPort: c.port, tls: c.ssl);
     final rest = RouterOsRestApi(
       '${c.ssl ? 'https' : 'http'}://${c.host}:$port',
       c.username,
@@ -82,24 +69,18 @@ class MikrotikService {
     sw.stop();
 
     _rest = rest;
-    final versionStr = resource['version']?.toString() ?? '';
-    final identityStr = identity['name']?.toString() ?? 'راوتر';
-
     return ConnectionResult(
       success: true,
       message: 'تم الاتصال بنجاح عبر REST API',
       protocol: 'REST',
       latency: sw.elapsed,
-      identity: identityStr,
-      version: versionStr,
+      identity: identity['name']?.toString() ?? 'راوتر',
+      version: resource['version']?.toString() ?? '',
     );
   }
 
-  Future<ConnectionResult> _connectBinary(
-    RouterConfigModel c,
-    Stopwatch sw,
-  ) async {
-    final port = c.port == 443 || c.port == 80 ? 8728 : c.port;
+  Future<ConnectionResult> _connectBinary(RouterConfigModel c, Stopwatch sw) async {
+    final port = RouterOsPortResolver.binaryPort(configuredPort: c.port, tls: c.ssl);
     final binary = RouterOsBinaryApi();
 
     await binary.connect(
@@ -119,15 +100,13 @@ class MikrotikService {
     sw.stop();
 
     _binary = binary;
-    final versionStr = resource['version'] ?? '';
-
     return ConnectionResult(
       success: true,
       message: 'تم الاتصال بنجاح عبر Binary API',
       protocol: 'Binary',
       latency: sw.elapsed,
       identity: identity['name'] ?? 'راوتر',
-      version: versionStr,
+      version: resource['version'] ?? '',
     );
   }
 
@@ -140,24 +119,15 @@ class MikrotikService {
     return s.replaceAll('Exception: ', '').replaceAll('UnsupportedError: ', '');
   }
 
-  // ═══════════════════════════════════════════════
-  //  UNIFIED API
-  // ═══════════════════════════════════════════════
   Future<Map<String, dynamic>> resource() async {
     if (_rest != null) return _rest!.resource();
-    if (_binary != null) {
-      final r = await _binary!.getResource();
-      return Map<String, dynamic>.from(r);
-    }
+    if (_binary != null) return Map<String, dynamic>.from(await _binary!.getResource());
     throw Exception('اتصل بالراوتر أولاً');
   }
 
   Future<Map<String, dynamic>> identity() async {
     if (_rest != null) return _rest!.identity();
-    if (_binary != null) {
-      final r = await _binary!.getIdentity();
-      return Map<String, dynamic>.from(r);
-    }
+    if (_binary != null) return Map<String, dynamic>.from(await _binary!.getIdentity());
     throw Exception('اتصل بالراوتر أولاً');
   }
 
@@ -169,7 +139,87 @@ class MikrotikService {
 
   Future<List<dynamic>> pppUsers() async {
     if (_rest != null) return _rest!.pppUsers();
-    throw Exception('PPPoE غير مدعوم في Binary API حالياً');
+    if (_binary != null) return _binary!.pppUsers();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> interfaces() async {
+    if (_rest != null) return _rest!.interfaces();
+    if (_binary != null) return _binary!.interfaces();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> interfaceListMembers() async {
+    if (_rest != null) return _rest!.interfaceListMembers();
+    if (_binary != null) return _binary!.interfaceListMembers();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> monitorTraffic(List<String> interfaceNames) async {
+    if (interfaceNames.isEmpty) return [];
+    if (_rest != null) return _rest!.monitorTraffic(interfaceNames);
+    if (_binary != null) return _binary!.monitorTraffic(interfaceNames);
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> hotspotActive() async {
+    if (_rest != null) return _rest!.hotspotActive();
+    if (_binary != null) return _binary!.hotspotActive();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> pppActive() async {
+    if (_rest != null) return _rest!.pppActive();
+    if (_binary != null) return _binary!.pppActive();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> dhcpLeases() async {
+    if (_rest != null) return _rest!.dhcpLeases();
+    if (_binary != null) return _binary!.dhcpLeases();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> simpleQueues() async {
+    if (_rest != null) return _rest!.simpleQueues();
+    if (_binary != null) return _binary!.simpleQueues();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> ipAddresses() async {
+    if (_rest != null) return _rest!.ipAddresses();
+    if (_binary != null) return _binary!.ipAddresses();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallFilterRules() async {
+    if (_rest != null) return _rest!.firewallFilterRules();
+    if (_binary != null) return _binary!.firewallFilterRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallNatRules() async {
+    if (_rest != null) return _rest!.firewallNatRules();
+    if (_binary != null) return _binary!.firewallNatRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallMangleRules() async {
+    if (_rest != null) return _rest!.firewallMangleRules();
+    if (_binary != null) return _binary!.firewallMangleRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> routes() async {
+    if (_rest != null) return _rest!.routes();
+    if (_binary != null) return _binary!.routes();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> logs() async {
+    if (_rest != null) return _rest!.logs();
+    if (_binary != null) return _binary!.logs();
+    throw Exception('اتصل بالراوتر أولاً');
   }
 
   Future<void> addHotspotUser({
@@ -179,21 +229,11 @@ class MikrotikService {
     String? comment,
   }) async {
     if (_rest != null) {
-      await _rest!.addHotspotUser(
-        name: name,
-        password: password,
-        profile: profile,
-        comment: comment,
-      );
+      await _rest!.addHotspotUser(name: name, password: password, profile: profile, comment: comment);
       return;
     }
     if (_binary != null) {
-      await _binary!.addHotspotUser(
-        name: name,
-        password: password,
-        profile: profile,
-        comment: comment,
-      );
+      await _binary!.addHotspotUser(name: name, password: password, profile: profile, comment: comment);
       return;
     }
     throw Exception('اتصل بالراوتر أولاً');
