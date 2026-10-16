@@ -135,4 +135,20 @@ class RouterOsRestApi {
 
   Future<List<dynamic>> dhcpLeases() =>
       getList('/rest/ip/dhcp-server/lease');
+
+  Future<List<dynamic>> simpleQueues() =>
+      getList('/rest/queue/simple');
+
+  Future<List<dynamic>> firewallFilterRules() =>
+      getList('/rest/ip/firewall/filter');
+
+  Future<List<dynamic>> firewallNatRules() =>
+      getList('/rest/ip/firewall/nat');
+
+  Future<List<dynamic>> firewallMangleRules() =>
+      getList('/rest/ip/firewall/mangle');
+
+  Future<List<dynamic>> routes() => getList('/rest/ip/route');
+
+  Future<List<dynamic>> logs() => getList('/rest/log');
 }

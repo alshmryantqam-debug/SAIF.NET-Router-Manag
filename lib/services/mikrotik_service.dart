@@ -169,7 +169,74 @@ class MikrotikService {
 
   Future<List<dynamic>> pppUsers() async {
     if (_rest != null) return _rest!.pppUsers();
-    throw Exception('PPPoE غير مدعوم في Binary API حالياً');
+    if (_binary != null) return _binary!.pppUsers();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> interfaces() async {
+    if (_rest != null) return _rest!.interfaces();
+    if (_binary != null) return _binary!.interfaces();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> hotspotActive() async {
+    if (_rest != null) return _rest!.hotspotActive();
+    if (_binary != null) return _binary!.hotspotActive();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> pppActive() async {
+    if (_rest != null) return _rest!.pppActive();
+    if (_binary != null) return _binary!.pppActive();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> dhcpLeases() async {
+    if (_rest != null) return _rest!.dhcpLeases();
+    if (_binary != null) return _binary!.dhcpLeases();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> simpleQueues() async {
+    if (_rest != null) return _rest!.simpleQueues();
+    if (_binary != null) return _binary!.simpleQueues();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> ipAddresses() async {
+    if (_rest != null) return _rest!.ipAddresses();
+    if (_binary != null) return _binary!.ipAddresses();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallFilterRules() async {
+    if (_rest != null) return _rest!.firewallFilterRules();
+    if (_binary != null) return _binary!.firewallFilterRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallNatRules() async {
+    if (_rest != null) return _rest!.firewallNatRules();
+    if (_binary != null) return _binary!.firewallNatRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> firewallMangleRules() async {
+    if (_rest != null) return _rest!.firewallMangleRules();
+    if (_binary != null) return _binary!.firewallMangleRules();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> routes() async {
+    if (_rest != null) return _rest!.routes();
+    if (_binary != null) return _binary!.routes();
+    throw Exception('اتصل بالراوتر أولاً');
+  }
+
+  Future<List<dynamic>> logs() async {
+    if (_rest != null) return _rest!.logs();
+    if (_binary != null) return _binary!.logs();
+    throw Exception('اتصل بالراوتر أولاً');
   }
 
   Future<void> addHotspotUser({
