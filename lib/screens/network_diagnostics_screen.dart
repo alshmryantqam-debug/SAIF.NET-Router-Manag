@@ -385,7 +385,7 @@ class _TrafficPanel extends StatelessWidget {
                   ]),
                 ]),
               );
-            }).toList()),
+            }).toList());
           },
         ),
         const SizedBox(height: 6),
