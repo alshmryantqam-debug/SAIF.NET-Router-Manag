@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/connection_provider.dart';
+import '../models/router_health_assessment.dart';
 import '../theme.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -26,7 +27,8 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => _errorView(e),
         data: (resource) {
           final identity = identityAsync.valueOrNull?['name']?.toString() ?? 'الراوتر';
-          final cpu = _number(resource['cpu-load']);
+          final cpuReading = int.tryParse(resource['cpu-load']?.toString() ?? '');
+          final cpu = cpuReading ?? 0;
           final freeMem = _number(resource['free-memory']);
           final totalMem = _number(resource['total-memory']);
           final usedMem = totalMem > 0 ? (totalMem - freeMem).clamp(0, totalMem) : 0;
@@ -36,6 +38,13 @@ class DashboardScreen extends ConsumerWidget {
           final board = resource['board-name']?.toString() ?? '—';
           final architecture = resource['architecture-name']?.toString() ?? '—';
           final cpuPercent = cpu.clamp(0, 100).toInt();
+          final memoryReading = totalMem > 0 ? memoryPercent : null;
+          final temperatureReading = int.tryParse(resource['cpu-temperature']?.toString() ?? '');
+          final health = RouterHealthAssessment.evaluate(
+            cpuPercent: cpuReading,
+            memoryPercent: memoryReading,
+            temperatureCelsius: temperatureReading,
+          );
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -72,7 +81,9 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              _HealthPanel(assessment: health),
+              const SizedBox(height: 18),
               _Panel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,4 +426,94 @@ class _Tag extends StatelessWidget {
           ],
         ),
       );
+}
+
+class _HealthPanel extends StatelessWidget {
+  final RouterHealthAssessment assessment;
+  const _HealthPanel({required this.assessment});
+
+  Color _color(RouterHealthLevel level) {
+    switch (level) {
+      case RouterHealthLevel.healthy:
+        return AppTheme.success;
+      case RouterHealthLevel.warning:
+        return AppTheme.warning;
+      case RouterHealthLevel.critical:
+        return AppTheme.danger;
+      case RouterHealthLevel.unknown:
+        return AppTheme.textMuted;
+    }
+  }
+
+  IconData _icon(RouterHealthLevel level) {
+    switch (level) {
+      case RouterHealthLevel.healthy:
+        return Icons.check_circle_outline_rounded;
+      case RouterHealthLevel.warning:
+        return Icons.warning_amber_rounded;
+      case RouterHealthLevel.critical:
+        return Icons.error_outline_rounded;
+      case RouterHealthLevel.unknown:
+        return Icons.help_outline_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color(assessment.overallLevel);
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: color.withOpacity(0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_icon(assessment.overallLevel), color: color, size: 22),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(assessment.overallTitle,
+                    style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (final finding in assessment.findings) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(_icon(finding.level), color: _color(finding.level), size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(finding.title, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      Text(finding.detail, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, height: 1.45)),
+                      if (finding.level == RouterHealthLevel.warning || finding.level == RouterHealthLevel.critical || finding.level == RouterHealthLevel.unknown) ...[
+                        const SizedBox(height: 4),
+                        Text(finding.recommendation, style: const TextStyle(color: AppTheme.textMuted, fontSize: 10, height: 1.45)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (finding != assessment.findings.last) const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(height: 1),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Text('تقييم محلي إرشادي فقط؛ لا يغيّر أي إعداد على الراوتر.',
+              style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+        ],
+      ),
+    );
+  }
 }
