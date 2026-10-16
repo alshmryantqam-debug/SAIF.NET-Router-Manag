@@ -44,6 +44,15 @@ jobs:
             flutter create --platforms=android --project-name=tikplus_ultra .
           fi
 
+      - name: Remove incompatible generated starter widget test
+        shell: bash
+        run: |
+          if [ -f test/widget_test.dart ] && ! git ls-files --error-unmatch test/widget_test.dart >/dev/null 2>&1; then
+            if grep -q 'MyApp' test/widget_test.dart && ! grep -q 'class MyApp' lib/main.dart; then
+              rm test/widget_test.dart
+            fi
+          fi
+
       - name: Resolve dependencies
         run: flutter pub get
 
