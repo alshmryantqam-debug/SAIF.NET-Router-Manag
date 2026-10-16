@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['lib/**', 'pubspec.yaml', '.github/workflows/build.yml']
+    paths: ['lib/**', 'test/**', 'pubspec.yaml', '.github/workflows/build.yml']
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,8 +39,9 @@ jobs:
           PY
       - run: flutter --version
       - run: flutter pub get
+      - name: Test app startup and navigation
+        run: flutter test
       - run: flutter analyze --no-pub
-        continue-on-error: true
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
