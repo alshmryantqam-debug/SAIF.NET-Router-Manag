@@ -48,7 +48,7 @@ class AppTheme {
         fontWeight: FontWeight.bold,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: bgCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
