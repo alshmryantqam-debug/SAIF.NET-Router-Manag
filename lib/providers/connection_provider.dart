@@ -114,3 +114,16 @@ final interfaceListMembersProvider = FutureProvider.autoDispose((ref) async {
   if (!service.isConnected) throw Exception('غير متصل بالراوتر');
   return service.interfaceListMembers();
 });
+
+final wanTrafficProvider = FutureProvider.autoDispose((ref) async {
+  final service = ref.watch(mikrotikProvider);
+  if (!service.isConnected) throw Exception('غير متصل بالراوتر');
+  final members = await service.interfaceListMembers();
+  final names = members.where((row) =>
+    row is Map &&
+    row['list']?.toString().toLowerCase() == 'wan' &&
+    row['interface']?.toString().isNotEmpty == true
+  ).map((row) => (row as Map)['interface'].toString()).toSet().toList();
+  if (names.isEmpty) return <dynamic>[];
+  return service.monitorTraffic(names);
+});
