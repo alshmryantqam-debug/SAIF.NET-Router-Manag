@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
+import '../models/pppoe_user.dart';
 import '../theme.dart';
 import '../widgets/live_chart.dart';
 
@@ -27,6 +28,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.invalidate(hotspotActiveProvider);
       ref.invalidate(pppoeActiveProvider);
       ref.invalidate(interfacesProvider);
+      ref.invalidate(routerServicesProvider);
     });
   }
 
@@ -43,6 +45,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(interfacesProvider);
     ref.invalidate(dhcpLeasesProvider);
     ref.invalidate(firewallRulesProvider);
+    ref.invalidate(routerServicesProvider);
     await Future<void>.delayed(const Duration(milliseconds: 450));
   }
 
@@ -58,6 +61,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final interfaces = ref.watch(interfacesProvider).valueOrNull ?? <InterfaceInfo>[];
     final leases = ref.watch(dhcpLeasesProvider).valueOrNull ?? [];
     final firewall = ref.watch(firewallRulesProvider).valueOrNull ?? [];
+    final routerServices = ref.watch(routerServicesProvider);
+    final activeHotspot = ref.watch(hotspotActiveProvider).valueOrNull ?? <Map<String, String>>[];
+    final activePppoe = ref.watch(pppoeActiveProvider).valueOrNull ?? <PppoeActive>[];
     final up = interfaces.where((e) => e.running && !e.disabled).length;
 
     return RefreshIndicator(
@@ -136,6 +142,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               _heading('مركز التنبيهات', 'فحص سريع'),
               const SizedBox(height: 10),
               _alertPanel(r.cpuLoad, r.memUsedPercent, interfaces, up, firewall.length),
+              const SizedBox(height: 20),
+              _heading('مؤشر أمان الراوتر', 'تدقيق للقراءة فقط'),
+              const SizedBox(height: 10),
+              _securityScore(routerServices, firewall),
+              const SizedBox(height: 20),
+              _heading('تدفق حركة المرور', 'عدادات الواجهات'),
+              const SizedBox(height: 10),
+              _trafficFlow(interfaces),
+              const SizedBox(height: 20),
+              _heading('الأكثر استهلاكاً', 'أعلى 5 جلسات نشطة'),
+              const SizedBox(height: 10),
+              _topTalkers(activeHotspot, activePppoe),
               const SizedBox(height: 20),
               _heading('أدوات صاحب الشبكة', 'اختصارات عملية'),
               const SizedBox(height: 10),
@@ -226,6 +244,138 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+
+  Widget _securityScore(AsyncValue<List<Map<String, String>>> servicesAsync, List<FirewallRule> rules) {
+    return servicesAsync.when(
+      loading: () => _panelMessage(Icons.shield_outlined, 'جارٍ فحص خدمات الإدارة...', AppColors.textMuted),
+      error: (_, __) => _panelMessage(Icons.info_outline_rounded, 'تعذر قراءة خدمات الراوتر؛ لم يتم احتساب المؤشر.', AppColors.warning),
+      data: (services) {
+        if (services.isEmpty) return _panelMessage(Icons.info_outline_rounded, 'بيانات خدمات الإدارة غير متاحة؛ المؤشر غير مكتمل.', AppColors.warning);
+        bool enabled(String name) => services.any((s) => (s['name'] ?? '').toLowerCase() == name && !['yes', 'true'].contains((s['disabled'] ?? 'no').toLowerCase()));
+        final activeRules = rules.where((r) => !r.disabled).toList();
+        final hasInputProtection = activeRules.any((r) => r.chain.toLowerCase() == 'input' && ['drop', 'reject'].contains(r.action.toLowerCase()));
+        final findings = <({String title, String detail, int penalty})>[];
+        if (enabled('telnet')) findings.add((title: 'خدمة Telnet مفعّلة', detail: 'Telnet غير مشفّر؛ عطّلها إذا لم تكن تحتاجها.', penalty: 25));
+        if (enabled('ftp')) findings.add((title: 'خدمة FTP مفعّلة', detail: 'راجع الحاجة إليها وقيّد الوصول إليها.', penalty: 15));
+        if (enabled('api')) findings.add((title: 'واجهة API غير المشفّرة مفعّلة', detail: 'تحقق من تقييد الوصول إلى المنفذ 8728.', penalty: 10));
+        if (activeRules.isEmpty) {
+          findings.add((title: 'لا توجد قواعد Firewall مفعّلة', detail: 'لم تُكتشف قواعد فلترة فعّالة في القائمة المقروءة.', penalty: 30));
+        } else if (!hasInputProtection) {
+          findings.add((title: 'لم تُكتشف قاعدة إسقاط في input', detail: 'قد تكون الحماية موجودة في موضع آخر؛ راجع ترتيب القواعد يدويًا.', penalty: 20));
+        }
+        final score = (100 - findings.fold<int>(0, (sum, f) => sum + f.penalty)).clamp(0, 100);
+        final color = score >= 80 ? AppColors.success : score >= 55 ? AppColors.warning : AppColors.danger;
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(.3))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              SizedBox(width: 76, height: 76, child: Stack(alignment: Alignment.center, children: [
+                SizedBox.expand(child: CircularProgressIndicator(value: score / 100, strokeWidth: 7, backgroundColor: Colors.white.withOpacity(.07), valueColor: AlwaysStoppedAnimation<Color>(color))),
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text('$score', style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w900)), const Text('/100', style: TextStyle(color: AppColors.textMuted, fontSize: 9))]),
+              ])),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(score >= 80 ? 'مستوى جيد مبدئيًا' : score >= 55 ? 'يحتاج مراجعة' : 'مخاطر تحتاج انتباه', style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                const Text('تقييم أولي من الخدمات وقواعد الفلترة المقروءة، وليس فحصًا أمنيًا شاملًا.', style: TextStyle(color: AppColors.textMuted, fontSize: 10.5, height: 1.4)),
+              ])),
+            ]),
+            const SizedBox(height: 14),
+            if (findings.isEmpty)
+              const Row(children: [Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18), SizedBox(width: 8), Expanded(child: Text('لم تُكتشف المشكلات المحددة في هذا الفحص.', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)))])
+            else
+              ...findings.map((f) => Padding(padding: const EdgeInsets.only(top: 9), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 17), const SizedBox(width: 8),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(f.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(f.detail, style: const TextStyle(color: AppColors.textMuted, fontSize: 10, height: 1.35))])),
+                Text('-${f.penalty}', style: const TextStyle(color: AppColors.danger, fontSize: 10, fontWeight: FontWeight.w800)),
+              ]))),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(onPressed: () => context.push('/firewall'), icon: const Icon(Icons.tune_rounded, size: 16), label: const Text('مراجعة قواعد الجدار الناري')),
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _trafficFlow(List<InterfaceInfo> interfaces) {
+    final rows = interfaces.where((e) => !e.disabled).toList()..sort((a, b) => (b.rxByte + b.txByte).compareTo(a.rxByte + a.txByte));
+    final visible = rows.take(4).toList();
+    if (visible.isEmpty || visible.every((e) => e.rxByte == 0 && e.txByte == 0)) {
+      return _panelMessage(Icons.account_tree_rounded, 'لا توجد عدادات حركة مرور متاحة للعرض بعد. قد لا يدعم البروتوكول الحالي هذه القراءة.', AppColors.textMuted);
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('توزيع عدادات RX / TX التراكمية حسب الواجهة', style: TextStyle(color: AppColors.textSecondary, fontSize: 10.5)),
+        const SizedBox(height: 8),
+        SizedBox(height: 190, width: double.infinity, child: CustomPaint(painter: _TrafficSankeyPainter(visible, AppColors.primary, AppColors.secondary, AppColors.textMuted))),
+        const Padding(padding: EdgeInsets.only(bottom: 5), child: Text('القيم عدادات تراكمية منذ تصفيرها في الراوتر، وليست سرعة لحظية.', style: TextStyle(color: AppColors.textMuted, fontSize: 9.5))),
+      ]),
+    );
+  }
+
+  Widget _topTalkers(List<Map<String, String>> hotspot, List<PppoeActive> pppoe) {
+    final totals = <String, int>{};
+    final rx = <String, int>{};
+    final tx = <String, int>{};
+    int counter(Map<String, String> row, List<String> keys) {
+      for (final key in keys) {
+        final value = int.tryParse(row[key] ?? '');
+        if (value != null) return value;
+      }
+      return 0;
+    }
+    for (final row in hotspot) {
+      final name = row['user'] ?? row['name'] ?? row['login'] ?? '';
+      if (name.isEmpty) continue;
+      final down = counter(row, ['bytes-in', 'rx-byte', 'bytesIn']);
+      final up = counter(row, ['bytes-out', 'tx-byte', 'bytesOut']);
+      rx[name] = (rx[name] ?? 0) + down;
+      tx[name] = (tx[name] ?? 0) + up;
+      totals[name] = (totals[name] ?? 0) + down + up;
+    }
+    final sorted = totals.keys.toList()..sort((a, b) => totals[b]!.compareTo(totals[a]!));
+    final usable = sorted.where((name) => totals[name]! > 0).take(5).toList();
+    if (usable.isEmpty) return _panelMessage(Icons.leaderboard_rounded, 'عدادات الاستهلاك لكل جلسة غير متاحة من بيانات الراوتر الحالية؛ لن نعرض ترتيبًا تخمينيًا.', AppColors.textMuted);
+    final maxValue = totals[usable.first]!.toDouble();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
+      child: Column(children: [
+        ...usable.asMap().entries.map((entry) {
+          final rank = entry.key + 1;
+          final name = entry.value;
+          final amount = totals[name]!;
+          final color = rank == 1 ? AppColors.accent : rank == 2 ? AppColors.primary : AppColors.secondary;
+          return Padding(padding: const EdgeInsets.symmetric(vertical: 7), child: Row(children: [
+            Container(width: 27, height: 27, alignment: Alignment.center, decoration: BoxDecoration(color: color.withOpacity(.13), borderRadius: BorderRadius.circular(9)), child: Text('$rank', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900))),
+            const SizedBox(width: 9),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              ClipRRect(borderRadius: BorderRadius.circular(5), child: LinearProgressIndicator(value: (amount / maxValue).clamp(0.0, 1.0), minHeight: 5, backgroundColor: Colors.white.withOpacity(.06), valueColor: AlwaysStoppedAnimation<Color>(color))),
+            ])),
+            const SizedBox(width: 10),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(_bytes(amount), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900)),
+              Text('↓ ${_bytes(rx[name] ?? 0)}  ↑ ${_bytes(tx[name] ?? 0)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 8.5)),
+            ]),
+          ]));
+        }),
+        const Divider(color: AppColors.border, height: 18),
+        const Text('الترتيب حسب عدادات جلسات Hotspot النشطة التي يعيدها الراوتر؛ لا يمثل الاستهلاك اليومي ما لم تُصفّر العدادات يوميًا.', style: TextStyle(color: AppColors.textMuted, fontSize: 9.5, height: 1.4)),
+      ]),
+    );
+  }
+
+  Widget _panelMessage(IconData icon, String message, Color color) => Container(
+    width: double.infinity, padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.border)),
+    child: Row(children: [Icon(icon, color: color, size: 22), const SizedBox(width: 10), Expanded(child: Text(message, style: const TextStyle(color: AppColors.textMuted, fontSize: 11, height: 1.45)))]),
+  );
+
   Widget _action(String label, IconData icon, Color color, VoidCallback onTap) => Material(
     color: AppColors.bgCard, borderRadius: BorderRadius.circular(17),
     child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(17), child: Container(
@@ -272,4 +422,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
     return '${size.toStringAsFixed(i == 0 ? 0 : 1)} ${units[i]}';
   }
+}
+
+class _TrafficSankeyPainter extends CustomPainter {
+  _TrafficSankeyPainter(this.interfaces, this.rxColor, this.txColor, this.labelColor);
+  final List<InterfaceInfo> interfaces;
+  final Color rxColor;
+  final Color txColor;
+  final Color labelColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (interfaces.isEmpty) return;
+    var maxBytes = 1;
+    for (final e in interfaces) {
+      if (e.rxByte > maxBytes) maxBytes = e.rxByte;
+      if (e.txByte > maxBytes) maxBytes = e.txByte;
+    }
+    final labelStyle = TextStyle(color: labelColor, fontSize: 10, fontWeight: FontWeight.w600);
+    final rxStyle = TextStyle(color: rxColor, fontSize: 10, fontWeight: FontWeight.w700);
+    final txStyle = TextStyle(color: txColor, fontSize: 10, fontWeight: FontWeight.w700);
+    final leftX = size.width * .02;
+    final midX = size.width * .42;
+    final rightX = size.width * .76;
+    final rowH = size.height / (interfaces.length + 1);
+    for (var i = 0; i < interfaces.length; i++) {
+      final item = interfaces[i];
+      final y = rowH * (i + 1);
+      final rxWidth = 2.0 + 11.0 * item.rxByte / maxBytes;
+      final txWidth = 2.0 + 11.0 * item.txByte / maxBytes;
+      final start = Offset(leftX + size.width * .24, y);
+      final rxEnd = Offset(rightX, size.height * .35);
+      final txEnd = Offset(rightX, size.height * .72);
+      final rxPaint = Paint()..color = rxColor.withOpacity(.42)..style = PaintingStyle.stroke..strokeWidth = rxWidth..strokeCap = StrokeCap.round;
+      final txPaint = Paint()..color = txColor.withOpacity(.42)..style = PaintingStyle.stroke..strokeWidth = txWidth..strokeCap = StrokeCap.round;
+      final rxPath = Path()..moveTo(start.dx, start.dy)..cubicTo(midX, y, midX, rxEnd.dy, rxEnd.dx, rxEnd.dy);
+      final txPath = Path()..moveTo(start.dx, start.dy)..cubicTo(midX, y, midX, txEnd.dy, txEnd.dx, txEnd.dy);
+      canvas.drawPath(rxPath, rxPaint);
+      canvas.drawPath(txPath, txPaint);
+      _drawText(canvas, item.name, Offset(leftX, y - 7), labelStyle, maxWidth: size.width * .22);
+    }
+    _drawText(canvas, 'RX ↓', Offset(rightX + 4, size.height * .35 - 7), rxStyle, maxWidth: size.width * .2);
+    _drawText(canvas, 'TX ↑', Offset(rightX + 4, size.height * .72 - 7), txStyle, maxWidth: size.width * .2);
+  }
+
+  void _drawText(Canvas canvas, String text, Offset offset, TextStyle style, {required double maxWidth}) {
+    final painter = TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.rtl, maxLines: 1, ellipsis: '…')..layout(maxWidth: maxWidth);
+    painter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrafficSankeyPainter oldDelegate) =>
+      oldDelegate.interfaces != interfaces || oldDelegate.rxColor != rxColor || oldDelegate.txColor != txColor;
 }
