@@ -2,6 +2,14 @@ import 'package:uuid/uuid.dart';
 
 enum RouterVersion { auto, v6, v7 }
 
+extension RouterVersionLabel on RouterVersion {
+  String get label => switch (this) {
+    RouterVersion.auto => 'تلقائي',
+    RouterVersion.v6 => 'RouterOS v6',
+    RouterVersion.v7 => 'RouterOS v7',
+  };
+}
+
 class RouterProfile {
   RouterProfile({
     String? id, required this.name, required this.host,
