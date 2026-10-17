@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'providers/connection_provider.dart';
 import 'screens/add_hotspot_user_screen.dart';
 import 'screens/automation_screens.dart';
+import 'screens/advanced_ai_screens.dart';
 import 'screens/add_pppoe_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/business_screens.dart';
@@ -127,6 +128,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/billing', name: 'billing', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager], child: BillingScreen())),
       GoRoute(path: '/customer-portal', name: 'customer-portal', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessGate(allowed: [BusinessRole.customer], child: CustomerPortalScreen())),
       GoRoute(path: '/roles', name: 'roles', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessRoleScreen()),
+      GoRoute(
+        path: '/advanced-ai',
+        name: 'advanced-ai',
+        parentNavigatorKey: _rootKey,
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: AdvancedAiScreen()),
+      ),
       GoRoute(
         path: '/automation',
         name: 'automation',
