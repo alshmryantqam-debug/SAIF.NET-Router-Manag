@@ -407,6 +407,21 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
                   ],
                 ),
               ),
+              IconButton(
+                tooltip: 'تعديل المستخدم',
+                icon: const Icon(Icons.edit_rounded, size: 19),
+                color: AppColors.primary,
+                onPressed: () async {
+                  final saved = await context.push<bool>(
+                    '/hotspot/edit',
+                    extra: user,
+                  );
+                  if (saved == true) {
+                    ref.invalidate(hotspotUsersProvider);
+                    ref.invalidate(hotspotActiveProvider);
+                  }
+                },
+              ),
               Transform.scale(
                 scale: 0.85,
                 child: Switch(
