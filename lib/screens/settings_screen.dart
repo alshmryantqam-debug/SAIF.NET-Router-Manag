@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/connection_provider.dart';
+import '../services/mikrotik_service.dart';
 import '../theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
