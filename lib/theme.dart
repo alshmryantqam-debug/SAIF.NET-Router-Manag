@@ -19,11 +19,27 @@ class AppColors {
 }
 
 class AppGradients {
+  static const glass = LinearGradient(
+    begin: Alignment.topLeft, end: Alignment.bottomRight,
+    colors: [Color(0xCC261E3B), Color(0xCC171226)],
+  );
   static const primary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFFC084FC), Color(0xFF7C3AED), Color(0xFF4F46E5)],
   );
+}
+
+class AppDurations {
+  static const normal = Duration(milliseconds: 240);
+  static const curve = Curves.easeOutCubic;
+}
+
+class AppShadows {
+  static List<BoxShadow> get soft => const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10))];
+  static List<BoxShadow> glow(Color color, {double opacity = 0.25}) => [
+    BoxShadow(color: color.withOpacity(opacity), blurRadius: 24, spreadRadius: 1),
+  ];
 }
 
 class AppRadius {
@@ -50,7 +66,7 @@ class AppTheme {
       centerTitle: false,
       elevation: 0,
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: AppColors.bgCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
