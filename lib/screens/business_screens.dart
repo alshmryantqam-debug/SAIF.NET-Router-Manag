@@ -32,7 +32,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen>{
   if(u==null)return;final value=double.tryParse(amount.text);if(value==null||value<=0){msg('أدخل مبلغًا صحيحًا');return;}
   final rows=await BusinessService.instance.invoices();rows.add(BillingRecord(id:const Uuid().v4(),username:u.name,amount:value,dueDate:due));await BusinessService.instance.saveInvoices(rows);ref.invalidate(billingRecordsProvider);
  }
- Future<void> paid(BillingRecord record)async{final rows=await BusinessService.instance.invoices();final i=rows.indexWhere((x)=>x.id==record.id);if(i<0)return;rows[i]=rows[i].copyWith(paid:true,paidAt:DateTime.now());await BusinessService.instance.saveInvoices(rows);ref.invalidate(billingRecordsProvider);msg('سُجل الدفع محليًا؛ لم يتم التحقق من بوابة دفع أو تفعيل الراوتر تلقائيًا.');}
+ Future<void> paid(BillingRecord record)async{
+  final confirm=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('تأكيد استلام المبلغ'),content:Text('هل تأكدت من استلام مبلغ '+record.amount.toStringAsFixed(2)+' من '+record.username+'؟'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('رجوع')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('تأكيد الدفع'))]));
+  if(confirm!=true)return;
+  final rows=await BusinessService.instance.invoices();final i=rows.indexWhere((x)=>x.id==record.id);if(i<0)return;
+  rows[i]=rows[i].copyWith(paid:true,paidAt:DateTime.now());await BusinessService.instance.saveInvoices(rows);ref.invalidate(billingRecordsProvider);
+  try{final list=await ref.read(mikrotikProvider).hotspotUsers();final u=list.where((x)=>x.name==record.username).firstOrNull;if(u!=null&&u.id.isNotEmpty){await ref.read(mikrotikProvider).setHotspotUserDisabled(u.id,false);ref.invalidate(hotspotUsersProvider);msg('تم تسجيل الدفع ومحاولة تفعيل حساب Hotspot. تحقق من حالة الحساب.');}else{msg('سُجل الدفع محليًا، لكن لم يُعثر على حساب مطابق لتفعيله.');}}catch(e){msg('سُجل الدفع محليًا، لكن تعذر تفعيل الحساب على الراوتر: '+e.toString());}
+ }
  Future<void> disable(BillingRecord record)async{
   final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('تأكيد تعطيل الحساب'),content:Text('تعطيل Hotspot للمستخدم '+record.username+'؟'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('تعطيل'))]));
   if(ok!=true)return;setState(()=>busy=true);try{final list=await ref.read(mikrotikProvider).hotspotUsers();final u=list.where((x)=>x.name==record.username).firstOrNull;if(u==null||u.id.isEmpty)throw Exception('الحساب غير موجود');await ref.read(mikrotikProvider).setHotspotUserDisabled(u.id,true);ref.invalidate(hotspotUsersProvider);msg('تم تعطيل الحساب يدويًا بعد التأكيد.');}catch(e){msg('تعذر تعطيل الحساب: '+e.toString());}finally{if(mounted)setState(()=>busy=false);}
