@@ -41,7 +41,7 @@ jobs:
       - name: Generate Android platform files if missing
         run: |
           if [ ! -d android ]; then
-            flutter create --platforms=android --org com.tikplus.ultra .
+            flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .
           fi
 
       - name: Resolve dependencies
