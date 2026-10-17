@@ -561,15 +561,108 @@ class MikrotikService {
     return [];
   }
 
+  static const Set<String> _readOnlyCommandPaths = {
+    '/ip/hotspot/user',
+    '/ip/hotspot/active',
+    '/ip/hotspot/user/profile',
+    '/ppp/secret',
+    '/ppp/active',
+    '/interface',
+    '/ip/address',
+    '/ip/dhcp-server/lease',
+    '/ip/dhcp-client',
+    '/ip/firewall/filter',
+    '/ip/route',
+    '/ip/service',
+    '/queue/simple',
+    '/system/resource',
+    '/system/identity',
+    '/system/clock',
+    '/system/package',
+    '/log',
+  };
+
+  static bool isReadOnlyCommandPath(String path) {
+    final normalized = path.trim().replaceAll(RegExp(r'/+
+
+  List<Map<String, dynamic>> _asList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) return [Map<String, dynamic>.from(data)];
+    return [];
+  }
+
+  Future<void> disconnect() async {
+    try {
+      _binary?.close();
+    } catch (_) {}
+    try {
+      _rest?.close();
+    } catch (_) {}
+    _rest = null;
+    _binary = null;
+    _activeProtocol = null;
+    _profile = null;
+  }
+}), '');
+    final base = normalized.endsWith('/print')
+        ? normalized.substring(0, normalized.length - '/print'.length)
+        : normalized;
+    return _readOnlyCommandPaths.contains(base) &&
+        (normalized == base || normalized == '$base/print');
+  }
+
   Future<List<Map<String, String>>> runCommand(String path) async {
+    final normalized = path.trim().replaceAll(RegExp(r'/+
+
+  List<Map<String, dynamic>> _asList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) return [Map<String, dynamic>.from(data)];
+    return [];
+  }
+
+  Future<void> disconnect() async {
+    try {
+      _binary?.close();
+    } catch (_) {}
+    try {
+      _rest?.close();
+    } catch (_) {}
+    _rest = null;
+    _binary = null;
+    _activeProtocol = null;
+    _profile = null;
+  }
+}), '');
+    if (!isReadOnlyCommandPath(normalized)) {
+      throw const RouterOsException(
+        'الطرفية الحالية للقراءة فقط وتسمح بمسارات فحص محددة. أوامر التغيير أو إعادة التشغيل غير مسموحة.',
+        kind: RouterOsErrorKind.forbidden,
+      );
+    }
+
+    final endpoint = normalized.endsWith('/print')
+        ? normalized.substring(0, normalized.length - '/print'.length)
+        : normalized;
+
     if (_rest != null) {
-      final data = await _rest!.get(path);
+      final data = await _rest!.get(endpoint);
       return _asList(data).map(_toRow).toList();
     }
     if (_binary != null) {
-      return _binary!.command(path);
+      return _binary!.command('$endpoint/print');
     }
-    return [];
+    throw const RouterOsException('اتصل بالراوتر أولاً',
+        kind: RouterOsErrorKind.network);
   }
 
   List<Map<String, dynamic>> _asList(dynamic data) {
