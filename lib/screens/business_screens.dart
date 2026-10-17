@@ -91,6 +91,34 @@ class BusinessGate extends ConsumerWidget {
  final List<BusinessRole> allowed; final Widget child;
  @override Widget build(BuildContext context,WidgetRef ref){
   final role=ref.watch(businessRoleProvider);
-  return role.when(loading:()=>const Scaffold(body:Center(child:CircularProgressIndicator())),error:(_,__)=>const Scaffold(body:Center(child:Text('تعذر التحقق من الدور'))),data:(r)=>allowed.contains(r)?child:Scaffold(backgroundColor:AppColors.bgDeep,appBar:AppBar(title:const Text('صلاحيات الوصول')),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.lock_outline,color:AppColors.warning,size:48),const SizedBox(height:12),const Text('هذا القسم غير متاح للدور الحالي',style:TextStyle(color:AppColors.textPrimary,fontWeight:FontWeight.bold)),const SizedBox(height:12),FilledButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const BusinessRoleScreen())),child:const Text('إدارة الدور المحلي'))]))));
+   return role.when(
+    loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+    error: (_, __) => const Scaffold(body: Center(child: Text('تعذر التحقق من الدور'))),
+    data: (r) {
+      if (allowed.contains(r)) return child;
+      return Scaffold(
+        backgroundColor: AppColors.bgDeep,
+        appBar: AppBar(title: const Text('صلاحيات الوصول')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, color: AppColors.warning, size: 48),
+                const SizedBox(height: 12),
+                const Text('هذا القسم غير متاح للدور الحالي', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BusinessRoleScreen())),
+                  child: const Text('إدارة الدور المحلي'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+   );
  }
 }
