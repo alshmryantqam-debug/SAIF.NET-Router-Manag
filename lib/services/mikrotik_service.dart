@@ -583,32 +583,7 @@ class MikrotikService {
   };
 
   static bool isReadOnlyCommandPath(String path) {
-    final normalized = path.trim().replaceAll(RegExp(r'/+
-
-  List<Map<String, dynamic>> _asList(dynamic data) {
-    if (data is List) {
-      return data
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-    if (data is Map) return [Map<String, dynamic>.from(data)];
-    return [];
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _binary?.close();
-    } catch (_) {}
-    try {
-      _rest?.close();
-    } catch (_) {}
-    _rest = null;
-    _binary = null;
-    _activeProtocol = null;
-    _profile = null;
-  }
-}), '');
+    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
     final base = normalized.endsWith('/print')
         ? normalized.substring(0, normalized.length - '/print'.length)
         : normalized;
@@ -617,32 +592,7 @@ class MikrotikService {
   }
 
   Future<List<Map<String, String>>> runCommand(String path) async {
-    final normalized = path.trim().replaceAll(RegExp(r'/+
-
-  List<Map<String, dynamic>> _asList(dynamic data) {
-    if (data is List) {
-      return data
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-    if (data is Map) return [Map<String, dynamic>.from(data)];
-    return [];
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _binary?.close();
-    } catch (_) {}
-    try {
-      _rest?.close();
-    } catch (_) {}
-    _rest = null;
-    _binary = null;
-    _activeProtocol = null;
-    _profile = null;
-  }
-}), '');
+    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
     if (!isReadOnlyCommandPath(normalized)) {
       throw const RouterOsException(
         'الطرفية الحالية للقراءة فقط وتسمح بمسارات فحص محددة. أوامر التغيير أو إعادة التشغيل غير مسموحة.',
