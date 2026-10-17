@@ -153,6 +153,9 @@ class MainShell extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          _drawerItem(context, icon: Icons.receipt_long_rounded, label: 'الفوترة', route: '/billing'),
+          _drawerItem(context, icon: Icons.person_pin_circle_rounded, label: 'بوابة المشترك', route: '/customer-portal'),
+          _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'الأدوار والصلاحيات', route: '/roles'),
           _drawerItem(
             context,
             icon: Icons.router_rounded,
