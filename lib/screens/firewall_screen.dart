@@ -44,7 +44,7 @@ class FirewallScreen extends ConsumerWidget {
                 size: 64,
                 color: AppColors.danger,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 e.toString().replaceAll('Exception: ', ''),
                 textAlign: TextAlign.center,
@@ -60,13 +60,13 @@ class FirewallScreen extends ConsumerWidget {
               return ListView(
                 children: const [
                   SizedBox(height: 120),
-                  const Icon(
+                  Icon(
                     Icons.security_rounded,
                     size: 64,
                     color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 16),
-                  const Center(
+                  Center(
                     child: Text(
                       'لا توجد قواعد في الجدار الناري',
                       style: TextStyle(
