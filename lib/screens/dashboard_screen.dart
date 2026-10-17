@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/connection_provider.dart';
+import '../services/predictive_history.dart';
+import 'advanced_ai_screens.dart';
 import '../services/mikrotik_service.dart';
 import '../theme.dart';
 import '../widgets/live_chart.dart';
@@ -71,6 +73,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => _error(e),
         data: (r) {
+          unawaited(PredictiveHistory.recordIfDue(r.cpuLoad.toDouble(), r.memUsedPercent));
           if (_cpu.length >= 36) _cpu.removeAt(0);
           _cpu.add(r.cpuLoad.toDouble());
           if (_ram.length >= 36) _ram.removeAt(0);
@@ -137,6 +140,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               LiveChart(values: _cpu, color: AppColors.primary, title: 'حمل المعالج', unit: '%', maxY: 100),
               const SizedBox(height: 12),
               LiveChart(values: _ram, color: AppColors.secondary, title: 'استخدام الذاكرة', unit: '%', maxY: 100),
+              const SizedBox(height: 12),
+              const PredictiveDashboardCard(),
               const SizedBox(height: 20),
               _heading('مركز التنبيهات', 'فحص سريع'),
               const SizedBox(height: 10),
