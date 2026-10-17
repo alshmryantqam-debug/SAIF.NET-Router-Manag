@@ -6,6 +6,8 @@ import 'providers/connection_provider.dart';
 import 'screens/add_hotspot_user_screen.dart';
 import 'screens/add_pppoe_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/business_screens.dart';
+import 'services/business_service.dart';
 import 'screens/firewall_screen.dart';
 import 'screens/hotspot_screen.dart';
 import 'screens/interfaces_screen.dart';
@@ -56,14 +58,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/dashboard',
             name: 'dashboard',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: DashboardScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: DashboardScreen()),
             ),
           ),
           GoRoute(
             path: '/hotspot',
             name: 'hotspot',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: HotspotScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: HotspotScreen()),
             ),
             routes: [
               GoRoute(
@@ -77,7 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/pppoe',
             name: 'pppoe',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: PppoeScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: PppoeScreen()),
             ),
             routes: [
               GoRoute(
@@ -91,14 +93,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/voucher',
             name: 'voucher',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: VoucherScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager, BusinessRole.distributor], child: VoucherScreen()),
             ),
           ),
           GoRoute(
             path: '/settings',
             name: 'settings',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: SettingsScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: SettingsScreen()),
             ),
           ),
         ],
@@ -107,25 +109,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/routers',
         name: 'routers',
         parentNavigatorKey: _rootKey,
-        builder: (_, __) => const RoutersListScreen(),
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager], child: RoutersListScreen()),
       ),
       GoRoute(
         path: '/terminal',
         name: 'terminal',
         parentNavigatorKey: _rootKey,
-        builder: (_, __) => const TerminalScreen(),
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager], child: TerminalScreen()),
       ),
       GoRoute(
         path: '/interfaces',
         name: 'interfaces',
         parentNavigatorKey: _rootKey,
-        builder: (_, __) => const InterfacesScreen(),
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: InterfacesScreen()),
       ),
+      GoRoute(path: '/billing', name: 'billing', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager], child: BillingScreen())),
+      GoRoute(path: '/customer-portal', name: 'customer-portal', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessGate(allowed: [BusinessRole.customer], child: CustomerPortalScreen())),
+      GoRoute(path: '/roles', name: 'roles', parentNavigatorKey: _rootKey, builder: (_, __) => const BusinessRoleScreen()),
       GoRoute(
         path: '/firewall',
         name: 'firewall',
         parentNavigatorKey: _rootKey,
-        builder: (_, __) => const FirewallScreen(),
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: FirewallScreen()),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
