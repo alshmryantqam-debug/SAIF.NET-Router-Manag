@@ -274,8 +274,8 @@ class MikrotikService {
       sw.stop();
       throw RouterOsException(
         'فشل الاتصال بالراوتر عبر الطريقتين.\n'
-        'REST (v7): \${_cleanMessage(restError)}\n'
-        'Binary (v6): \${_cleanMessage(binaryError)}',
+        'REST (v7): ${_cleanMessage(restError)}\n'
+        'Binary (v6): ${_cleanMessage(binaryError)}',
         kind: RouterOsErrorKind.network,
       );
     }
