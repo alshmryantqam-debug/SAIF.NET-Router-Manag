@@ -58,8 +58,8 @@ class FirewallScreen extends ConsumerWidget {
           data: (rules) {
             if (rules.isEmpty) {
               return ListView(
-                children: [
-                  const SizedBox(height: 120),
+                children: const [
+                  SizedBox(height: 120),
                   const Icon(
                     Icons.security_rounded,
                     size: 64,
