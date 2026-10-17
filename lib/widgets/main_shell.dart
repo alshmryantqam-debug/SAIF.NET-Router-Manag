@@ -41,37 +41,60 @@ class MainShell extends StatelessWidget {
         bottom: false,
         child: child,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          border: const Border(
-            top: BorderSide(color: AppColors.border),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xF21A1429),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.primary.withOpacity(.22)),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(.38), blurRadius: 24, offset: const Offset(0, 7)),
+              BoxShadow(color: AppColors.primary.withOpacity(.05), blurRadius: 22, spreadRadius: 1),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: NavigationBar(
-          selectedIndex: index,
-          onDestinationSelected: (i) => context.go(_destinations[i].route),
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          height: 68,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: _destinations
-              .map(
-                (d) => NavigationDestination(
-                  icon: Icon(d.icon, color: AppColors.textMuted),
-                  selectedIcon: Icon(d.icon, color: AppColors.primary),
-                  label: d.label,
+          child: Row(
+            children: List.generate(_destinations.length, (i) {
+              final d = _destinations[i];
+              final selected = i == index;
+              return Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => context.go(d.route),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                    decoration: BoxDecoration(
+                      gradient: selected ? AppGradients.primary : null,
+                      color: selected ? null : Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: selected ? AppShadows.glow(AppColors.primary, opacity: .16) : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(d.icon, size: 21, color: selected ? Colors.white : AppColors.textMuted),
+                        const SizedBox(height: 4),
+                        Text(
+                          d.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: selected ? Colors.white : AppColors.textMuted,
+                            fontSize: 9.5,
+                            fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              )
-              .toList(),
+              );
+            }),
+          ),
         ),
       ),
     );
