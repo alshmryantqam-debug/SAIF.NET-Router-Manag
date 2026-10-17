@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
-import '../models/pppoe_user.dart';
 import '../theme.dart';
 import '../widgets/live_chart.dart';
 
@@ -60,10 +59,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final pppTotal = ref.watch(pppoeUsersProvider).valueOrNull?.length ?? 0;
     final interfaces = ref.watch(interfacesProvider).valueOrNull ?? <InterfaceInfo>[];
     final leases = ref.watch(dhcpLeasesProvider).valueOrNull ?? [];
-    final firewall = ref.watch(firewallRulesProvider).valueOrNull ?? [];
+    final firewallState = ref.watch(firewallRulesProvider);
+    final firewall = firewallState.valueOrNull ?? [];
     final routerServices = ref.watch(routerServicesProvider);
     final activeHotspot = ref.watch(hotspotActiveProvider).valueOrNull ?? <Map<String, String>>[];
-    final activePppoe = ref.watch(pppoeActiveProvider).valueOrNull ?? <PppoeActive>[];
     final up = interfaces.where((e) => e.running && !e.disabled).length;
 
     return RefreshIndicator(
@@ -145,7 +144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 20),
               _heading('مؤشر أمان الراوتر', 'تدقيق للقراءة فقط'),
               const SizedBox(height: 10),
-              _securityScore(routerServices, firewall),
+              _securityScore(routerServices, firewallState),
               const SizedBox(height: 20),
               _heading('تدفق حركة المرور', 'عدادات الواجهات'),
               const SizedBox(height: 10),
@@ -153,7 +152,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 20),
               _heading('الأكثر استهلاكاً', 'أعلى 5 جلسات نشطة'),
               const SizedBox(height: 10),
-              _topTalkers(activeHotspot, activePppoe),
+              _topTalkers(activeHotspot),
               const SizedBox(height: 20),
               _heading('أدوات صاحب الشبكة', 'اختصارات عملية'),
               const SizedBox(height: 10),
@@ -245,11 +244,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
 
-  Widget _securityScore(AsyncValue<List<Map<String, String>>> servicesAsync, List<FirewallRule> rules) {
+  Widget _securityScore(AsyncValue<List<Map<String, String>>> servicesAsync, AsyncValue<List<FirewallRule>> firewallAsync) {
     return servicesAsync.when(
       loading: () => _panelMessage(Icons.shield_outlined, 'جارٍ فحص خدمات الإدارة...', AppColors.textMuted),
       error: (_, __) => _panelMessage(Icons.info_outline_rounded, 'تعذر قراءة خدمات الراوتر؛ لم يتم احتساب المؤشر.', AppColors.warning),
       data: (services) {
+        if (!firewallAsync.hasValue) return _panelMessage(Icons.info_outline_rounded, 'تعذر التأكد من قواعد الفايروول؛ لم يتم احتساب مؤشر الأمان.', AppColors.warning);
+        final rules = firewallAsync.value ?? <FirewallRule>[];
         if (services.isEmpty) return _panelMessage(Icons.info_outline_rounded, 'بيانات خدمات الإدارة غير متاحة؛ المؤشر غير مكتمل.', AppColors.warning);
         bool enabled(String name) => services.any((s) => (s['name'] ?? '').toLowerCase() == name && !['yes', 'true'].contains((s['disabled'] ?? 'no').toLowerCase()));
         final activeRules = rules.where((r) => !r.disabled).toList();
@@ -316,7 +317,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _topTalkers(List<Map<String, String>> hotspot, List<PppoeActive> pppoe) {
+  Widget _topTalkers(List<Map<String, String>> hotspot) {
     final totals = <String, int>{};
     final rx = <String, int>{};
     final tx = <String, int>{};
@@ -355,7 +356,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
-              ClipRRect(borderRadius: BorderRadius.circular(5), child: LinearProgressIndicator(value: (amount / maxValue).clamp(0.0, 1.0), minHeight: 5, backgroundColor: Colors.white.withOpacity(.06), valueColor: AlwaysStoppedAnimation<Color>(color))),
+              ClipRRect(borderRadius: BorderRadius.circular(5), child: LinearProgressIndicator(value: (amount / maxValue).clamp(0.0, 1.0).toDouble(), minHeight: 5, backgroundColor: Colors.white.withOpacity(.06), valueColor: AlwaysStoppedAnimation<Color>(color))),
             ])),
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
