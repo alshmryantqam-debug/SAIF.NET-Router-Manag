@@ -202,7 +202,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         Text(display, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900)),
       ]),
       const SizedBox(height: 12),
-      ClipRRect(borderRadius: BorderRadius.circular(9), child: LinearProgressIndicator(value: value.clamp(0.0, 100.0) / 100, minHeight: 7, backgroundColor: Colors.white.withOpacity(.06), valueColor: AlwaysStoppedAnimation<Color>(color))),
+      ClipRRect(borderRadius: BorderRadius.circular(9), child: LinearProgressIndicator(value: value.clamp(0.0, 100.0).toDouble() / 100, minHeight: 7, backgroundColor: Colors.white.withOpacity(.06), valueColor: AlwaysStoppedAnimation<Color>(color))),
     ]),
   );
 
