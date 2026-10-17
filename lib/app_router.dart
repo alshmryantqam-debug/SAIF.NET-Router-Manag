@@ -23,7 +23,7 @@ import 'screens/voucher_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
 
-final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final routerProvider = Provider<GoRouter>((ref) {
   final connected = ref.watch(connectedProvider);
@@ -53,7 +53,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const LoginScreen(),
       ),
       ShellRoute(
-        navigatorKey: _rootKey,
+        navigatorKey: _shellKey,
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(
@@ -110,7 +110,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/routers',
         name: 'routers',
-        parentNavigatorKey: _rootKey,
         builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager], child: RoutersListScreen()),
       ),
       GoRoute(
