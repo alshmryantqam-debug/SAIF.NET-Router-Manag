@@ -198,3 +198,44 @@ class _Sample {
 class _Trend { const _Trend(this.title,this.detail,this.color); final String title,detail; final Color color; }
 class _Notice extends StatelessWidget { const _Notice(this.text); final String text; @override Widget build(BuildContext context)=>Container(margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:AppColors.warning.withOpacity(.08),border:Border.all(color:AppColors.warning.withOpacity(.3)),borderRadius:BorderRadius.circular(12)),child:Text(text,style:const TextStyle(color:AppColors.textSecondary,fontSize:12,height:1.5))); }
 Widget _panel(String title,Widget child)=>Container(margin:const EdgeInsets.symmetric(vertical:7),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:AppColors.bgCard,border:Border.all(color:AppColors.border),borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(color:AppColors.textPrimary,fontWeight:FontWeight.bold)),const SizedBox(height:10),child]));
+
+class PredictiveDashboardCard extends StatefulWidget {
+  const PredictiveDashboardCard({super.key});
+  @override State<PredictiveDashboardCard> createState()=>_PredictiveDashboardCardState();
+}
+class _PredictiveDashboardCardState extends State<PredictiveDashboardCard> {
+  List<_Sample> samples=[];
+  @override void initState(){super.initState();load();}
+  Future<void> load()async{
+    final raw=await _secure.read(key:_historyKey);
+    final rows=< _Sample >[];
+    if(raw!=null){try{for(final x in (jsonDecode(raw) as List)){final s=_Sample.fromJson(Map<String,dynamic>.from(x));if(DateTime.now().difference(s.time)<=const Duration(days:7))rows.add(s);}}catch(_){}}
+    if(mounted)setState(()=>samples=rows);
+  }
+  String summary(bool cpu){
+    if(samples.length<3)return 'تُجمع البيانات تدريجياً؛ العينات الحالية غير كافية لاتجاه موثوق.';
+    final sorted=[...samples]..sort((a,b)=>a.time.compareTo(b.time));
+    final values=sorted.map((s)=>cpu?s.cpu:s.ram).toList();
+    final n=values.length;
+    final early=values.take((n/3).ceil()).toList();
+    final late=values.skip((n*2/3).floor()).toList();
+    final first=early.reduce((a,b)=>a+b)/early.length;
+    final last=late.reduce((a,b)=>a+b)/late.length;
+    final current=values.last;
+    if(current>=(cpu?90:92)||(last-first>=15&&last>=(cpu?70:75)))return 'تنبيه مرتفع: الاستخدام الحالي ${current.toStringAsFixed(0)}% والاتجاه صاعد. افحص الموارد.';
+    if(last-first>=7||current>=(cpu?80:85))return 'مراقبة مطلوبة: يوجد ارتفاع ملحوظ في الاستخدام.';
+    return 'لا يظهر ارتفاع تصاعدي حاد في العينات المتوفرة.';
+  }
+  @override Widget build(BuildContext context)=>Container(
+    padding:const EdgeInsets.all(14),
+    decoration:BoxDecoration(color:AppColors.bgCard,borderRadius:BorderRadius.circular(18),border:Border.all(color:AppColors.border)),
+    child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Icon(Icons.query_stats_rounded,color:AppColors.primary),const SizedBox(width:8),const Expanded(child:Text('التحليل التنبؤي · 7 أيام',style:TextStyle(color:AppColors.textPrimary,fontWeight:FontWeight.w900))),IconButton(onPressed:load,icon:const Icon(Icons.refresh,size:18))]),
+      Text('CPU: ${summary(true)}',style:const TextStyle(color:AppColors.textSecondary,fontSize:11,height:1.5)),
+      const SizedBox(height:6),
+      Text('RAM: ${summary(false)}',style:const TextStyle(color:AppColors.textSecondary,fontSize:11,height:1.5)),
+      const SizedBox(height:5),
+      Text('العينات المحفوظة: ${samples.length} · تُجمع عينة كل 15 دقيقة أثناء فتح لوحة القيادة واتصال الراوتر.',style:const TextStyle(color:AppColors.textMuted,fontSize:9.5)),
+    ]),
+  );
+}
