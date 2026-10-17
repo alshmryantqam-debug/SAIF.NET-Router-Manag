@@ -132,7 +132,12 @@ class _PredictiveScreenState extends ConsumerState<PredictiveScreen> {
         if (_loading) const LinearProgressIndicator(),
         _trendCard('المعالج CPU', cpu, _samples.length),
         _trendCard('الذاكرة RAM', ram, _samples.length),
-        _panel('آخر القياسات', Column(children: _samples.reversed.take(12).map((s)=>ListTile(dense:true, contentPadding:EdgeInsets.zero, title:Text('${s.cpu.toStringAsFixed(0)}% CPU · ${s.ram.toStringAsFixed(0)}% RAM',style:const TextStyle(color:AppColors.textPrimary)), subtitle:Text(s.time.toLocal().toString().substring(0,16),style:const TextStyle(color:AppColors.textMuted,fontSize:11))).toList())),
+        _panel('آخر القياسات', Column(children: _samples.reversed.take(12).map((s) => ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: Text('${s.cpu.toStringAsFixed(0)}% CPU · ${s.ram.toStringAsFixed(0)}% RAM', style: const TextStyle(color: AppColors.textPrimary)),
+          subtitle: Text(s.time.toLocal().toString().substring(0, 16), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        )).toList())),
       ]));
   }
   Widget _trendCard(String title, _Trend trend, int count) => _panel(title, Column(crossAxisAlignment:CrossAxisAlignment.start, children:[Row(children:[Icon(Icons.circle,size:10,color:trend.color),const SizedBox(width:8),Text(trend.title,style:TextStyle(color:trend.color,fontWeight:FontWeight.bold))]),const SizedBox(height:8),Text(trend.detail,style:const TextStyle(color:AppColors.textSecondary,height:1.5,fontSize:12)),const SizedBox(height:6),Text('عدد العينات: $count',style:const TextStyle(color:AppColors.textMuted,fontSize:10))]));
