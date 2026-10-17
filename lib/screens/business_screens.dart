@@ -79,3 +79,12 @@ class CustomerPortalScreen extends ConsumerWidget {
 class _Notice extends StatelessWidget{const _Notice(this.text);final String text;@override Widget build(BuildContext context)=>Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:AppColors.primary.withOpacity(.08),borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.primary.withOpacity(.25))),child:Text(text,style:const TextStyle(color:AppColors.textSecondary,fontSize:12,height:1.5)));}
 class _Stat extends StatelessWidget{const _Stat(this.label,this.value);final String label,value;@override Widget build(BuildContext context)=>Container(width:double.infinity,padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:AppColors.bgCard,borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.border)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label,style:const TextStyle(color:AppColors.textMuted,fontSize:11)),const SizedBox(height:5),Text(value,style:const TextStyle(color:AppColors.textPrimary,fontSize:15,fontWeight:FontWeight.w900),maxLines:2,overflow:TextOverflow.ellipsis)]));}
 String _bytes(int b){if(b<=0)return '0 B';const u=['B','KB','MB','GB','TB'];var n=b.toDouble();var i=0;while(n>=1024&&i<u.length-1){n/=1024;i++;}return n.toStringAsFixed(i==0?0:1)+' '+u[i];}
+
+class BusinessGate extends ConsumerWidget {
+ const BusinessGate({super.key,required this.allowed,required this.child});
+ final List<BusinessRole> allowed; final Widget child;
+ @override Widget build(BuildContext context,WidgetRef ref){
+  final role=ref.watch(businessRoleProvider);
+  return role.when(loading:()=>const Scaffold(body:Center(child:CircularProgressIndicator())),error:(_,__)=>const Scaffold(body:Center(child:Text('تعذر التحقق من الدور'))),data:(r)=>allowed.contains(r)?child:Scaffold(backgroundColor:AppColors.bgDeep,appBar:AppBar(title:const Text('صلاحيات الوصول')),body:Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.lock_outline,color:AppColors.warning,size:48),const SizedBox(height:12),const Text('هذا القسم غير متاح للدور الحالي',style:TextStyle(color:AppColors.textPrimary,fontWeight:FontWeight.bold)),const SizedBox(height:12),FilledButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const BusinessRoleScreen())),child:const Text('إدارة الدور المحلي'))]))));
+ }
+}
