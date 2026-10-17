@@ -1,2 +1,0 @@
-import 'dart:convert';import 'package:flutter_secure_storage/flutter_secure_storage.dart';import '../models/router_config.dart';
-class StorageService {static const _s=FlutterSecureStorage();static const _key='tikplus.router';Future<void> save(RouterConfigModel c)=>_s.write(key:_key,value:jsonEncode(c.toJson()));Future<RouterConfigModel?> load() async {final v=await _s.read(key:_key);if(v==null)return null;try{return RouterConfigModel.fromJson(jsonDecode(v));}catch(_){return null;}}Future<void> clear()=>_s.delete(key:_key);}

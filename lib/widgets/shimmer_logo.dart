@@ -1,1 +1,0 @@
-import 'package:flutter/material.dart';import '../theme.dart';class ShimmerLogo extends StatelessWidget{const ShimmerLogo({super.key});@override Widget build(BuildContext c)=>const Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.router,size:88,color:AppTheme.primary),Text('TikPlus ULTRA',style:TextStyle(fontSize:28,fontWeight:FontWeight.bold))]);}
