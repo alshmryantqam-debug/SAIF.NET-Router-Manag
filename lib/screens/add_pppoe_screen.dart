@@ -10,7 +10,9 @@ import '../widgets/primary_button.dart';
 import '../widgets/ultra_input.dart';
 
 class AddPppoeScreen extends ConsumerStatefulWidget {
-  const AddPppoeScreen({super.key});
+  const AddPppoeScreen({super.key, this.user});
+
+  final PppoeUser? user;
 
   @override
   ConsumerState<AddPppoeScreen> createState() => _AddPppoeScreenState();
@@ -40,6 +42,20 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
           .join();
 
   @override
+  void initState() {
+    super.initState();
+    final user = widget.user;
+    if (user != null) {
+      _nameCtrl.text = user.name;
+      _profileCtrl.text = user.profile;
+      _localCtrl.text = user.localAddress;
+      _remoteCtrl.text = user.remoteAddress;
+      _commentCtrl.text = user.comment;
+      _service = user.service;
+    }
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
     _passCtrl.dispose();
@@ -59,6 +75,7 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
     });
 
     final user = PppoeUser(
+      id: widget.user?.id ?? '',
       name: _nameCtrl.text.trim(),
       password: _passCtrl.text,
       profile: _profileCtrl.text.trim().isEmpty
@@ -71,7 +88,20 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
     );
 
     try {
-      await ref.read(mikrotikProvider).addPppoeUser(user);
+      if (widget.user == null) {
+        await ref.read(mikrotikProvider).addPppoeUser(user);
+      } else {
+        final data = <String, dynamic>{
+          'name': user.name,
+          'profile': user.profile,
+          'service': user.service,
+          'comment': user.comment,
+          'local-address': user.localAddress,
+          'remote-address': user.remoteAddress,
+        };
+        if (_passCtrl.text.isNotEmpty) data['password'] = _passCtrl.text;
+        await ref.read(mikrotikProvider).updatePppoeUser(user.id, data);
+      }
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -88,7 +118,7 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
       appBar: AppBar(
-        title: const Text('مشترك PPPoE جديد'),
+        title: Text(widget.user == null ? 'مشترك PPPoE جديد' : 'تعديل مشترك PPPoE'),
         backgroundColor: AppColors.bgCard,
       ),
       body: Form(
@@ -140,7 +170,7 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
                         obscure: _obscure,
                         enabled: !_busy,
                         validator: (v) {
-                          if ((v ?? '').isEmpty) {
+                          if (widget.user == null && (v ?? '').isEmpty) {
                             return 'أدخل كلمة المرور';
                           }
                           return null;
@@ -277,7 +307,7 @@ class _AddPppoeScreenState extends ConsumerState<AddPppoeScreen> {
             ],
             const SizedBox(height: 20),
             PrimaryButton(
-              label: _busy ? 'جاري الحفظ...' : 'حفظ المشترك',
+              label: _busy ? 'جاري الحفظ...' : (widget.user == null ? 'حفظ المشترك' : 'حفظ التعديلات'),
               icon: Icons.check_rounded,
               loading: _busy,
               onPressed: _save,
