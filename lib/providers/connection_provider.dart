@@ -244,3 +244,10 @@ final savedRoutersProvider =
     FutureProvider.autoDispose<List<RouterProfile>>((ref) async {
   return ref.watch(storageProvider).loadAll();
 });
+/// Read-only RouterOS service table used by the dashboard security audit.
+final routerServicesProvider =
+    FutureProvider.autoDispose<List<Map<String, String>>>((ref) async {
+  final service = ref.watch(mikrotikProvider);
+  if (!service.isConnected) return [];
+  return service.runCommand('/ip/service');
+});
