@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tikplus_ultra/models/hotspot_user.dart';
 import 'package:tikplus_ultra/models/router_config.dart';
 import 'package:tikplus_ultra/models/voucher.dart';
+import 'package:tikplus_ultra/services/mikrotik_service.dart';
+import 'package:tikplus_ultra/services/routeros_binary_api.dart';
+import 'package:tikplus_ultra/services/routeros_rest_api.dart';
 
 void main() {
   group('Router profile', () {
@@ -45,4 +48,41 @@ void main() {
     expect(vouchers.every((v) => v.username.length == 6), isTrue);
     expect(vouchers.every((v) => v.password.length == 4), isTrue);
   });
+
+  group('Read-only command guard', () {
+    test('allows known RouterOS read paths', () {
+      expect(MikrotikService.isReadOnlyCommandPath('/ip/hotspot/user'), isTrue);
+      expect(MikrotikService.isReadOnlyCommandPath('/system/resource/print'), isTrue);
+      expect(MikrotikService.isReadOnlyCommandPath('/ip/service'), isTrue);
+    });
+
+    test('rejects commands that could change router state', () {
+      expect(MikrotikService.isReadOnlyCommandPath('/system/reboot'), isFalse);
+      expect(MikrotikService.isReadOnlyCommandPath('/ip/firewall/filter/remove'), isFalse);
+      expect(MikrotikService.isReadOnlyCommandPath('/system/resource?x=y'), isFalse);
+    });
+  });
+
+  group('RouterOS binary framing', () {
+    test('encodes length prefixes at protocol boundaries', () {
+      expect(RouterOsBinaryApi.encodeLength(127), [0x7F]);
+      expect(RouterOsBinaryApi.encodeLength(128), [0x80, 0x80]);
+      expect(RouterOsBinaryApi.encodeLength(16384), [0xC0, 0x40, 0x00]);
+    });
+
+    test('terminates each encoded sentence with a zero byte', () {
+      final bytes = RouterOsBinaryApi.encodeSentence(['/system/resource/print']);
+      expect(bytes.last, 0);
+      expect(bytes.length, greaterThan(1));
+    });
+  });
+
+  group('Local address classification', () {
+    test('recognizes private and public IPv4 addresses', () {
+      expect(isPrivateHost('192.168.88.1'), isTrue);
+      expect(isPrivateHost('10.0.0.1'), isTrue);
+      expect(isPrivateHost('8.8.8.8'), isFalse);
+    });
+  });
+
 }
