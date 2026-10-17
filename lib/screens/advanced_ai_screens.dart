@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../providers/connection_provider.dart';
-import '../services/mikrotik_service.dart';
 import '../theme.dart';
 
 const _secure = FlutterSecureStorage();
@@ -183,8 +182,20 @@ class _ConditionalAutomationScreenState extends ConsumerState<ConditionalAutomat
       const _Notice('القواعد تُفحص كل 30 ثانية أثناء بقاء هذه الشاشة مفتوحة والتطبيق متصلاً. التنبيه داخل التطبيق فقط؛ إشعارات الخلفية تحتاج خدمة خلفية وصلاحيات نظام إضافية. أسماء WAN الافتراضية تشمل ether1/ether2/ether3 أو واجهة يحتوي اسمها WAN.'),
       const SizedBox(height:10),
       if(_rules.isEmpty) const _Notice('لا توجد قواعد بعد. أضف قاعدة «إذا انقطعت WAN فأظهر تنبيهاً».'),
-      ..._rules.map((r)=>Card(color:AppColors.bgCard,child:SwitchListTile(value:r['enabled']==true,title:Text(r['name'] as String,style:const TextStyle(color:AppColors.textPrimary,fontWeight:FontWeight.bold)),subtitle:const Text('إذا توقفت كل واجهات WAN المكتشفة ← تنبيه داخل التطبيق'),activeColor:AppColors.primary,onChanged:(v)async{setState(()=>r['enabled']=v);await _save();},secondary:Icon(Icons.notifications_active,color:r['enabled']==true?AppColors.warning:AppColors.textMuted),)),
-      ),
+      ..._rules.map((r) => Card(
+        color: AppColors.bgCard,
+        child: SwitchListTile(
+          value: r['enabled'] == true,
+          title: Text(r['name'] as String, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+          subtitle: const Text('إذا توقفت كل واجهات WAN المكتشفة ← تنبيه داخل التطبيق'),
+          activeColor: AppColors.primary,
+          onChanged: (v) async {
+            setState(() => r['enabled'] = v);
+            await _save();
+          },
+          secondary: Icon(Icons.notifications_active, color: r['enabled'] == true ? AppColors.warning : AppColors.textMuted),
+        ),
+      )),
       if(_rules.isNotEmpty) OutlinedButton.icon(onPressed:_check,icon:const Icon(Icons.monitor_heart),label:const Text('فحص الشروط الآن')),
     ]));
 }
