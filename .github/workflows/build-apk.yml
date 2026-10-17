@@ -42,6 +42,7 @@ jobs:
         run: |
           if [ ! -d android ]; then
             flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .
+            git checkout -- test/widget_test.dart
           fi
 
       - name: Resolve dependencies
