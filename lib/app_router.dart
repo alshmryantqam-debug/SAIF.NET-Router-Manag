@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/connection_provider.dart';
+import 'models/hotspot_user.dart';
+import 'models/pppoe_user.dart';
 import 'screens/add_hotspot_user_screen.dart';
 import 'screens/automation_screens.dart';
 import 'screens/advanced_ai_screens.dart';
@@ -75,6 +77,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'hotspot.add',
                 builder: (_, __) => const AddHotspotUserScreen(),
               ),
+              GoRoute(
+                path: 'edit',
+                name: 'hotspot.edit',
+                builder: (_, state) => AddHotspotUserScreen(
+                  user: state.extra as HotspotUser,
+                ),
+              ),
             ],
           ),
           GoRoute(
@@ -88,6 +97,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'add',
                 name: 'pppoe.add',
                 builder: (_, __) => const AddPppoeScreen(),
+              ),
+              GoRoute(
+                path: 'edit',
+                name: 'pppoe.edit',
+                builder: (_, state) => AddPppoeScreen(
+                  user: state.extra as PppoeUser,
+                ),
               ),
             ],
           ),

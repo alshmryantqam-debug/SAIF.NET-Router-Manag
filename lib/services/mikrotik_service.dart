@@ -450,6 +450,19 @@ class MikrotikService {
         kind: RouterOsErrorKind.network);
   }
 
+  Future<void> updatePppoeUser(String id, Map<String, dynamic> data) async {
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف مشترك PPPoE غير صالح',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    if (_rest != null) {
+      await _rest!.patch('/ppp/secret/$id', data);
+      return;
+    }
+    throw const RouterOsException('تعديل PPPoE يتطلب REST API في RouterOS 7',
+        kind: RouterOsErrorKind.methodNotAllowed);
+  }
+
   Future<void> removeHotspotUser(String id) async {
     if (_rest != null) {
       await _rest!.delete('/ip/hotspot/user/$id');
@@ -466,6 +479,26 @@ class MikrotikService {
     }
     throw const RouterOsException('التعديل يتطلب REST API (v7)',
         kind: RouterOsErrorKind.methodNotAllowed);
+  }
+
+  Future<void> updateHotspotUserFields(
+    String id, {
+    required String name,
+    required String profile,
+    required String comment,
+    required String password,
+    required String limitUptime,
+    required int limitBytesTotal,
+  }) async {
+    final data = <String, dynamic>{
+      'name': name,
+      'profile': profile,
+      'comment': comment,
+      'limit-uptime': limitUptime,
+      'limit-bytes-total': limitBytesTotal.toString(),
+    };
+    if (password.isNotEmpty) data['password'] = password;
+    await updateHotspotUser(id, data);
   }
 
   Future<void> setHotspotUserDisabled(String id, bool disabled) async {

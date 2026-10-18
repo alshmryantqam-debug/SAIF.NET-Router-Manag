@@ -10,7 +10,9 @@ import '../widgets/primary_button.dart';
 import '../widgets/ultra_input.dart';
 
 class AddHotspotUserScreen extends ConsumerStatefulWidget {
-  const AddHotspotUserScreen({super.key});
+  const AddHotspotUserScreen({super.key, this.user});
+
+  final HotspotUser? user;
 
   @override
   ConsumerState<AddHotspotUserScreen> createState() =>
@@ -40,6 +42,21 @@ class _AddHotspotUserScreenState
           .join();
 
   @override
+  void initState() {
+    super.initState();
+    final user = widget.user;
+    if (user != null) {
+      _nameCtrl.text = user.name;
+      _profileCtrl.text = user.profile;
+      _commentCtrl.text = user.comment;
+      _uptimeCtrl.text = user.limitUptime;
+      _bytesCtrl.text = user.limitBytesTotal > 0
+          ? user.limitBytesTotal.toString()
+          : '';
+    }
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
     _passCtrl.dispose();
@@ -61,6 +78,7 @@ class _AddHotspotUserScreenState
     final bytes = int.tryParse(_bytesCtrl.text.trim()) ?? 0;
 
     final user = HotspotUser(
+      id: widget.user?.id ?? '',
       name: _nameCtrl.text.trim(),
       password: _passCtrl.text,
       profile: _profileCtrl.text.trim().isEmpty
@@ -72,7 +90,19 @@ class _AddHotspotUserScreenState
     );
 
     try {
-      await ref.read(mikrotikProvider).addHotspotUser(user);
+      if (widget.user == null) {
+        await ref.read(mikrotikProvider).addHotspotUser(user);
+      } else {
+        await ref.read(mikrotikProvider).updateHotspotUserFields(
+          user.id,
+          name: user.name,
+          profile: user.profile,
+          comment: user.comment,
+          password: user.password,
+          limitUptime: user.limitUptime,
+          limitBytesTotal: user.limitBytesTotal,
+        );
+      }
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -89,7 +119,7 @@ class _AddHotspotUserScreenState
     return Scaffold(
       backgroundColor: AppColors.bgDeep,
       appBar: AppBar(
-        title: const Text('مستخدم Hotspot جديد'),
+        title: Text(widget.user == null ? 'مستخدم Hotspot جديد' : 'تعديل مستخدم Hotspot'),
         backgroundColor: AppColors.bgCard,
       ),
       body: Form(
@@ -141,7 +171,7 @@ class _AddHotspotUserScreenState
                         obscure: _obscure,
                         enabled: !_busy,
                         validator: (v) {
-                          if ((v ?? '').isEmpty) {
+                          if (widget.user == null && (v ?? '').isEmpty) {
                             return 'أدخل كلمة المرور';
                           }
                           return null;
@@ -247,7 +277,7 @@ class _AddHotspotUserScreenState
             ],
             const SizedBox(height: 20),
             PrimaryButton(
-              label: _busy ? 'جاري الحفظ...' : 'حفظ المستخدم',
+              label: _busy ? 'جاري الحفظ...' : (widget.user == null ? 'حفظ المستخدم' : 'حفظ التعديلات'),
               icon: Icons.check_rounded,
               loading: _busy,
               onPressed: _save,

@@ -368,6 +368,21 @@ class _PppoeScreenState extends ConsumerState<PppoeScreen> {
                   ],
                 ),
               ),
+              IconButton(
+                tooltip: 'تعديل المشترك',
+                icon: const Icon(Icons.edit_rounded, size: 19),
+                color: AppColors.primary,
+                onPressed: () async {
+                  final saved = await context.push<bool>(
+                    '/pppoe/edit',
+                    extra: user,
+                  );
+                  if (saved == true) {
+                    ref.invalidate(pppoeUsersProvider);
+                    ref.invalidate(pppoeActiveProvider);
+                  }
+                },
+              ),
               Transform.scale(
                 scale: 0.85,
                 child: Switch(

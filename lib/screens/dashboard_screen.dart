@@ -36,6 +36,84 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void dispose() { _timer?.cancel(); super.dispose(); }
 
+  Future<void> _openCommandSearch() async {
+    final controller = TextEditingController();
+    final commands = <({String title, String subtitle, IconData icon, String route, List<String> terms})>[
+      (title: 'مشتركو Hotspot', subtitle: 'الحسابات والكروت والجلسات', icon: Icons.wifi_rounded, route: '/hotspot', terms: ['هوتسبوت', 'كروت', 'مشتركين', 'hotspot', 'users']),
+      (title: 'مشتركو PPPoE', subtitle: 'حسابات الإنترنت المنزلي', icon: Icons.cable_rounded, route: '/pppoe', terms: ['برودباند', 'pppoe', 'انترنت', 'مشتركين']),
+      (title: 'الواجهات والمنافذ', subtitle: 'حالة المنافذ وعدادات الشبكة', icon: Icons.account_tree_rounded, route: '/interfaces', terms: ['ether', 'port', 'wan', 'lan', 'منافذ']),
+      (title: 'الراوترات', subtitle: 'إدارة أجهزة الشبكة', icon: Icons.router_rounded, route: '/routers', terms: ['router', 'راوتر', 'أجهزة']),
+      (title: 'الجدار الناري', subtitle: 'قواعد الحماية ومراجعتها', icon: Icons.shield_rounded, route: '/firewall', terms: ['firewall', 'فايروول', 'حماية', 'قواعد']),
+      (title: 'توليد الكروت', subtitle: 'إنشاء حسابات Hotspot', icon: Icons.confirmation_number_rounded, route: '/voucher', terms: ['كرت', 'كروت', 'voucher', 'توليد']),
+      (title: 'الفوترة والحسابات', subtitle: 'متابعة حسابات وفواتير المشتركين', icon: Icons.receipt_long_rounded, route: '/billing', terms: ['billing', 'فاتورة', 'فواتير', 'فوترة', 'حسابات']),
+      (title: 'مركز الأتمتة', subtitle: 'أدوات التشغيل والمهام المساعدة', icon: Icons.auto_awesome_rounded, route: '/automation', terms: ['automation', 'أتمتة', 'تلقائي', 'مهام']),
+      (title: 'مساعد الشبكة الذكي', subtitle: 'تحليلات ومساعدة تشخيصية', icon: Icons.psychology_alt_rounded, route: '/advanced-ai', terms: ['ذكاء', 'ai', 'تحليل', 'تشخيص', 'مساعد']),
+      (title: 'إدارة الصلاحيات', subtitle: 'أدوار المستخدمين ومستويات الوصول', icon: Icons.admin_panel_settings_rounded, route: '/roles', terms: ['صلاحيات', 'أدوار', 'مستخدمين', 'roles', 'permissions']),
+      (title: 'بوابة المشترك', subtitle: 'واجهة خدمات المشتركين', icon: Icons.support_agent_rounded, route: '/customer-portal', terms: ['بوابة', 'دعم', 'مشترك', 'customer', 'portal']),
+      (title: 'الطرفية', subtitle: 'أوامر RouterOS المتقدمة', icon: Icons.terminal_rounded, route: '/terminal', terms: ['terminal', 'ترمنال', 'أوامر']),
+    ];
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final q = controller.text.trim().toLowerCase();
+          final matches = commands.where((item) => q.isEmpty || item.title.toLowerCase().contains(q) || item.subtitle.toLowerCase().contains(q) || item.terms.any((term) => term.toLowerCase().contains(q) || q.contains(term.toLowerCase()))).toList();
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(18, 12, 18, 18 + MediaQuery.of(sheetContext).viewInsets.bottom),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Center(child: Container(width: 38, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(5)))),
+                const SizedBox(height: 18),
+                const Text('بحث سريع في أدوات الشبكة', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                const Text('اكتب اسم الأداة أو وظيفتها للوصول مباشرة', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  onChanged: (_) => setSheetState(() {}),
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'مثال: PPPoE، كروت، فايروول...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: AppColors.bgCard,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: AppColors.border)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Flexible(child: matches.isEmpty
+                  ? const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('ما لقيت أداة مطابقة. جرّب كلمة ثانية.', style: TextStyle(color: AppColors.textMuted))))
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: matches.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                      itemBuilder: (_, index) {
+                        final item = matches[index];
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          leading: Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.primary.withOpacity(.12), borderRadius: BorderRadius.circular(13)), child: Icon(item.icon, color: AppColors.primary)),
+                          title: Text(item.title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13)),
+                          subtitle: Text(item.subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+                          onTap: () { Navigator.of(sheetContext).pop(); context.push(item.route); },
+                        );
+                      },
+                    )),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+    controller.dispose();
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(systemResourceProvider);
     ref.invalidate(identityProvider);
@@ -90,8 +168,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const Text('TikPlus ULTRA', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w900)),
                   Text(identity, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 ])),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: AppColors.success.withOpacity(.1), border: Border.all(color: AppColors.success.withOpacity(.3)), borderRadius: BorderRadius.circular(30)), child: const Row(children: [Icon(Icons.circle, size: 7, color: AppColors.success), SizedBox(width: 6), Text('متصل', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w800))])),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: (conn.isConnected ? AppColors.success : AppColors.danger).withOpacity(.1), border: Border.all(color: (conn.isConnected ? AppColors.success : AppColors.danger).withOpacity(.3)), borderRadius: BorderRadius.circular(30)), child: Row(children: [Icon(Icons.circle, size: 7, color: conn.isConnected ? AppColors.success : AppColors.danger), const SizedBox(width: 6), Text(conn.isConnected ? 'متصل' : 'غير متصل', style: TextStyle(color: conn.isConnected ? AppColors.success : AppColors.danger, fontSize: 11, fontWeight: FontWeight.w800))])),
               ]),
+              const SizedBox(height: 16),
+              Material(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: _openCommandSearch,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                    child: Row(children: [
+                      const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+                      const SizedBox(width: 10),
+                      const Expanded(child: Text('ابحث عن أداة أو قسم...', style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(8)), child: const Text('بحث سريع', style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.w800))),
+                    ]),
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
               Container(
                 padding: const EdgeInsets.all(20),

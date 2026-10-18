@@ -8,6 +8,12 @@ on:
       - 'lib/**'
       - 'pubspec.yaml'
       - '.github/workflows/build-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/build-apk.yml'
 
 permissions:
   contents: read
