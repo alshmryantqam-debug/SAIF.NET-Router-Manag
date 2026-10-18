@@ -90,7 +90,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const Text('TikPlus ULTRA', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w900)),
                   Text(identity, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 ])),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: AppColors.success.withOpacity(.1), border: Border.all(color: AppColors.success.withOpacity(.3)), borderRadius: BorderRadius.circular(30)), child: const Row(children: [Icon(Icons.circle, size: 7, color: AppColors.success), SizedBox(width: 6), Text('متصل', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w800))])),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: (conn.isConnected ? AppColors.success : AppColors.danger).withOpacity(.1), border: Border.all(color: (conn.isConnected ? AppColors.success : AppColors.danger).withOpacity(.3)), borderRadius: BorderRadius.circular(30)), child: Row(children: [Icon(Icons.circle, size: 7, color: conn.isConnected ? AppColors.success : AppColors.danger), const SizedBox(width: 6), Text(conn.isConnected ? 'متصل' : 'غير متصل', style: TextStyle(color: conn.isConnected ? AppColors.success : AppColors.danger, fontSize: 11, fontWeight: FontWeight.w800))])),
               ]),
               const SizedBox(height: 18),
               Container(
