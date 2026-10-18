@@ -45,6 +45,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       (title: 'الراوترات', subtitle: 'إدارة أجهزة الشبكة', icon: Icons.router_rounded, route: '/routers', terms: ['router', 'راوتر', 'أجهزة']),
       (title: 'الجدار الناري', subtitle: 'قواعد الحماية ومراجعتها', icon: Icons.shield_rounded, route: '/firewall', terms: ['firewall', 'فايروول', 'حماية', 'قواعد']),
       (title: 'توليد الكروت', subtitle: 'إنشاء حسابات Hotspot', icon: Icons.confirmation_number_rounded, route: '/voucher', terms: ['كرت', 'كروت', 'voucher', 'توليد']),
+      (title: 'الفوترة والحسابات', subtitle: 'متابعة حسابات وفواتير المشتركين', icon: Icons.receipt_long_rounded, route: '/billing', terms: ['billing', 'فاتورة', 'فواتير', 'فوترة', 'حسابات']),
+      (title: 'مركز الأتمتة', subtitle: 'أدوات التشغيل والمهام المساعدة', icon: Icons.auto_awesome_rounded, route: '/automation', terms: ['automation', 'أتمتة', 'تلقائي', 'مهام']),
+      (title: 'مساعد الشبكة الذكي', subtitle: 'تحليلات ومساعدة تشخيصية', icon: Icons.psychology_alt_rounded, route: '/advanced-ai', terms: ['ذكاء', 'ai', 'تحليل', 'تشخيص', 'مساعد']),
+      (title: 'إدارة الصلاحيات', subtitle: 'أدوار المستخدمين ومستويات الوصول', icon: Icons.admin_panel_settings_rounded, route: '/roles', terms: ['صلاحيات', 'أدوار', 'مستخدمين', 'roles', 'permissions']),
+      (title: 'بوابة المشترك', subtitle: 'واجهة خدمات المشتركين', icon: Icons.support_agent_rounded, route: '/customer-portal', terms: ['بوابة', 'دعم', 'مشترك', 'customer', 'portal']),
       (title: 'الطرفية', subtitle: 'أوامر RouterOS المتقدمة', icon: Icons.terminal_rounded, route: '/terminal', terms: ['terminal', 'ترمنال', 'أوامر']),
     ];
     if (!mounted) return;
