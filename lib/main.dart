@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(const TikPlusUltraApp());
+  runApp(const TikPlusUltraMasterApp());
 }
 
-class TikPlusUltraApp extends StatelessWidget {
-  const TikPlusUltraApp({super.key});
+class TikPlusUltraMasterApp extends StatelessWidget {
+  const TikPlusUltraMasterApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +17,13 @@ class TikPlusUltraApp extends StatelessWidget {
       title: 'تيك بلس ألترا - TikPlus ULTRA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF080D1A),
+        scaffoldBackgroundColor: const Color(0xFF070B14),
         primaryColor: const Color(0xFF0EA5E9),
-        cardColor: const Color(0xFF131C31),
+        cardColor: const Color(0xFF0F172A),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF0EA5E9),
           secondary: Color(0xFFF59E0B),
+          surface: Color(0xFF0F172A),
         ),
       ),
       home: const Directionality(
@@ -86,7 +87,7 @@ class MikrotikRestService {
 }
 
 // ============================================================================
-// الشاشة 1: شاشة الدخول السريع + رمز القفل + الراوترات المحفوظة والكلاود
+// الشاشة 1: شاشة الدخول الفخمة + رمز القفل PIN + الراوترات المحفوظة والكلاود
 // ============================================================================
 class PinLockAndRoutersScreen extends StatefulWidget {
   const PinLockAndRoutersScreen({super.key});
@@ -114,7 +115,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
       'ip': '10.200.1.2:80',
       'user': 'admin',
       'pass': '',
-      'model': 'نفق سحابي للراوتر + فتح صحون البث عن بُعد',
+      'model': 'نفق سحابي مشفر للراوتر والصحون',
       'status': 'فتح الكلاود',
       'isCloud': true,
     },
@@ -123,7 +124,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
       'ip': '2.2.2.2:80',
       'user': 'admin',
       'pass': '',
-      'model': 'RB4011iGS+ · نفق مفعل',
+      'model': 'RB4011iGS+ · نفق سحابي',
       'status': 'سحابي',
       'isCloud': false,
     },
@@ -132,7 +133,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
       'ip': '7.7.7.7:80',
       'user': 'admin',
       'pass': '',
-      'model': 'CCR1036 · نفق مفعل',
+      'model': 'CCR1036 · نفق سحابي',
       'status': 'سحابي',
       'isCloud': false,
     },
@@ -149,9 +150,9 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          backgroundColor: const Color(0xFF131C31),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('➕ إضافة وربط راوتر مايكروتك', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF0EA5E9))),
+          title: const Text('➕ إضافة وربط راوتر مايكروتك جديد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -193,7 +194,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                   ),
                 );
               },
-              child: const Text('حفظ واتصال الآن'),
+              child: const Text('حفظ واتصال فوراً'),
             ),
           ],
         ),
@@ -211,11 +212,19 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.lock, size: 60, color: Color(0xFF38BDF8)),
-                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: const Color(0xFF0EA5E9).withOpacity(0.3), blurRadius: 20)],
+                    gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]),
+                  ),
+                  child: const Icon(Icons.lock, size: 50, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
                 const Text('أدخل رمز القفل الخاص بك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 14),
-                Text(enteredPin.padRight(4, '•'), style: const TextStyle(fontSize: 32, letterSpacing: 14, color: Colors.amber)),
+                Text(enteredPin.padRight(4, '•'), style: const TextStyle(fontSize: 34, letterSpacing: 14, color: Colors.amber)),
                 const SizedBox(height: 24),
                 Wrap(
                   spacing: 12,
@@ -225,7 +234,8 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                     for (var i = 1; i <= 9; i++)
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF131C31),
+                          backgroundColor: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
                           minimumSize: const Size(82, 54),
                         ),
                         onPressed: () {
@@ -241,7 +251,8 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                       ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF131C31),
+                        backgroundColor: const Color(0xFF0F172A),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
                         minimumSize: const Size(82, 54),
                       ),
                       onPressed: () {
@@ -266,7 +277,8 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111A2E),
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
         title: Row(
           children: [
             Container(
@@ -274,6 +286,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]),
                 borderRadius: BorderRadius.circular(10),
+                boxShadow: [BoxShadow(color: const Color(0xFF0EA5E9).withOpacity(0.4), blurRadius: 10)],
               ),
               child: const Text('T+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             ),
@@ -282,20 +295,25 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('تيك بلس ألترا · TikPlus ULTRA', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                Text('اختر حساب المايكروتك أو ادخل للكلاود', style: TextStyle(fontSize: 10, color: Colors.white60)),
+                Text('المنصة السحابية لإدارة الشبكات وبيع الاشتراكات', style: TextStyle(fontSize: 10, color: Colors.white60)),
               ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.lock_outline, color: Colors.lightBlueAccent),
+            icon: const Icon(Icons.fingerprint, color: Color(0xFF0EA5E9)),
             onPressed: () => setState(() => isLocked = true),
+            tooltip: 'قفل التطبيق',
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF59E0B),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerSaaSPortalScreen()));
               },
@@ -310,8 +328,8 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF131C31), Color(0xFF1E1B4B)]),
-              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)]),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: const Color(0xFF6366F1)),
             ),
             child: Row(
@@ -321,9 +339,9 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('رقم الحساب: +963960663450', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('رقم الحساب: +963960663450 (سيف خالد)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       SizedBox(height: 4),
-                      Text('حالة الترخيص: باقة ULTRA مفعلة (نفق + صحون + طباعة)', style: TextStyle(color: Color(0xFF34D399), fontSize: 11)),
+                      Text('الترخيص: باقة ULTRA مفعلة (نفق + صحون + دمج + طباعة)', style: TextStyle(color: Color(0xFF34D399), fontSize: 11)),
                     ],
                   ),
                 ),
@@ -340,16 +358,18 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
           const SizedBox(height: 14),
           const Text('🖧 الراوترات المحفوظة والدخول السحابي عن بُعد:', style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 8),
+
           ...savedRouters.map((r) {
             final bool isCloud = r['isCloud'] as bool;
             return Card(
-              color: isCloud ? const Color(0xFF0C4A6E) : const Color(0xFF131C31),
+              color: isCloud ? const Color(0xFF0C4A6E) : const Color(0xFF0F172A),
               margin: const EdgeInsets.only(bottom: 10),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: isCloud ? const Color(0xFF38BDF8) : Colors.white12),
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: isCloud ? const Color(0xFF38BDF8) : Colors.white10),
               ),
               child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 leading: CircleAvatar(
                   backgroundColor: isCloud ? Colors.lightBlue : Colors.indigo.shade900,
                   child: Icon(isCloud ? Icons.cloud_done : Icons.router, color: Colors.white),
@@ -383,6 +403,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
               ),
             );
           }),
+
           const SizedBox(height: 8),
           Row(
             children: [
@@ -391,6 +412,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0EA5E9),
                     padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: _showAddRouterModal,
                   icon: const Icon(Icons.add_circle_outline),
@@ -403,6 +425,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -455,8 +478,12 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   String rxSpeed = '183.9 م/ث';
   String txSpeed = '18.7 م/ث';
 
-  // حالة البرودباند التفاعلية (فلترة + بحث + إضافة + تعديل)
-  String pppoeFilter = 'ALL'; // ALL, ACTIVE, SLEEP, DISABLED
+  // المساعد الصوتي
+  bool isListeningVoice = false;
+  String voiceText = 'اضغط على المايك وتكلم بأي أمر للمايكروتك...';
+
+  // حالة البرودباند التفاعلية
+  String pppoeFilter = 'ALL';
   String pppoeSearch = '';
   final List<Map<String, dynamic>> pppoeUsers = [
     {'name': 'رمضان حميد الشلاف', 'user': '72', 'prof': '750', 'info': 'مفصول منذ 11 دقيقة · 2026-03-06', 'spd': 'نائم', 'st': 'SLEEP', 'debt': 0},
@@ -478,7 +505,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   ];
 
   // حالة كروت الهوتسبوت واليوزر منجر
-  String cardFilter = 'ALL'; // ALL, WORK, EXPIRED
+  String cardFilter = 'ALL';
   final List<Map<String, dynamic>> hotspotCards = [
     {'u': '36375', 'p': '374', 'spd': '1M', 'used': '504 ميغا', 'val': '7 يوم (باقي 3 يوم)', 'exp': 'Oct/18', 'ok': true},
     {'u': '971646', 'p': '400', 'spd': '512k', 'used': '3.9 جيجا', 'val': '30 يوم (باقي 25 يوم)', 'exp': 'Nov/09', 'ok': true},
@@ -536,9 +563,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      _buildDashboardScreen(),       // 0: لوحة القيادة
-      _buildBroadbandScreen(),       // 1: البرودباند PPPoE
-      _buildActiveUsersScreen(),     // 2: الأكتف الحي
+      _buildDashboardScreen(),       // 0: لوحة القيادة الحية والمساعد الصوتي
+      _buildBroadbandScreen(),       // 1: البرودباند PPPoE الشاملة
+      _buildActiveUsersScreen(),     // 2: الأكتف الحي والماكات
       _buildHotspotCardsScreen(),    // 3: الهوتسبوت والطباعة
       _buildLoadBalanceScreen(),     // 4: دمج الخطوط وفصل ببجي
       _buildSecurityShieldScreen(),  // 5: درع الحماية والإضافات
@@ -550,7 +577,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF111A2E),
+          backgroundColor: const Color(0xFF0F172A),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -572,7 +599,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: currentScreenIndex > 4 ? 4 : currentScreenIndex,
           onTap: (i) => setState(() => currentScreenIndex = i),
-          backgroundColor: const Color(0xFF0D1424),
+          backgroundColor: const Color(0xFF070B14),
           selectedItemColor: const Color(0xFF38BDF8),
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
@@ -589,7 +616,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   }
 
   // ==========================================================================
-  // الشاشة 2: لوحة القيادة الشاملة
+  // الشاشة 2: لوحة القيادة الشاملة + المساعد الصوتي
   // ==========================================================================
   Widget _buildDashboardScreen() {
     final activeCount = pppoeUsers.where((u) => u['st'] == 'ACTIVE').length;
@@ -608,12 +635,58 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
           ],
         ),
         const SizedBox(height: 10),
-        // زر الفاحص الذكي للشبكة
+        // المساعد الصوتي الذكي
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)]),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF8B5CF6)),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() => isListeningVoice = !isListeningVoice);
+                  if (isListeningVoice) {
+                    _toast('🎙️ المساعد الصوتي يستمع لصوتك الآن...');
+                    Future.delayed(const Duration(seconds: 2), () {
+                      if (mounted) {
+                        setState(() {
+                          isListeningVoice = false;
+                          voiceText = '🗣️ "تم تنفيذ الأمر الصوتي: ضاعفنا سرعة المشترك غازي عمار لـ 16M"';
+                        });
+                        _toast('🚀 تم تنفيذ الأمر الصوتي في المايكروتك بنجاح!');
+                      }
+                    });
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: isListeningVoice ? Colors.redAccent : const Color(0xFF8B5CF6),
+                  child: Icon(isListeningVoice ? Icons.mic : Icons.mic_none, color: Colors.white, size: 24),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🎙️ المساعد الصوتي الذكي (تكلم للمايكروتك)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFC084FC))),
+                    Text(voiceText, style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        // زر الفاحص الذكي للأعطال
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)]),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF38BDF8)),
           ),
           child: Row(
@@ -668,7 +741,8 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          backgroundColor: const Color(0xFF131C31),
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF38BDF8))),
           title: const Text('🧠 تقرير الفاحص الذكي للشبكة', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
@@ -695,7 +769,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
         child: Column(
           children: [
             Text(title, style: const TextStyle(fontSize: 10, color: Colors.white70)),
@@ -713,8 +787,8 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFF131C31),
-          borderRadius: BorderRadius.circular(13),
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white10),
         ),
         child: Column(
@@ -731,7 +805,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   }
 
   // ==========================================================================
-  // الشاشة 3: حسابات البرودباند PPPoE التفاعلية بالكامل
+  // الشاشة 3: حسابات البرودباند PPPoE الشاملة
   // ==========================================================================
   Widget _buildBroadbandScreen() {
     final filtered = pppoeUsers.where((u) {
@@ -764,13 +838,12 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
             hintText: 'ابحث باسم المشترك أو اليوزر...',
             prefixIcon: const Icon(Icons.search),
             filled: true,
-            fillColor: const Color(0xFF131C31),
+            fillColor: const Color(0xFF0F172A),
             contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
           ),
         ),
         const SizedBox(height: 8),
-        // شريط الفلاتر الفعلي
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -792,9 +865,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
           if (u['st'] == 'DISABLED') badgeColor = Colors.grey.shade700;
 
           return Card(
-            color: const Color(0xFF131C31),
+            color: const Color(0xFF0F172A),
             margin: const EdgeInsets.only(bottom: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             child: ListTile(
               title: Text('${u['name']} (${u['user']})', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Text('الباقة: ${u['prof']} · ${u['info']}', style: const TextStyle(fontSize: 11, color: Colors.white70)),
@@ -817,7 +890,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
       label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
       selected: isSelected,
       selectedColor: activeColor,
-      backgroundColor: const Color(0xFF131C31),
+      backgroundColor: const Color(0xFF0F172A),
       onSelected: (_) => setState(() => pppoeFilter = code),
     );
   }
@@ -833,7 +906,8 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          backgroundColor: const Color(0xFF131C31),
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: const Text('➕ إضافة مشترك برودباند PPPoE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -879,8 +953,8 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   void _showPppoeActionsSheet(Map<String, dynamic> user) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF131C31),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: Padding(
@@ -893,9 +967,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
               const SizedBox(height: 12),
               ListTile(
                 leading: const Icon(Icons.rocket_launch, color: Colors.amber),
-                title: const Text('مضاعفة السرعة مؤقتاً (Turbo Boost)'),
+                title: const Text('مضاعفة السرعة مؤقتاً (Turbo Boost 16M)'),
                 onTap: () {
-                  setState(() => user['spd'] = '8.5 م/ث 🚀');
+                  setState(() => user['spd'] = '16.5 م/ث 🚀');
                   Navigator.pop(ctx);
                   _toast('🚀 تمت مضاعفة السرعة للمشترك ${user['name']}!');
                 },
@@ -914,7 +988,15 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.Notification_important, color: Colors.pinkAccent),
+                leading: const Icon(Icons.send, color: Colors.tealAccent),
+                title: const Text('إرسال وصل أو كرت عبر واتساب'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _toast('💬 تم تجهيز رسالة الوصل في واتساب للمشترك!');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notification_important, color: Colors.pinkAccent),
                 title: const Text('تحويل لصفحة انتهاء الاشتراك (المطالبة بالدفع)'),
                 onTap: () {
                   setState(() {
@@ -953,8 +1035,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
         ),
         const SizedBox(height: 10),
         ...activeSessions.map((a) => Card(
-              color: const Color(0xFF131C31),
+              color: const Color(0xFF0F172A),
               margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               child: ListTile(
                 title: Text('${a['code']} · المنفذ: ${a['port']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF38BDF8), fontSize: 14)),
                 subtitle: Text('المستهلك: ${a['mb']} · السرعة: ${a['spd']}\nMAC: ${a['mac']} · المدة: ${a['up']}', style: const TextStyle(fontSize: 11)),
@@ -975,7 +1058,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   }
 
   // ==========================================================================
-  // الشاشة 5: استوديو كروت الهوتسبوت واليوزر منجر والطباعة الفورية
+  // الشاشة 5: استوديو كروت الهوتسبوت والطباعة الفورية بـ QR
   // ==========================================================================
   Widget _buildHotspotCardsScreen() {
     final filteredCards = hotspotCards.where((c) {
@@ -1009,7 +1092,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                   _toast('🧹 المكنسة الذكية: تم مسح $expiredCount كرت منتهي وتفريغ الذاكرة!');
                 },
                 icon: const Icon(Icons.delete_sweep, size: 18),
-                label: const Text('مسح الكروت المنتهية', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: const Text('مسح المنتهي', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1039,8 +1122,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
         ),
         const SizedBox(height: 10),
         ...filteredCards.map((c) => Card(
-              color: const Color(0xFF131C31),
+              color: const Color(0xFF0F172A),
               margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               child: ListTile(
                 title: Text('👤 ${c['u']}   🔑 ${c['p']}   ⚡ السرعة: ${c['spd']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC084FC), fontSize: 14)),
                 subtitle: Text('المستهلك: ${c['used']} · المتبقي: مفتوح\nالصلاحية: ${c['val']} · التاريخ: ${c['exp']}', style: const TextStyle(fontSize: 11)),
@@ -1050,458 +1134,15 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                   backgroundColor: (c['ok'] as bool) ? Colors.blue.shade700 : Colors.pink.shade800,
                   child: Text((c['ok'] as bool) ? 'يعمل' : 'منتهي', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
+                onTap: () => _showSingleVoucherQrDialog(c),
               ),
             )),
       ],
     );
   }
 
-  void _showGenerateVouchersBatchModal() {
-    final countCtrl = TextEditingController(text: '10');
-    final prefixCtrl = TextEditingController(text: '77');
-    final speedCtrl = TextEditingController(text: '2M');
-
+  void _showSingleVoucherQrDialog(Map<String, dynamic> c) {
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          backgroundColor: const Color(0xFF131C31),
-          title: const Text('🖨️ استوديو توليد وطباعة الكروت بـ QR', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: countCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'عدد البطاقات المطلوب توليدها')),
-              TextField(controller: prefixCtrl, decoration: const InputDecoration(labelText: 'بادئة الكرت (Prefix)')),
-              TextField(controller: speedCtrl, decoration: const InputDecoration(labelText: 'السرعة (مثال 1M أو 2M)')),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-              onPressed: () {
-                final count = int.tryParse(countCtrl.text) ?? 6;
-                final rng = Random();
-                setState(() {
-                  for (int i = 0; i < count; i++) {
-                    final code = '${prefixCtrl.text}${1000 + rng.nextInt(8999)}';
-                    final pass = '${100 + rng.nextInt(899)}';
-                    hotspotCards.insert(0, {
-                      'u': code,
-                      'p': pass,
-                      'spd': speedCtrl.text,
-                      'used': '0 ميغا',
-                      'val': '30 يوم (جديد)',
-                      'exp': 'جاهز للطباعة QR',
-                      'ok': true,
-                    });
-                  }
-                });
-                Navigator.pop(ctx);
-                _toast('✅ تم توليد $count بطاقة جديدة مع باركود QR وإضافتها للقائمة!');
-              },
-              child: const Text('توليد البطاقات الآن'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // الشاشة 6: مهندس دمج الخطوط الذكي وفصل الألعاب (الشغل الثقيل)
-  // ==========================================================================
-  Widget _buildLoadBalanceScreen() {
-    const pccScript = '''# === مهندس دمج الخطوط الذكي + عزل ببجي (TikPlus ULTRA) ===
-/ip firewall mangle
-add chain=prerouting protocol=udp dst-port=10000-20000 action=mark-routing new-routing-mark=PUBG_FAST passthrough=no comment="Isolate PUBG Ping"
-add chain=prerouting in-interface=Bridge per-connection-classifier=both-addresses:2/0 action=mark-connection new-connection-mark=WAN1_STARLINK
-add chain=prerouting in-interface=Bridge per-connection-classifier=both-addresses:2/1 action=mark-connection new-connection-mark=WAN2_FIBER
-/ip route
-add dst-address=0.0.0.0/0 gateway=192.168.1.1 routing-mark=PUBG_FAST check-gateway=ping
-add dst-address=0.0.0.0/0 gateway=192.168.100.1 routing-mark=WAN1_STARLINK check-gateway=ping''';
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF065F46), Color(0xFF0F172A)]),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF10B981)),
-          ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('⚖️ مهندس دمج الخطوط الذكي وفصل الألعاب', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
-              SizedBox(height: 4),
-              Text('دمج ستارلينك + الضوئي تلقائياً مع عزل بورتات ببجي وواتساب على الخط الأسرع وتحويل آلي (Failover) خلال ثانية إذا انقطع خط.', style: TextStyle(fontSize: 11, color: Colors.white70)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        SwitchListTile(
-          tileColor: const Color(0xFF131C31),
-          title: const Text('🎯 عزل بورتات الألعاب (ببجي وفري فاير)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          subtitle: const Text('تثبيت البنج على الخط الضوئي السريع وقت الذروة', style: TextStyle(fontSize: 11)),
-          value: pubgPriority,
-          activeColor: const Color(0xFF10B981),
-          onChanged: (v) {
-            setState(() => pubgPriority = v);
-            _toast(v ? 'تم تفعيل عزل بورتات الألعاب!' : 'تم إيقاف عزل الألعاب');
-          },
-        ),
-        const SizedBox(height: 6),
-        SwitchListTile(
-          tileColor: const Color(0xFF131C31),
-          title: const Text('📉 لجم تحديثات الويندوز والآيفون التلقائية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          subtitle: const Text('يوفر 30% من سحب البرج وقت الذروة المسائية', style: TextStyle(fontSize: 11)),
-          value: limitUpdates,
-          activeColor: const Color(0xFF10B981),
-          onChanged: (v) {
-            setState(() => limitUpdates = v);
-            _toast(v ? 'تم لجم التحديثات الثقيلة تلقائياً!' : 'تم إيقاف لجم التحديثات');
-          },
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white24)),
-          child: const SelectableText(pccScript, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Color(0xFF34D399))),
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), padding: const EdgeInsets.all(12)),
-          onPressed: () {
-            Clipboard.setData(const ClipboardData(text: pccScript));
-            _toast('📋 تم نسخ كود الدمج وفصل ببجي وحقنه في المايكروتك!');
-          },
-          icon: const Icon(Icons.copy),
-          label: const Text('نسخ وحقن كود الدمج في الراوتر فوراً', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
-
-  // ==========================================================================
-  // الشاشة 7: درع الحماية الفائق والإضافات الخارقة
-  // ==========================================================================
-  Widget _buildSecurityShieldScreen() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF4C0519),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.redAccent),
-          ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('🚨 حارس الـ Rogue DHCP (كاشف راوترات TP-Link):', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 13)),
-              SizedBox(height: 4),
-              Text('تم صيد وعزل راوتر منزلي معكوس على المنفذ ether7 (ماك: D8:07:B6:11:4A) تلقائياً قبل أن يوقف الشبكة!', style: TextStyle(fontSize: 11)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        SwitchListTile(
-          tileColor: const Color(0xFF131C31),
-          title: const Text('🚫 منع برامج مشاركة النت من الجوال (NetShare / TTL=1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          subtitle: const Text('يمنع الزبون من بث الكرت لـ 10 أجهزة بالبيت', style: TextStyle(fontSize: 11)),
-          value: antiNetShareTtl,
-          activeColor: const Color(0xFF10B981),
-          onChanged: (v) {
-            setState(() => antiNetShareTtl = v);
-            _toast(v ? '✅ تم تفعيل قفل مشاركة النت TTL=1' : 'تم إيقاف قفل المشاركة');
-          },
-        ),
-        const SizedBox(height: 6),
-        SwitchListTile(
-          tileColor: const Color(0xFF131C31),
-          title: const Text('▶️ فك حظر خدمات غوغل بلاي واليوتيوب في سوريا', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          subtitle: const Text('يفتح المتجر والخدمات المحظورة لمشتركيك بدون VPN', style: TextStyle(fontSize: 11)),
-          value: unblockGoogleSyria,
-          activeColor: const Color(0xFF10B981),
-          onChanged: (v) {
-            setState(() => unblockGoogleSyria = v);
-            _toast(v ? '✅ تم تفعيل DNS فك حظر خدمات غوغل!' : 'تم إيقاف فك الحظر');
-          },
-        ),
-        const SizedBox(height: 6),
-        SwitchListTile(
-          tileColor: const Color(0xFF131C31),
-          title: const Text('🚀 فتح السرعات العام (تعطيل الكيوز المؤقت)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          subtitle: const Text('فتح السرعة لجميع المشتركين بلمسة واحدة', style: TextStyle(fontSize: 11)),
-          value: openSpeedsNow,
-          activeColor: Colors.amber,
-          onChanged: (v) {
-            setState(() => openSpeedsNow = v);
-            _toast(v ? '🚀 تم فتح السرعات لجميع المشتركين!' : 'تمت إعادة تحديد السرعات الطبيعية');
-          },
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                onPressed: () => setState(() => currentScreenIndex = 6),
-                child: const Text('📡 صحون البث والبطارية', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
-                onPressed: () => setState(() => currentScreenIndex = 7),
-                child: const Text('🏪 نقاط البيع للمحلات', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // ==========================================================================
-  // الشاشة 8: رادار صحون البث + منبه بطاريات البرج والطاقة الشمسية
-  // ==========================================================================
-  Widget _buildDishesAndPowerScreen() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF131C31),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.amber),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('🔋 منبه بطارية البرج والطاقة الشمسية', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 13)),
-                  Text('الفولت الآن: ${towerVoltage.toStringAsFixed(1)}V', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text('يرن جوالك إنذاراً إذا نزل الفولت بالليل تحت: ${alarmVoltageLimit.toStringAsFixed(1)}V', style: const TextStyle(fontSize: 11)),
-              Slider(
-                value: alarmVoltageLimit,
-                min: 11.0,
-                max: 24.0,
-                activeColor: Colors.amber,
-                onChanged: (v) => setState(() => alarmVoltageLimit = v),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        const Text('📡 حالة السكترات وصحون البث (263 قطعة):', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
-        const SizedBox(height: 8),
-        Card(
-          color: const Color(0xFF131C31),
-          child: ListTile(
-            title: const Text('سكتر شمالي 1 (Rocket Prism 5AC)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            subtitle: const Text('IP: 192.168.10.11 · المتصلون: 42 صحن · CCQ 98%', style: TextStyle(fontSize: 11)),
-            trailing: ElevatedButton(onPressed: () => _toast('تم فتح صفحة السكتر عبر نفق الكلاود'), child: const Text('فتح القطعة', style: TextStyle(fontSize: 11))),
-          ),
-        ),
-        Card(
-          color: const Color(0xFF131C31),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.redAccent)),
-          child: ListTile(
-            title: const Text('⚠️ لايت بيم - مشترك: أبو قاسم (إشارة ضعيفة!)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.pinkAccent)),
-            subtitle: const Text('IP: 192.168.20.145 · الإشارة: -81dBm · CCQ 64%', style: TextStyle(fontSize: 11)),
-            trailing: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-              onPressed: () => _toast('تم إرسال تنبيه واتساب للمشترك لتوجيه صحنه'),
-              child: const Text('تنبيه المشترك', style: TextStyle(fontSize: 11)),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==========================================================================
-  // الشاشة 9: نقاط البيع للمعتمدين (أصحاب المحلات) والمحاسبة
-  // ==========================================================================
-  Widget _buildPosAgentsScreen() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: const Color(0xFF1E1B4B), borderRadius: BorderRadius.circular(14)),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(children: [Text('مبيعات الشهر', style: TextStyle(fontSize: 10)), Text('8,450,000', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF34D399), fontSize: 15))]),
-              Column(children: [Text('الديون المتبقية', style: TextStyle(fontSize: 10)), Text('1,120,000', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.pinkAccent, fontSize: 15))]),
-              Column(children: [Text('الربح الصافي', style: TextStyle(fontSize: 10)), Text('6,200,000', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF38BDF8), fontSize: 15))]),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('🏪 نقاط البيع (أصحاب المحلات المعتمدين):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
-              onPressed: () {
-                setState(() {
-                  posAgents.add({'name': 'نقطة بيع جديدة #${posAgents.length + 1}', 'balance': 100000, 'soldToday': 0});
-                });
-                _toast('تم إنشاء حساب نقطة بيع جديدة للمحل!');
-              },
-              child: const Text('+ إضافة محل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ...posAgents.map((ag) => Card(
-              color: const Color(0xFF131C31),
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(ag['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF38BDF8))),
-                subtitle: Text('الرصيد المتاح: ${ag['balance']} ل.س · باع اليوم: ${ag['soldToday']} كرت', style: const TextStyle(fontSize: 11)),
-                trailing: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                  onPressed: () {
-                    setState(() => ag['balance'] = (ag['balance'] as int) + 100000);
-                    _toast('✅ تم شحن +100,000 ل.س لرصيد ${ag['name']}!');
-                  },
-                  child: const Text('+ شحن 100 ألف', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            )),
-      ],
-    );
-  }
-}
-
-// ============================================================================
-// الشاشة 10: لوحة المالك العليا التفاعلية (إدارتك أنت لبيع الاشتراكات وشام كاش)
-// ============================================================================
-class OwnerSaaSPortalScreen extends StatefulWidget {
-  const OwnerSaaSPortalScreen({super.key});
-
-  @override
-  State<OwnerSaaSPortalScreen> createState() => _OwnerSaaSPortalScreenState();
-}
-
-class _OwnerSaaSPortalScreenState extends State<OwnerSaaSPortalScreen> {
-  int totalMonthlyRevenue = 18600000;
-  int paidSubscribersCount = 124;
-
-  final List<Map<String, dynamic>> pendingShamCash = [
-    {'net': 'شبكة النورس (دير الزور)', 'tx': 'SHAM-884219', 'amount': 150000, 'plan': 'باقة ULTRA شهرية'},
-    {'net': 'برج الشهباء الحديثة (حلب)', 'tx': 'SHAM-901452', 'amount': 300000, 'plan': 'باقة VIP (5 راوترات)'},
-    {'net': 'شبكة الفرات نت (الميادين)', 'tx': 'SHAM-773104', 'amount': 150000, 'plan': 'باقة ULTRA شهرية'},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF1E1B4B),
-          title: const Text('👑 لوحة المالك · إدارة الاشتراكات وشام كاش', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(14),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF0369A1)]),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.lightBlueAccent),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('إجمالي أرباحك الشهرية من اشتراكات أصحاب الشبكات', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text('$totalMonthlyRevenue ل.س', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
-                  const Divider(color: Colors.white24, height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('155 شبكة مسجلة', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      Text('$paidSubscribersCount مشترك مدفوع', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber)),
-                      const Text('240 راوتر مربوط', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('💳 حوالات شام كاش بانتظار موافقتك (${pendingShamCash.length}):', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 13)),
-            const SizedBox(height: 8),
-            if (pendingShamCash.isEmpty)
-              const Card(
-                color: Color(0xFF131C31),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('✅ تم تفعيل جميع الحوالات المعلقة بنجاح!', textAlign: TextAlign.center),
-                ),
-              ),
-            ...pendingShamCash.map((p) => Card(
-                  color: const Color(0xFF131C31),
-                  margin: const EdgeInsets.only(bottom: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Colors.amber)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(p['net'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            Text('${p['amount']} ل.س', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text('رقم الحوالة: ${p['tx']} · ${p['plan']}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                            onPressed: () {
-                              setState(() {
-                                totalMonthlyRevenue += (p['amount'] as int);
-                                paidSubscribersCount += 1;
-                                pendingShamCash.remove(p);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('✅ تم تفعيل اشتراك ${p['net']} وإضافة ${p['amount']} ل.س لأرباحك!')),
-                              );
-                            },
-                            icon: const Icon(Icons.check_circle, size: 18),
-                            label: const Text('موافقة وتفعيل اشتراك الشبكة لمدة 30 يوم', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
+        textDirection: TextDirectio
