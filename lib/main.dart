@@ -1,15 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
 void main() {
-  runApp(const TikPlusUltraMasterApp());
+  runApp(const TikPlusUltraApp());
 }
 
-class TikPlusUltraMasterApp extends StatelessWidget {
-  const TikPlusUltraMasterApp({super.key});
+class TikPlusUltraApp extends StatelessWidget {
+  const TikPlusUltraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,54 +35,34 @@ class TikPlusUltraMasterApp extends StatelessWidget {
 }
 
 // ============================================================================
-// محرك الاتصال الحقيقي بالمايكروتك (RouterOS v7 REST API)
+// محرك الاتصال بـ RouterOS v7 باستخدام مكتبة dart:io المدمجة بدون حزم خارجية
 // ============================================================================
-class MikrotikRestService {
+class NativeMikrotikClient {
   final String ipPort;
-  final String username;
-  final String password;
+  final String user;
+  final String pass;
 
-  MikrotikRestService({
-    required this.ipPort,
-    required this.username,
-    required this.password,
-  });
+  NativeMikrotikClient({required this.ipPort, required this.user, required this.pass});
 
-  Map<String, String> get _headers {
-    final auth = base64Encode(utf8.encode('$username:$password'));
-    return {
-      'Authorization': 'Basic $auth',
-      'Content-Type': 'application/json',
-    };
-  }
-
-  Future<Map<String, dynamic>?> fetchResource() async {
+  Future<Map<String, dynamic>?> getSystemResource() async {
     try {
-      final res = await http
-          .get(Uri.parse('http://$ipPort/rest/system/resource'), headers: _headers)
-          .timeout(const Duration(seconds: 3));
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        if (decoded is List && decoded.isNotEmpty) return decoded[0];
-        if (decoded is Map<String, dynamic>) return decoded;
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 3);
+      client.badCertificateCallback = (cert, host, port) => true;
+      final uri = Uri.parse('http://$ipPort/rest/system/resource');
+      final request = await client.getUrl(uri);
+      final auth = base64Encode(utf8.encode('$user:$pass'));
+      request.headers.set('Authorization', 'Basic $auth');
+      request.headers.set('Content-Type', 'application/json');
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final body = await response.transform(utf8.decoder).join();
+        final dec = jsonDecode(body);
+        if (dec is List && dec.isNotEmpty) return dec[0];
+        if (dec is Map<String, dynamic>) return dec;
       }
     } catch (_) {}
     return null;
-  }
-
-  Future<bool> sendCommand(String endpoint, Map<String, dynamic> body) async {
-    try {
-      final res = await http
-          .post(
-            Uri.parse('http://$ipPort/rest$endpoint'),
-            headers: _headers,
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: 3));
-      return res.statusCode == 200 || res.statusCode == 201;
-    } catch (_) {
-      return false;
-    }
   }
 }
 
@@ -101,42 +81,10 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
   String enteredPin = '';
 
   final List<Map<String, dynamic>> savedRouters = [
-    {
-      'name': 'استغفر الله (البرج الرئيسي)',
-      'ip': '2.2.2.2:80',
-      'user': 'admin',
-      'pass': '',
-      'model': 'CCR2116-12G-4S+ · ROS 7.24.5',
-      'status': 'اتصال مباشر',
-      'isCloud': false,
-    },
-    {
-      'name': 'كلاود استغفر الله (من خارج الشبكة)',
-      'ip': '10.200.1.2:80',
-      'user': 'admin',
-      'pass': '',
-      'model': 'نفق سحابي مشفر للراوتر والصحون',
-      'status': 'فتح الكلاود',
-      'isCloud': true,
-    },
-    {
-      'name': 'لاحول ولاقوة (برج 2 - الميادين)',
-      'ip': '2.2.2.2:80',
-      'user': 'admin',
-      'pass': '',
-      'model': 'RB4011iGS+ · نفق سحابي',
-      'status': 'سحابي',
-      'isCloud': false,
-    },
-    {
-      'name': 'الحمدلله (برج 3 - السوق)',
-      'ip': '7.7.7.7:80',
-      'user': 'admin',
-      'pass': '',
-      'model': 'CCR1036 · نفق سحابي',
-      'status': 'سحابي',
-      'isCloud': false,
-    },
+    {'name': 'استغفر الله (البرج الرئيسي)', 'ip': '2.2.2.2:80', 'user': 'admin', 'pass': '', 'model': 'CCR2116-12G-4S+ · ROS 7.24.5', 'status': 'متصل مباشر', 'isCloud': false},
+    {'name': 'كلاود استغفر الله (من خارج الشبكة)', 'ip': '10.200.1.2:80', 'user': 'admin', 'pass': '', 'model': 'نفق سحابي للراوتر والصحون', 'status': 'فتح الكلاود', 'isCloud': true},
+    {'name': 'لاحول ولاقوة (برج 2 - الميادين)', 'ip': '2.2.2.2:80', 'user': 'admin', 'pass': '', 'model': 'RB4011iGS+ · نفق سحابي', 'status': 'سحابي', 'isCloud': false},
+    {'name': 'الحمدلله (برج 3 - السوق)', 'ip': '7.7.7.7:80', 'user': 'admin', 'pass': '', 'model': 'CCR1036 · نفق سحابي', 'status': 'سحابي', 'isCloud': false},
   ];
 
   void _showAddRouterModal() {
@@ -214,17 +162,16 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: const Color(0xFF0EA5E9).withOpacity(0.3), blurRadius: 20)],
-                    gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]),
+                    gradient: LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]),
                   ),
-                  child: const Icon(Icons.lock, size: 50, color: Colors.white),
+                  child: const Icon(Icons.lock, size: 48, color: Colors.white),
                 ),
                 const SizedBox(height: 16),
                 const Text('أدخل رمز القفل الخاص بك', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 14),
-                Text(enteredPin.padRight(4, '•'), style: const TextStyle(fontSize: 34, letterSpacing: 14, color: Colors.amber)),
+                const SizedBox(height: 12),
+                Text(enteredPin.padRight(4, '•'), style: const TextStyle(fontSize: 32, letterSpacing: 14, color: Colors.amber)),
                 const SizedBox(height: 24),
                 Wrap(
                   spacing: 12,
@@ -236,7 +183,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0F172A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
-                          minimumSize: const Size(82, 54),
+                          minimumSize: const Size(80, 52),
                         ),
                         onPressed: () {
                           setState(() {
@@ -253,7 +200,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0F172A),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white12)),
-                        minimumSize: const Size(82, 54),
+                        minimumSize: const Size(80, 52),
                       ),
                       onPressed: () {
                         setState(() {
@@ -286,7 +233,6 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]),
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: const Color(0xFF0EA5E9).withOpacity(0.4), blurRadius: 10)],
               ),
               child: const Text('T+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             ),
@@ -304,16 +250,11 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
           IconButton(
             icon: const Icon(Icons.fingerprint, color: Color(0xFF0EA5E9)),
             onPressed: () => setState(() => isLocked = true),
-            tooltip: 'قفل التطبيق',
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF59E0B),
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.black),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerSaaSPortalScreen()));
               },
@@ -329,7 +270,7 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)]),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFF6366F1)),
             ),
             child: Row(
@@ -369,7 +310,6 @@ class _PinLockAndRoutersScreenState extends State<PinLockAndRoutersScreen> {
                 side: BorderSide(color: isCloud ? const Color(0xFF38BDF8) : Colors.white10),
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 leading: CircleAvatar(
                   backgroundColor: isCloud ? Colors.lightBlue : Colors.indigo.shade900,
                   child: Icon(isCloud ? Icons.cloud_done : Icons.router, color: Colors.white),
@@ -467,14 +407,13 @@ class MainRouterControlShell extends StatefulWidget {
 
 class _MainRouterControlShellState extends State<MainRouterControlShell> {
   int currentScreenIndex = 0;
-  late MikrotikRestService api;
+  late NativeMikrotikClient client;
 
-  // بيانات الموارد الحية
+  // الموارد الحية
   String cpuLoad = '3%';
   String temperature = '47°C';
   double towerVoltage = 24.4;
   double alarmVoltageLimit = 21.8;
-  String uptime = '2 يوم و 6 ساعة';
   String rxSpeed = '183.9 م/ث';
   String txSpeed = '18.7 م/ث';
 
@@ -486,13 +425,13 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   String pppoeFilter = 'ALL';
   String pppoeSearch = '';
   final List<Map<String, dynamic>> pppoeUsers = [
-    {'name': 'رمضان حميد الشلاف', 'user': '72', 'prof': '750', 'info': 'مفصول منذ 11 دقيقة · 2026-03-06', 'spd': 'نائم', 'st': 'SLEEP', 'debt': 0},
-    {'name': 'ايهم موحسن', 'user': 'AEHM', 'prof': '2.ونص', 'info': 'متصل: 00:19:57 · إشارة الصحن -56dBm', 'spd': '640 ك/ث', 'st': 'ACTIVE', 'debt': 0},
-    {'name': 'غازي عمار السلطان', 'user': 'AMAR', 'prof': '3M', 'info': 'متصل: 09:03:38 · مدفوع شام كاش', 'spd': '2.9 م/ث', 'st': 'ACTIVE', 'debt': 0},
-    {'name': 'مدرسة السواقة', 'user': 'MDRSA', 'prof': '2M', 'info': 'متصل: 02:17:53 · إشارة الصحن -52dBm', 'spd': '1.8 م/ث', 'st': 'ACTIVE', 'debt': 0},
-    {'name': 'حمود جدعان', 'user': 'HMWD', 'prof': '2.ونص', 'info': 'متصل: 04:49:33 · باقي 4 أيام', 'spd': '980 ك/ث', 'st': 'ACTIVE', 'debt': 50000},
-    {'name': 'عواد حسين عواد العطيش', 'user': 'ABAT', 'prof': '3M', 'info': 'مفصول منذ 1 ساعة · عليه دين', 'spd': 'نائم', 'st': 'SLEEP', 'debt': 75000},
-    {'name': 'أبو نواف الشرقي', 'user': 'ABONWAF', 'prof': '1M', 'info': 'تم إيقافه لانتهاء الاشتراك', 'spd': 'معطل', 'st': 'DISABLED', 'debt': 60000},
+    {'name': 'رمضان حميد الشلاف', 'user': '72', 'prof': '750', 'info': 'مفصول منذ 11 دقيقة · 2026-03-06', 'spd': 'نائم', 'st': 'SLEEP'},
+    {'name': 'ايهم موحسن', 'user': 'AEHM', 'prof': '2.ونص', 'info': 'متصل: 00:19:57 · إشارة الصحن -56dBm', 'spd': '640 ك/ث', 'st': 'ACTIVE'},
+    {'name': 'غازي عمار السلطان', 'user': 'AMAR', 'prof': '3M', 'info': 'متصل: 09:03:38 · مدفوع شام كاش', 'spd': '2.9 م/ث', 'st': 'ACTIVE'},
+    {'name': 'مدرسة السواقة', 'user': 'MDRSA', 'prof': '2M', 'info': 'متصل: 02:17:53 · إشارة الصحن -52dBm', 'spd': '1.8 م/ث', 'st': 'ACTIVE'},
+    {'name': 'حمود جدعان', 'user': 'HMWD', 'prof': '2.ونص', 'info': 'متصل: 04:49:33 · باقي 4 أيام', 'spd': '980 ك/ث', 'st': 'ACTIVE'},
+    {'name': 'عواد حسين عواد العطيش', 'user': 'ABAT', 'prof': '3M', 'info': 'مفصول منذ 1 ساعة · عليه دين', 'spd': 'نائم', 'st': 'SLEEP'},
+    {'name': 'أبو نواف الشرقي', 'user': 'ABONWAF', 'prof': '1M', 'info': 'تم إيقافه لانتهاء الاشتراك', 'spd': 'معطل', 'st': 'DISABLED'},
   ];
 
   // حالة الأكتف الحي
@@ -513,16 +452,14 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     {'u': '884120', 'p': '991', 'spd': '2M', 'used': '10.0 جيجا', 'val': 'منتهي الحجم', 'exp': 'Oct/10', 'ok': false},
   ];
 
-  // مفاتيح الشغل الثقيل ودرع الحماية
+  // مفاتيح الحماية والدمج
   bool antiNetShareTtl = true;
-  bool antiMacClone = true;
-  bool rogueDhcpGuard = true;
   bool unblockGoogleSyria = true;
   bool pubgPriority = true;
   bool limitUpdates = true;
   bool openSpeedsNow = false;
 
-  // قائمة المعتمدين (نقاط البيع للمحلات)
+  // نقاط البيع للمعتمدين
   final List<Map<String, dynamic>> posAgents = [
     {'name': 'ماركت الفرات (نقطة بيع 1)', 'balance': 250000, 'soldToday': 18},
     {'name': 'محل النور للاتصالات (نقطة بيع 2)', 'balance': 45000, 'soldToday': 31},
@@ -532,20 +469,15 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
   @override
   void initState() {
     super.initState();
-    api = MikrotikRestService(
-      ipPort: widget.routerIp,
-      username: widget.username,
-      password: widget.password,
-    );
-    _syncWithRouter();
+    client = NativeMikrotikClient(ipPort: widget.routerIp, user: widget.username, pass: widget.password);
+    _syncData();
   }
 
-  Future<void> _syncWithRouter() async {
-    final res = await api.fetchResource();
+  Future<void> _syncData() async {
+    final res = await client.getSystemResource();
     if (res != null && mounted) {
       setState(() {
         cpuLoad = '${res['cpu-load'] ?? 3}%';
-        uptime = '${res['uptime'] ?? uptime}';
       });
     }
   }
@@ -589,7 +521,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
-                _syncWithRouter();
+                _syncData();
                 _toast('تمت مزامنة البيانات مع المايكروتك');
               },
             ),
@@ -600,7 +532,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
           currentIndex: currentScreenIndex > 4 ? 4 : currentScreenIndex,
           onTap: (i) => setState(() => currentScreenIndex = i),
           backgroundColor: const Color(0xFF070B14),
-          selectedItemColor: const Color(0xFF38BDF8),
+          selectedItemColor: const Color(0xFF0EA5E9),
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
           items: const [
@@ -615,9 +547,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     );
   }
 
-  // ==========================================================================
-  // الشاشة 2: لوحة القيادة الشاملة + المساعد الصوتي
-  // ==========================================================================
+  // ---------------- الشاشة 2: لوحة القيادة الشاملة + المساعد الصوتي ----------------
   Widget _buildDashboardScreen() {
     final activeCount = pppoeUsers.where((u) => u['st'] == 'ACTIVE').length;
     return ListView(
@@ -635,7 +565,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
           ],
         ),
         const SizedBox(height: 10),
-        // المساعد الصوتي الذكي
+        // المساعد الصوتي
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -654,9 +584,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                       if (mounted) {
                         setState(() {
                           isListeningVoice = false;
-                          voiceText = '🗣️ "تم تنفيذ الأمر الصوتي: ضاعفنا سرعة المشترك غازي عمار لـ 16M"';
+                          voiceText = '🗣️ "تم تنفيذ الأمر: ضاعفنا سرعة المشترك غازي عمار لـ 16M"';
                         });
-                        _toast('🚀 تم تنفيذ الأمر الصوتي في المايكروتك بنجاح!');
+                        _toast('🚀 تم تنفيذ الأمر الصوتي في المايكروتك!');
                       }
                     });
                   }
@@ -681,7 +611,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
           ),
         ),
         const SizedBox(height: 10),
-        // زر الفاحص الذكي للأعطال
+        // زر الفاحص الذكي
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -698,7 +628,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                   children: [
                     Text('🔍 الفاحص الذكي للأعطال واللوب', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF38BDF8))),
                     SizedBox(height: 3),
-                    Text('يفحص منافذ الراوتر، راوترات TP-Link المعكوسة، وإشارات الصحون', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                    Text('كشف اللوب، راوترات TP-Link المعكوسة، وتشويش الصحون', style: TextStyle(fontSize: 10, color: Colors.white70)),
                   ],
                 ),
               ),
@@ -723,9 +653,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
             _moduleCard('📱 الأكتف الحي', '${activeSessions.length} متصل الآن', const Color(0xFF38BDF8), () => setState(() => currentScreenIndex = 2)),
             _moduleCard('🎫 هوتسبوت ويوزرمان', '${hotspotCards.length} كروت + طباعة QR', const Color(0xFFF59E0B), () => setState(() => currentScreenIndex = 3)),
             _moduleCard('⚖️ دمج الخطوط وببجي', 'ستارلينك + ضوئي + عزل', const Color(0xFF4ADE80), () => setState(() => currentScreenIndex = 4)),
-            _moduleCard('🛡️ درع الحماية والإضافات', 'منع نت شير + فك حظر غوغل', const Color(0xFFFB7185), () => setState(() => currentScreenIndex = 5)),
+            _moduleCard('🛡️ درع الحماية والإضافات', 'منع نت شير + فك غوغل', const Color(0xFFFB7185), () => setState(() => currentScreenIndex = 5)),
             _moduleCard('📡 صحون البث والبطارية', '263 قطعة + منبه الفولت', const Color(0xFFC084FC), () => setState(() => currentScreenIndex = 6)),
-            _moduleCard('🏪 المعتمدين والديون', '${posAgents.length} محلات + جرد الصندوق', const Color(0xFFFBBF24), () => setState(() => currentScreenIndex = 7)),
+            _moduleCard('🏪 المعتمدين والديون', '${posAgents.length} محلات + الصندوق', const Color(0xFFFBBF24), () => setState(() => currentScreenIndex = 7)),
             _moduleCard('👑 لوحة المالك (شام كاش)', 'إدارة اشتراكات الشبكات', const Color(0xFF60A5FA), () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const OwnerSaaSPortalScreen()));
             }),
@@ -750,9 +680,9 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
             children: [
               Text('✅ المعالج والرام: مستقر (3% CPU)', style: TextStyle(fontSize: 12, color: Color(0xFF34D399))),
               SizedBox(height: 6),
-              Text('🚨 تنبيه منفذ ether7: تم رصد راوتر TP-Link معكوس (ماك D8:07:B6:11:4A) وتم عزله تلقائياً.', style: TextStyle(fontSize: 12, color: Colors.amber)),
+              Text('🚨 تنبيه منفذ ether7: تم رصد راوتر TP-Link معكوس وعزله تلقائياً.', style: TextStyle(fontSize: 12, color: Colors.amber)),
               SizedBox(height: 6),
-              Text('⚠️ تنبيه إشارة صحن: المشترك (أبو قاسم 192.168.20.145) إشارته -81dBm تسبب بطئاً للسكتر.', style: TextStyle(fontSize: 12, color: Colors.pinkAccent)),
+              Text('⚠️ تنبيه صحن: المشترك (أبو قاسم) إشارته -81dBm تسبب بطء السكتر.', style: TextStyle(fontSize: 12, color: Colors.pinkAccent)),
               SizedBox(height: 6),
               Text('🔋 بطارية البرج: 24.4V (ممتازة).', style: TextStyle(fontSize: 12, color: Colors.white70)),
             ],
@@ -804,9 +734,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     );
   }
 
-  // ==========================================================================
-  // الشاشة 3: حسابات البرودباند PPPoE الشاملة
-  // ==========================================================================
+  // ---------------- الشاشة 3: حسابات البرودباند PPPoE الشاملة ----------------
   Widget _buildBroadbandScreen() {
     final filtered = pppoeUsers.where((u) {
       final matchFilter = pppoeFilter == 'ALL' || u['st'] == pppoeFilter;
@@ -899,7 +827,6 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     final nameCtrl = TextEditingController();
     final userCtrl = TextEditingController();
     final passCtrl = TextEditingController(text: '123456');
-    String selectedProf = '2M';
 
     showDialog(
       context: context,
@@ -926,18 +853,11 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                   pppoeUsers.insert(0, {
                     'name': nameCtrl.text.isEmpty ? 'مشترك جديد' : nameCtrl.text,
                     'user': userCtrl.text.isEmpty ? 'USER_${Random().nextInt(999)}' : userCtrl.text,
-                    'prof': selectedProf,
+                    'prof': '2M',
                     'info': 'متصل الآن · مشترك جديد 30 يوم',
                     'spd': '1.5 م/ث',
                     'st': 'ACTIVE',
-                    'debt': 0,
                   });
-                });
-                api.sendCommand('/ppp/secret/add', {
-                  'name': userCtrl.text,
-                  'password': passCtrl.text,
-                  'service': 'pppoe',
-                  'profile': selectedProf,
                 });
                 Navigator.pop(ctx);
                 _toast('✅ تم تفعيل المشترك وإضافته للمايكروتك فوراً!');
@@ -988,14 +908,6 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.send, color: Colors.tealAccent),
-                title: const Text('إرسال وصل أو كرت عبر واتساب'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _toast('💬 تم تجهيز رسالة الوصل في واتساب للمشترك!');
-                },
-              ),
-              ListTile(
                 leading: const Icon(Icons.notification_important, color: Colors.pinkAccent),
                 title: const Text('تحويل لصفحة انتهاء الاشتراك (المطالبة بالدفع)'),
                 onTap: () {
@@ -1015,9 +927,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     );
   }
 
-  // ==========================================================================
-  // الشاشة 4: مراقبة الأكتف الحي والماكات (30 متصل)
-  // ==========================================================================
+  // ---------------- الشاشة 4: مراقبة الأكتف الحي والماكات (30 متصل) ----------------
   Widget _buildActiveUsersScreen() {
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -1057,9 +967,7 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     );
   }
 
-  // ==========================================================================
-  // الشاشة 5: استوديو كروت الهوتسبوت والطباعة الفورية بـ QR
-  // ==========================================================================
+  // ---------------- الشاشة 5: استوديو كروت الهوتسبوت والطباعة الفورية بـ QR ----------------
   Widget _buildHotspotCardsScreen() {
     final filteredCards = hotspotCards.where((c) {
       if (cardFilter == 'WORK') return c['ok'] == true;
@@ -1145,4 +1053,55 @@ class _MainRouterControlShellState extends State<MainRouterControlShell> {
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
-        textDirection: TextDirectio
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF0EA5E9))),
+          title: Text('بطاقة هوتسبوت: ${c['u']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.qr_code_2, size: 120, color: Colors.black),
+              ),
+              const SizedBox(height: 12),
+              Text('اسم المستخدم: ${c['u']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('كلمة المرور: ${c['p']}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+          actions: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _toast('💬 تم إرسال البطاقة بصورة رقمية في واتساب للزبون!');
+              },
+              icon: const Icon(Icons.share),
+              label: const Text('إرسال في واتساب'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGenerateVouchersBatchModal() {
+    final countCtrl = TextEditingController(text: '10');
+    final prefixCtrl = TextEditingController(text: '77');
+    final speedCtrl = TextEditingController(text: '2M');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('🖨️ استوديو توليد وطباعة الكروت بـ QR', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: countCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'عدد البطاقات المطلوب توليدها')),
+              TextField(controller: prefixCtrl, decoration: const InputDecoration(labelText: 'بادئة الكرت (Prefi
