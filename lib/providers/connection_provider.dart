@@ -102,4 +102,19 @@ class ConnectionProvider extends ChangeNotifier {
     final success = await _service.removeHotspotUser(id);
     if (success) await fetchHotspotUsers();
   }
+
+  Future<void> addPPPoEUser(String username, String password, String profile) async {
+    _errorMessage = '';
+    final success = await _service.createPPPoEUser(username, password, profile);
+    if (success) {
+      await fetchPPPoEUsers();
+    } else {
+      _errorMessage = 'فشل إضافة مشترك PPPoE. تحقق من صلاحيات الراوتر والباقة.';
+      notifyListeners();
+    }
+  }
+
+  Future<bool> executeLoadBalancingScript(String script) async {
+    return await _service.runSystemScript(script);
+  }
 }
