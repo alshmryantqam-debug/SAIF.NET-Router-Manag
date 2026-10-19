@@ -15,6 +15,7 @@ class ConnectionProvider extends ChangeNotifier {
   List<PPPoEUser> _pppoeUsers = [];
   List<HotspotUser> _hotspotUsers = [];
   List<dynamic> _interfaces = [];
+  List<dynamic> _ipAddresses = [];
   List<dynamic> _queues = [];
 
   bool get isLoading => _isLoading;
@@ -24,6 +25,7 @@ class ConnectionProvider extends ChangeNotifier {
   List<PPPoEUser> get pppoeUsers => _pppoeUsers;
   List<HotspotUser> get hotspotUsers => _hotspotUsers;
   List<dynamic> get interfaces => _interfaces;
+  List<dynamic> get ipAddresses => _ipAddresses;
   List<dynamic> get queues => _queues;
 
   Future<void> fetchInterfaces() async {
@@ -32,6 +34,22 @@ class ConnectionProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _errorMessage = 'فشل جلب المنافذ: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchInterfacesAndIps() async {
+    _errorMessage = '';
+    try {
+      final results = await Future.wait([
+        _service.getInterfaces(),
+        _service.getIpAddresses(),
+      ]);
+      _interfaces = results[0];
+      _ipAddresses = results[1];
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'فشل جلب المنافذ وعناوين IP: $e';
       notifyListeners();
     }
   }
