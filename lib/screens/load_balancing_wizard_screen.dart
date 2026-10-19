@@ -12,214 +12,220 @@ class LoadBalancingWizardScreen extends StatefulWidget {
 }
 
 class _LoadBalancingWizardScreenState extends State<LoadBalancingWizardScreen> {
-  bool wan1 = true, wan2 = true, wan3 = false;
-  bool _busy = false;
+  final Set<String> _selectedWans = <String>{};
+  bool _isLoading = true;
+  String? _loadError;
 
-  // هذا السكربت مثال ثابت وليس مولداً من مفاتيح WAN.
-  // لا تنفذه قبل استبدال البوابات ومراجعته مقابل إعدادات PCC الحالية.
-  String get script => """
-# سكربت دمج تجريبي - نوفا
-# عناوين البوابات التالية أمثلة وليست مؤكدة لشبكتك
-/ip firewall mangle
-add chain=prerouting action=mark-connection new-connection-mark=conn1 passthrough=yes in-interface=ether1
-add chain=prerouting action=mark-connection new-connection-mark=conn2 passthrough=yes in-interface=ether2
-add chain=prerouting action=mark-routing new-routing-mark=route1 passthrough=no connection-mark=conn1
-add chain=prerouting action=mark-routing new-routing-mark=route2 passthrough=no connection-mark=conn2
-/ip route
-add gateway=192.168.1.2 routing-table=route1 check-gateway=ping
-add gateway=192.168.2.2 routing-table=route2 check-gateway=ping
-""";
+  @override
+  void initState() {
+    super.initState();
+    _loadRouterInterfaces();
+  }
 
-  Future<void> _confirmAndExecute() async {
-    if (!wan1 && !wan2 && !wan3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اختر خط إنترنت واحداً على الأقل.'),
-          backgroundColor: AppTheme.dangerRed,
-        ),
-      );
-      return;
-    }
-
-    bool backupReady = false;
-    bool rollbackReady = false;
-    bool scriptReviewed = false;
-
-    final approved = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.cardDark,
-          title: const Text(
-            'تأكيد التنفيذ على الراوتر',
-            style: TextStyle(color: AppTheme.dangerRed),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'تحذير: هذا سكربت تجريبي يضيف قواعد mangle ومسارات جديدة، وقد يتعارض مع PCC الحالي أو يقطع الإنترنت. مفاتيح WAN لا تغيّر محتوى السكربت، والبوابتان 192.168.1.2 و192.168.2.2 أمثلة فقط. لا تتابع إلا بعد تخصيص السكربت لشبكتك.',
-                ),
-                const SizedBox(height: 8),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: backupReady,
-                  onChanged: (value) => setDialogState(() => backupReady = value ?? false),
-                  title: const Text('أنشأت نسخة احتياطية حديثة ويمكنني استعادتها'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: rollbackReady,
-                  onChanged: (value) => setDialogState(() => rollbackReady = value ?? false),
-                  title: const Text('لدي اتصال بديل وخطة تراجع'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: scriptReviewed,
-                  onChanged: (value) => setDialogState(() => scriptReviewed = value ?? false),
-                  title: const Text('راجعت البوابات وقواعد PCC والجداول على الراوتر'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed),
-              onPressed: backupReady && rollbackReady && scriptReviewed
-                  ? () => Navigator.pop(dialogContext, true)
-                  : null,
-              child: const Text('تأكيد الإرسال'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (approved != true || !mounted) return;
-
-    setState(() => _busy = true);
+  Future<void> _loadRouterInterfaces() async {
     try {
-      final success = await context.read<ConnectionProvider>().executeLoadBalancingScript(script);
+      await context.read<ConnectionProvider>().fetchInterfacesAndIps();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'أُرسل السكربت للتنفيذ. تحقق من سجل الراوتر والاتصال؛ لا يعني الرد نجاح كل قاعدة.'
-                : 'فشل إرسال السكربت. تحقق من صلاحيات REST وسجل الراوتر.',
-          ),
-          backgroundColor: success ? AppTheme.successGreen : AppTheme.dangerRed,
-        ),
-      );
+      final provider = context.read<ConnectionProvider>();
+      setState(() {
+        _isLoading = false;
+        _loadError = provider.errorMessage.isEmpty ? null : provider.errorMessage;
+      });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل التنفيذ: $e'), backgroundColor: AppTheme.dangerRed),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
+      setState(() {
+        _isLoading = false;
+        _loadError = 'تعذر جلب بيانات الراوتر: $e';
+      });
     }
+  }
+
+  List<dynamic> _addressesFor(String interfaceName, List<dynamic> addresses) {
+    return addresses.where((item) =>
+      item is Map && item['interface']?.toString() == interfaceName
+    ).toList();
+  }
+
+  bool _isPhysicalInterface(dynamic item) {
+    if (item is! Map) return false;
+    final type = item['type']?.toString().toLowerCase() ?? '';
+    return type == 'ether' ||
+        type == 'wlan' ||
+        type.contains('sfp') ||
+        type.contains('wifi');
+  }
+
+  String get _generatedPreview {
+    if (_selectedWans.isEmpty) {
+      return '# اختر منافذ WAN لعرضها هنا.';
+    }
+
+    final provider = context.read<ConnectionProvider>();
+    final lines = <String>[
+      '# Nova - معاينة اكتشاف WAN فقط',
+      '# المنافذ المختارة من الراوتر:',
+    ];
+    for (final name in _selectedWans) {
+      final addresses = _addressesFor(name, provider.ipAddresses);
+      final addressText = addresses.isEmpty
+          ? 'لا يوجد عنوان IP مباشر'
+          : addresses.map((a) => a['address']?.toString() ?? 'غير معروف').join(', ');
+      lines.add('# $name | $addressText');
+    }
+    lines.addAll([
+      '',
+      '# لم يتم توليد أو تنفيذ قواعد PCC بعد.',
+      '# عنوان IP على المنفذ ليس بالضرورة عنوان البوابة.',
+      '# يلزم اكتشاف البوابات الفعلية، منفذ LAN، وجداول التوجيه الحالية',
+      '# قبل توليد أوامر تغيّر إعدادات الراوتر بأمان.',
+    ]);
+    return lines.join('\n');
+  }
+
+  void _toggleWan(String interfaceName, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedWans.add(interfaceName);
+      } else {
+        _selectedWans.remove(interfaceName);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<ConnectionProvider>();
+    final wanInterfaces = provider.interfaces.where(_isPhysicalInterface).toList()
+      ..sort((a, b) => (a['name']?.toString() ?? '')
+          .compareTo(b['name']?.toString() ?? ''));
+
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
-        title: const Text('مهندس دمج الخطوط'),
+        title: const Text('مهندس دمج الخطوط (ذكي)'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'اختر خطوط الإنترنت (WAN)',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryPurple),
-                ),
-                SwitchListTile(
-                  title: const Text('ether1 (Starlink 1)'),
-                  value: wan1,
-                  onChanged: _busy ? null : (value) => setState(() => wan1 = value),
-                  activeColor: AppTheme.primaryPurple,
-                ),
-                SwitchListTile(
-                  title: const Text('ether2 (Starlink 2)'),
-                  value: wan2,
-                  onChanged: _busy ? null : (value) => setState(() => wan2 = value),
-                  activeColor: AppTheme.primaryPurple,
-                ),
-                SwitchListTile(
-                  title: const Text('ether3 (الخط التركي)'),
-                  value: wan3,
-                  onChanged: _busy ? null : (value) => setState(() => wan3 = value),
-                  activeColor: AppTheme.primaryPurple,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'السكربت المعروض (مثال ثابت يحتاج تخصيصاً قبل التنفيذ):',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: SelectableText(
-              script,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                color: AppTheme.successGreen,
-                fontSize: 11,
-              ),
-              textDirection: TextDirection.ltr,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'مهم: مفاتيح WAN حالياً للعرض فقط ولا تغيّر السكربت. لا تطبّقه على CCR2116 الإنتاجي قبل مواءمته مع RouterOS 7 وإعدادات PCC والبوابات الفعلية.',
-            style: TextStyle(color: AppTheme.warningOrange, fontSize: 12),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 55,
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryPurple,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: _busy ? null : _confirmAndExecute,
-              child: _busy
-                  ? const CircularProgressIndicator()
-                  : const Text(
-                      'تطبيق الدمج (PCC)',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-            ),
+        actions: [
+          IconButton(
+            tooltip: 'تحديث بيانات الراوتر',
+            onPressed: _isLoading ? null : () {
+              setState(() {
+                _isLoading = true;
+                _loadError = null;
+              });
+              _loadRouterInterfaces();
+            },
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (_loadError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _loadError!,
+                      style: const TextStyle(color: AppTheme.dangerRed),
+                    ),
+                  ),
+                GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'منافذ الشبكة المكتشفة من الراوتر',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (wanInterfaces.isEmpty)
+                        const Text(
+                          'لم يتم العثور على منافذ فعلية. تأكد من الاتصال وصلاحيات REST.',
+                          style: TextStyle(color: AppTheme.dangerRed),
+                        ),
+                      ...wanInterfaces.map((intf) {
+                        final name = intf['name']?.toString() ?? '';
+                        final addresses = _addressesFor(name, provider.ipAddresses);
+                        final ipText = addresses.isEmpty
+                            ? 'لا يوجد IP مباشر — قد يستخدم المنفذ DHCP أو يكون ضمن bridge'
+                            : addresses.map((a) => a['address']?.toString() ?? '').join(', ');
+                        return CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            '$ipText\nالحالة: ${intf['running'] == true ? 'يعمل' : 'غير نشط'}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          value: _selectedWans.contains(name),
+                          activeColor: AppTheme.primaryPurple,
+                          onChanged: (value) => _toggleWan(name, value ?? false),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'معاينة الاكتشاف',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: SelectableText(
+                    _generatedPreview,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: AppTheme.successGreen,
+                      fontSize: 11,
+                    ),
+                    textDirection: TextDirection.ltr,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'حماية الراوتر: هذه النسخة تكتشف المنافذ والعناوين فقط. لا يمكن استنتاج البوابة من عنوان IP وحده، كما أن توليد PCC يحتاج معرفة واجهة LAN وجداول التوجيه وقواعد mangle الموجودة. لذلك التنفيذ معطّل هنا حتى لا نضيف قواعد غير صحيحة إلى شبكة الإنتاج.',
+                  style: TextStyle(
+                    color: AppTheme.warningOrange,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 55,
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: null,
+                    icon: const Icon(Icons.lock_outline),
+                    label: const Text(
+                      'التنفيذ غير متاح قبل فحص البوابات وPCC',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryPurple,
+                      disabledBackgroundColor: Colors.grey.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
