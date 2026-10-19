@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/connection_provider.dart';
 import '../providers/dashboard_provider.dart';
+import 'pppoe_screen.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -258,6 +259,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(
+                      color: AppTheme.primaryColor,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PppoeScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.people_alt,
+                    color: AppTheme.primaryColor,
+                  ),
+                  label: const Text(
+                    'إدارة مشتركي PPPoE',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
