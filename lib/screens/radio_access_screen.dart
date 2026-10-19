@@ -253,9 +253,9 @@ class _RadioAccessScreenState extends State<RadioAccessScreen> {
                             label: const Text('فتح محلياً'),
                           ),
                           FilledButton.icon(
-                            onPressed: () => _openDevice(device, remote: true),
+                            onPressed: hasRemote ? () => _openDevice(device, remote: true) : null,
                             icon: const Icon(Icons.vpn_lock_rounded),
-                            label: Text(hasRemote ? 'فتح عن بُعد' : 'فتح عبر VPN'),
+                            label: const Text('فتح عن بُعد'),
                           ),
                         ]),
                       ]),
