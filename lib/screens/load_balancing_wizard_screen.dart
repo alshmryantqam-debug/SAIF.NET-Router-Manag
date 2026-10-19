@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
-import '../providers/connection_provider.dart';
 
 class LoadBalancingWizardScreen extends StatefulWidget {
   const LoadBalancingWizardScreen({super.key});
