@@ -87,7 +87,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Container(width: 44, height: 44, decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(15), boxShadow: AppShadows.glow(AppColors.primary, opacity: .22)), child: const Icon(Icons.hub_rounded, color: Colors.white, size: 24)),
                 const SizedBox(width: 11),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('TikPlus ULTRA', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w900)),
+                  const Text('SAIF.NET', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w900)),
                   Text(identity, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 ])),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7), decoration: BoxDecoration(color: AppColors.success.withOpacity(.1), border: Border.all(color: AppColors.success.withOpacity(.3)), borderRadius: BorderRadius.circular(30)), child: const Row(children: [Icon(Icons.circle, size: 7, color: AppColors.success), SizedBox(width: 6), Text('متصل', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w800))])),
@@ -105,9 +105,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [const Icon(Icons.auto_awesome_rounded, color: Color(0xFFD8B7FF), size: 18), const SizedBox(width: 7), Text('مركز قيادة الشبكة', style: TextStyle(color: Colors.white.withOpacity(.8), fontSize: 12, fontWeight: FontWeight.w700)), const Spacer(), const Icon(Icons.bolt_rounded, color: AppColors.accent)]),
                     const SizedBox(height: 16),
-                    const Text('شبكتك تحت السيطرة', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2)),
+                    const Text('مركز عمليات شبكتك', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2)),
                     const SizedBox(height: 7),
-                    Text('راقب الراوتر والمشتركين والموارد من شاشة واحدة.', style: TextStyle(color: Colors.white.withOpacity(.74), fontSize: 12, height: 1.5)),
+                    Text('إدارة احترافية للمنافذ والمشتركين والأمان وحركة المرور من مركز واحد.', style: TextStyle(color: Colors.white.withOpacity(.74), fontSize: 12, height: 1.5)),
                     const SizedBox(height: 17),
                     Wrap(spacing: 7, runSpacing: 7, children: [
                       _chip(Icons.router_rounded, r.version.isEmpty ? 'RouterOS' : r.version),
