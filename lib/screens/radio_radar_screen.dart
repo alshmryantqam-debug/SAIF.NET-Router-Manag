@@ -5,6 +5,7 @@ import 'package:dart_snmp/dart_snmp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
@@ -207,6 +208,11 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
       appBar: AppBar(title: const Text('رادار صحون البث'), actions: [
         IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded)),
         IconButton(onPressed: _addTarget, icon: const Icon(Icons.add_link_rounded)),
+        IconButton(
+          tooltip: 'فتح لوحات الصحون عن بُعد',
+          onPressed: () => context.push('/radio-access'),
+          icon: const Icon(Icons.vpn_lock_rounded),
+        ),
       ]),
       body: RefreshIndicator(onRefresh: _refresh, child: ListView(padding: const EdgeInsets.all(16), children: [
         Container(
