@@ -17,7 +17,7 @@ class PPPoEUser {
 
   factory PPPoEUser.fromJson(Map<String, dynamic> json) {
     return PPPoEUser(
-      id: json['id'] ?? '',
+      id: json['.id'] ?? json['id'] ?? '',
       name: json['name'] ?? '',
       password: json['password'] ?? '',
       profile: json['profile'] ?? 'default',
