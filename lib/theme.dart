@@ -10,6 +10,7 @@ class AppTheme {
   static const Color textMuted = Color(0xFF94A3B8);
   static const Color successGreen = Color(0xFF10B981);
   static const Color dangerRed = Color(0xFFEF4444);
+  static const Color warningOrange = Color(0xFFF59E0B);
 
   static ThemeData get darkTheme {
     return ThemeData(
