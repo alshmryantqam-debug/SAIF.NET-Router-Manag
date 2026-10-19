@@ -124,17 +124,17 @@ class RouterosRestApi {
       if (created.data is Map) {
         scriptId = created.data['.id']?.toString();
       }
-      if (scriptId == null || scriptId!.isEmpty) {
+      if (scriptId == null || scriptId.isEmpty) {
         final scripts = await _dio.get('/system/script', queryParameters: {'name': scriptName});
         if (scripts.data is List && (scripts.data as List).isNotEmpty) {
           scriptId = (scripts.data as List).first['.id']?.toString();
         }
       }
-      final target = (scriptId != null && scriptId!.isNotEmpty) ? scriptId! : scriptName;
+      final target = (scriptId != null && scriptId.isNotEmpty) ? scriptId : scriptName;
       await _dio.post('/system/script/run', data: {'number': target});
       return 'SUCCESS: RouterOS accepted the script for execution. REST does not provide a general interactive CLI output stream.';
     } finally {
-      if (scriptId != null && scriptId!.isNotEmpty) {
+      if (scriptId != null && scriptId.isNotEmpty) {
         try {
           await _dio.delete('/system/script/$scriptId');
         } catch (_) {
