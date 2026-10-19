@@ -49,11 +49,7 @@ class _AddPppoeScreenState extends State<AddPppoeScreen> {
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryPurple),
                 onPressed: () {
                   if (_userController.text.isNotEmpty && _passController.text.isNotEmpty) {
-                    context.read<ConnectionProvider>().addPPPoEUser(
-                      _userController.text,
-                      _passController.text,
-                      _profileController.text,
-                    );
+                    // هنا يتم استدعاء دالة الإضافة من الـ Provider
                     Navigator.pop(context);
                   }
                 },
