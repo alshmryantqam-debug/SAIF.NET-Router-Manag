@@ -47,12 +47,12 @@ class MainShell extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
           decoration: BoxDecoration(
-            color: const Color(0xF21A1429),
+            color: const Color(0xF2192933),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withOpacity(.22)),
+            border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(.38), blurRadius: 24, offset: const Offset(0, 7)),
-              BoxShadow(color: AppColors.primary.withOpacity(.05), blurRadius: 22, spreadRadius: 1),
+              BoxShadow(color: AppColors.secondary.withOpacity(.04), blurRadius: 22, spreadRadius: 1),
             ],
           ),
           child: Row(
