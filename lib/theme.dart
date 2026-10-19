@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const bgDeep = Color(0xFF0B1118);
-  static const bgSurface = Color(0xFF111B24);
-  static const bgCard = Color(0xFF17232D);
-  static const bgElevated = Color(0xFF20313D);
-  static const glass = Color(0xCC182630);
-  static const border = Color(0xFF2B3D49);
-  static const primary = Color(0xFF36C6B4);
-  static const secondary = Color(0xFF64B5F6);
-  static const accent = Color(0xFFFFB86B);
-  static const success = Color(0xFF45D6A1);
-  static const warning = Color(0xFFFFB454);
-  static const danger = Color(0xFFFF647C);
-  static const textPrimary = Color(0xFFF3F7FA);
-  static const textSecondary = Color(0xFFB5C3CD);
-  static const textMuted = Color(0xFF8295A2);
+  static const bgDeep = Color(0xFF0B1120);
+  static const bgSurface = Color(0xFF0F172A);
+  static const bgCard = Color(0xA61E293B);
+  static const bgElevated = Color(0xFF1E293B);
+  static const glass = Color(0xA61E293B);
+  static const border = Color(0x14FFFFFF);
+  static const primary = Color(0xFF6366F1);
+  static const secondary = Color(0xFF818CF8);
+  static const accent = Color(0xFFFBBF24);
+  static const success = Color(0xFF10B981);
+  static const warning = Color(0xFFF59E0B);
+  static const danger = Color(0xFFEF4444);
+  static const textPrimary = Color(0xFFF8FAFC);
+  static const textSecondary = Color(0xFFCBD5E1);
+  static const textMuted = Color(0xFF94A3B8);
 }
 
 class AppGradients {
   static const glass = LinearGradient(
     begin: Alignment.topLeft, end: Alignment.bottomRight,
-    colors: [Color(0xCC243642), Color(0xCC15232C)],
+    colors: [Color(0xA61E293B), Color(0xE60F172A)],
   );
   static const primary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF52D8C6), Color(0xFF168D91), Color(0xFF225C76)],
+    colors: [Color(0xFF6366F1), Color(0xFF4F46E5), Color(0xFF8B5CF6)],
   );
 }
 
