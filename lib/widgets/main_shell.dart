@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/pppoe_screen.dart';
@@ -27,21 +28,59 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       extendBody: true,
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: AppTheme.cardDark.withOpacity(0.95),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(0, Icons.dashboard_rounded, 'الرئيسية'),
-            _navItem(1, Icons.group_rounded, 'PPPoE'),
-            _navItem(2, Icons.wifi_rounded, 'الهوتسبوت'),
-            _navItem(3, Icons.menu_rounded, 'المزيد'),
-          ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+        child: Container(
+          height: 70,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A2235).withOpacity(0.95),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(0, Icons.dashboard_rounded, 'الرئيسية'),
+                  _navItem(1, Icons.group_rounded, 'PPPoE'),
+                  const SizedBox(width: 50),
+                  _navItem(2, Icons.wifi_rounded, 'الهوتسبوت'),
+                  _navItem(3, Icons.menu_rounded, 'المزيد'),
+                ],
+              ),
+              Positioned(
+                top: -25,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)],
+                    ),
+                    border: Border.all(color: AppTheme.bgDark, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.sync, color: Colors.white, size: 30),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -51,36 +90,24 @@ class _MainShellState extends State<MainShell> {
     final isActive = _index == index;
     return GestureDetector(
       onTap: () => setState(() => _index = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppTheme.primaryPurple.withOpacity(0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isActive ? AppTheme.primaryPurple : AppTheme.textMuted,
-              size: 26,
-            ),
-            if (isActive) ...[
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppTheme.primaryPurple,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isActive ? AppTheme.primaryPurple : Colors.grey,
+              size: 26),
+          if (isActive) ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.primaryPurple,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
