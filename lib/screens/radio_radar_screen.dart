@@ -196,6 +196,19 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
       return;
     }
     final iface = matches.first;
+    final interfaceType = iface.type.toLowerCase();
+    final interfaceLabel = iface.name.toLowerCase();
+    final isWireless = interfaceType.contains('wireless') ||
+        interfaceType.contains('wifi') ||
+        interfaceLabel.startsWith('wlan') ||
+        interfaceLabel.startsWith('wifi') ||
+        interfaceLabel.startsWith('wlan');
+    if (!isWireless) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('رفضت العملية لأن نوع الواجهة لا يبدو لاسلكياً.')),
+      );
+      return;
+    }
     final nextDisabled = !iface.disabled;
     var backupVerified = false;
     var rollbackReady = false;
