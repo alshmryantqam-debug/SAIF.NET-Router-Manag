@@ -1,11 +1,11 @@
-class RouterConfig {
+class MikrotikConfig {
   final String id;
   final String name;
   final String ipAddress;
   final String username;
   final String password;
 
-  RouterConfig({
+  MikrotikConfig({
     required this.id,
     required this.name,
     required this.ipAddress,
