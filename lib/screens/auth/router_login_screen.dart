@@ -1,42 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../providers/connection_provider.dart';
-import '../../theme.dart';
 import '../../widgets/glass_card.dart';
+import '../../theme.dart';
 import '../dashboard_screen.dart';
 
-/// شاشة الاتصال المباشر براوتر MikroTik عبر RouterOS REST/HTTPS.
 class RouterLoginScreen extends StatefulWidget {
-  const RouterLoginScreen({super.key});
+  const RouterLoginScreen({Key? key}) : super(key: key);
 
   @override
   State<RouterLoginScreen> createState() => _RouterLoginScreenState();
 }
 
 class _RouterLoginScreenState extends State<RouterLoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController(text: '192.168.88.1');
   final _portController = TextEditingController(text: '443');
   final _userController = TextEditingController(text: 'admin');
   final _passController = TextEditingController();
 
-  @override
-  void dispose() {
-    _ipController.dispose();
-    _portController.dispose();
-    _userController.dispose();
-    _passController.dispose();
-    super.dispose();
-  }
-
   Future<void> _connect() async {
-    if (!_formKey.currentState!.validate()) return;
-
+    final provider = Provider.of<ConnectionProvider>(context, listen: false);
     FocusScope.of(context).unfocus();
-    final provider = context.read<ConnectionProvider>();
 
-    final success = await provider.connectToRouter(
+    bool success = await provider.connectToRouter(
       ip: _ipController.text.trim(),
       port: _portController.text.trim(),
       username: _userController.text.trim(),
@@ -46,73 +32,66 @@ class _RouterLoginScreenState extends State<RouterLoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            backgroundColor: AppTheme.successColor,
-            content: Text('تم الاتصال بنجاح: ${provider.routerIdentity}'),
-          ),
-        );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => const DashboardScreen(),
-        ),
-      );
+      _showCustomSnackBar('تم الاتصال بنجاح: ${provider.routerIdentity}', AppTheme.successColor, Icons.check_circle);
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
     } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            backgroundColor: AppTheme.dangerColor,
-            content: Text(
-              provider.errorMessage.isEmpty
-                  ? 'تعذر الاتصال بالراوتر. تحقق من العنوان والمنفذ وبيانات الدخول.'
-                  : provider.errorMessage,
-            ),
-          ),
-        );
+      _showCustomSnackBar(provider.errorMessage, AppTheme.dangerColor, Icons.error_outline);
     }
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    IconData icon, {
+  void _showCustomSnackBar(String message, Color color, IconData icon) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message, style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Cairo'))),
+          ],
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(20),
+        elevation: 0,
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
     bool isPassword = false,
     TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword,
         keyboardType: keyboardType,
-        autocorrect: false,
-        enableSuggestions: !isPassword,
-        style: const TextStyle(color: AppTheme.textPrimary),
-        validator: validator,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: AppTheme.textSecondary),
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+          labelStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor.withOpacity(0.8)),
           filled: true,
-          fillColor: AppTheme.backgroundColor.withOpacity(0.5),
+          fillColor: const Color(0xFF121727),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: AppTheme.cardBorderColor.withOpacity(0.6),
-            ),
+            borderSide: BorderSide(color: AppTheme.cardBorderColor.withOpacity(0.3), width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppTheme.primaryColor),
+            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
           ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
         ),
       ),
     );
@@ -120,144 +99,69 @@ class _RouterLoginScreenState extends State<RouterLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ConnectionProvider>();
+    final provider = Provider.of<ConnectionProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('الاتصال بالراوتر')),
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: GlassCard(
-                useGradient: true,
-                child: Form(
-                  key: _formKey,
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.router_outlined, size: 64, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(height: 24),
+                const Text('الاتصال بالراوتر', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 8),
+                const Text('أدخل بيانات الاعتماد (REST API)', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+                const SizedBox(height: 32),
+                GlassCard(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(
-                        Icons.router_rounded,
-                        size: 52,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'الاتصال براوتر MikroTik',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'أدخل عنوان الراوتر وبيانات حساب لديه صلاحية API/REST.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppTheme.textSecondary),
-                      ),
-                      const SizedBox(height: 24),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            flex: 3,
-                            child: _buildTextField(
-                              'عنوان IP أو اسم المضيف',
-                              _ipController,
-                              Icons.router,
-                              keyboardType: TextInputType.url,
-                              validator: (value) =>
-                                  value == null || value.trim().isEmpty
-                                      ? 'أدخل عنوان الراوتر'
-                                      : null,
-                            ),
+                            flex: 2,
+                            child: _buildInputField(controller: _ipController, label: 'الـ IP', icon: Icons.wifi, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             flex: 1,
-                            child: _buildTextField(
-                              'المنفذ',
-                              _portController,
-                              Icons.numbers,
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                final port = int.tryParse(value?.trim() ?? '');
-                                if (port == null || port < 1 || port > 65535) {
-                                  return 'منفذ غير صالح';
-                                }
-                                return null;
-                              },
-                            ),
+                            child: _buildInputField(controller: _portController, label: 'المنفذ', icon: Icons.numbers, keyboardType: TextInputType.number),
                           ),
                         ],
                       ),
-                      _buildTextField(
-                        'اسم المستخدم',
-                        _userController,
-                        Icons.person_outline,
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'أدخل اسم المستخدم'
-                                : null,
-                      ),
-                      _buildTextField(
-                        'كلمة المرور',
-                        _passController,
-                        Icons.lock_outline,
-                        isPassword: true,
-                      ),
+                      _buildInputField(controller: _userController, label: 'اسم المستخدم', icon: Icons.person_outline),
+                      _buildInputField(controller: _passController, label: 'كلمة المرور', icon: Icons.lock_outline, isPassword: true),
                       const SizedBox(height: 8),
                       SizedBox(
-                        height: 54,
-                        child: ElevatedButton.icon(
-                          onPressed: provider.isLoading ? null : _connect,
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
-                            disabledBackgroundColor:
-                                AppTheme.primaryColor.withOpacity(0.45),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          icon: provider.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.link, color: Colors.white),
-                          label: Text(
-                            provider.isLoading
-                                ? 'جارٍ الاتصال...'
-                                : 'اتصال مباشر بالراوتر',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      const Text(
-                        'تأكد من تفعيل خدمة www-ssl على الراوتر والسماح بالوصول من جهازك. '
-                        'لا تستخدم الاتصال عبر شبكة عامة غير موثوقة.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
+                          onPressed: provider.isLoading ? null : _connect,
+                          child: provider.isLoading
+                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                              : const Text('اتصال آمن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
