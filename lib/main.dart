@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/connection_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
@@ -36,6 +37,12 @@ void main() {
             pppoeProvider.updateConnectionProvider(connectionProvider);
             return pppoeProvider;
           },
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, HotspotProvider>(
+          create: (context) =>
+              HotspotProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, hotspotProvider) =>
+              hotspotProvider ?? HotspotProvider(connectionProvider),
         ),
       ],
       child: const NovaApp(),
