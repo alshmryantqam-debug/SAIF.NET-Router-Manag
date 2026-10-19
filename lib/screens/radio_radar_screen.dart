@@ -201,8 +201,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     final isWireless = interfaceType.contains('wireless') ||
         interfaceType.contains('wifi') ||
         interfaceLabel.startsWith('wlan') ||
-        interfaceLabel.startsWith('wifi') ||
-        interfaceLabel.startsWith('wlan');
+        interfaceLabel.startsWith('wifi');
     if (!isWireless) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('رفضت العملية لأن نوع الواجهة لا يبدو لاسلكياً.')),
@@ -397,7 +396,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
             child: ListTile(
               leading: Icon(Icons.settings_input_antenna_rounded, color: color),
               title: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي'),
-              subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}'),
+              subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}\nالواجهة: ${row['interface'] ?? '—'} • ${_interfaces.where((i) => i.name == row['interface']).firstOrNull?.disabled == true ? 'معطلة' : 'مفعلة/غير معروفة'}'),
               isThreeLine: true,
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
