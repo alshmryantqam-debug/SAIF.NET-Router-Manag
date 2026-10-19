@@ -458,6 +458,56 @@ class MikrotikService {
         kind: RouterOsErrorKind.network);
   }
 
+  /// Updates selected fields of an existing Hotspot account.
+  Future<void> updateHotspotAccount(
+    String id, {
+    String? password,
+    String? profile,
+    String? comment,
+    String? limitUptime,
+    int? limitBytesTotal,
+    bool? disabled,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'تعديل حساب Hotspot متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف الحساب غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    final body = <String, dynamic>{};
+    if (password != null) body['password'] = password;
+    if (profile != null && profile.trim().isNotEmpty) {
+      body['profile'] = profile.trim();
+    }
+    if (comment != null) body['comment'] = comment;
+    if (limitUptime != null) body['limit-uptime'] = limitUptime;
+    if (limitBytesTotal != null) {
+      if (limitBytesTotal < 0) {
+        throw const RouterOsException('حد البيانات لا يمكن أن يكون سالباً.',
+            kind: RouterOsErrorKind.badRequest);
+      }
+      body['limit-bytes-total'] = limitBytesTotal.toString();
+    }
+    if (disabled != null) body['disabled'] = disabled ? 'true' : 'false';
+    if (body.isEmpty) {
+      throw const RouterOsException('لم يتم تحديد أي تعديل.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.patch('/ip/hotspot/user/$id', body);
+  }
+
   Future<void> removeHotspotUser(String id) async {
     if (_rest != null) {
       await _rest!.delete('/ip/hotspot/user/$id');
@@ -516,6 +566,50 @@ class MikrotikService {
     }
     throw const RouterOsException('الإضافة تتطلب REST API (v7)',
         kind: RouterOsErrorKind.methodNotAllowed);
+  }
+
+  /// Updates selected fields of an existing PPP secret.
+  Future<void> updatePppoeAccount(
+    String id, {
+    String? password,
+    String? profile,
+    String? comment,
+    String? localAddress,
+    String? remoteAddress,
+    bool? disabled,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'تعديل حساب PPPoE متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف حساب PPP غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    final body = <String, dynamic>{};
+    if (password != null) body['password'] = password;
+    if (profile != null && profile.trim().isNotEmpty) {
+      body['profile'] = profile.trim();
+    }
+    if (comment != null) body['comment'] = comment;
+    if (localAddress != null) body['local-address'] = localAddress;
+    if (remoteAddress != null) body['remote-address'] = remoteAddress;
+    if (disabled != null) body['disabled'] = disabled ? 'true' : 'false';
+    if (body.isEmpty) {
+      throw const RouterOsException('لم يتم تحديد أي تعديل.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.patch('/ppp/secret/$id', body);
   }
 
   Future<void> removePppoeUser(String id) async {
