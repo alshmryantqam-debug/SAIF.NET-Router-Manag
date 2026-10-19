@@ -57,11 +57,8 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
       if (!mounted) return;
       setState(() {
         _interfaces = interfaces;
-        for (var i = 0; i < _lines.length; i++) {
-          if (_lines[i].interfaceName == null && interfaces.isNotEmpty) {
-            _lines[i].interfaceName = interfaces[i % interfaces.length].name;
-          }
-        }
+        // Never guess WAN ports by list order: on a live router this can select a LAN,
+        // bridge, or subscriber-facing interface and interrupt service.
         _loading = false;
       });
     } catch (e) {
@@ -171,7 +168,7 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
                       SizedBox(height: 10),
                       Text('Load Balancing Wizard', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
                       SizedBox(height: 6),
-                      Text('PCC لتوزيع الاتصالات الجديدة + Failover بمسارات احتياطية وفحص البوابة ping.', style: TextStyle(color: Colors.white)),
+                      Text('فحص واجهات الراوتر ثم إعداد PCC وFailover وفق اختيارك. لا يتم تخمين منافذ WAN حسب ترتيبها.', style: TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),
@@ -242,7 +239,7 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
                             decoration: const InputDecoration(
                               labelText: 'عنوان بوابة الخط IPv4',
                               hintText: 'مثال: 192.168.1.1',
-                              helperText: 'اكتب بوابة هذا الخط الفعلية؛ لا تكتب عنوان DNS مثل 8.8.8.8.',
+                              helperText: 'هذا الإصدار يحتاج بوابة IPv4 ثابتة لكل خط؛ خطوط DHCP/PPPoE تحتاج اكتشاف بوابة ديناميكية قبل التطبيق.',
                             ),
                           ),
                         ],
@@ -255,7 +252,7 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
                   child: const Padding(
                     padding: EdgeInsets.all(14),
                     child: Text(
-                      'تنبيه مهم: لا يدمج PCC سرعة اتصال واحد؛ يوزّع اتصالات المشتركين بين الخطوط. هذا المعالج مخصص لإعداد نظيف، ويوقف نفسه إذا اكتشف قواعد Mangle فعّالة حتى لا يخرب PCC الحالي أو إعداداتك. يتطلب RouterOS v7 وREST API، والبوابات الثابتة التي تدخلها يجب أن تكون صحيحة وقابلة للوصول.',
+                      'تنبيه مهم: لا يدمج PCC سرعة اتصال واحد؛ يوزّع اتصالات المشتركين بين الخطوط. هذا المعالج يرفض الإضافة إذا وجد PCC/Mangle فعّالاً، ويتحقق من عدم اختيار واجهة WAN كعضو LAN. يتطلب RouterOS v7 وREST API وبوابات IPv4 ثابتة؛ لا تطبّقه على شبكة قائمة قبل مراجعة خطته، ولا يدعم حتى الآن الاكتشاف التلقائي الكامل لخطوط DHCP/PPPoE.',
                       style: TextStyle(color: AppColors.warning, height: 1.45),
                     ),
                   ),
@@ -294,7 +291,7 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'ملاحظة توافق: لا يوجد تطبيق على RouterOS v6 عبر Binary API في هذا المعالج. لم يتم اختبار هذا الإعداد على راوتر فعلي؛ بعد التطبيق يجب التحقق من المسارات وقواعد الجدار الناري ومراقبة الخطوط.',
+                  'ملاحظة توافق: هذه المرحلة تدعم RouterOS v7 عبر REST فقط والبوابات الثابتة، ولم تُختبر على راوتر فعلي. دعم DHCP/PPPoE التلقائي وRouterOS v6 يتطلب مسارات تنفيذ إضافية؛ لا تعتبرها أداة إعداد عامة مكتملة قبل ذلك.',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
               ],
