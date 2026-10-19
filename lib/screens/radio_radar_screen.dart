@@ -71,6 +71,19 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     await _storage.write(key: _key, value: jsonEncode(_targets));
   }
 
+  Future<List<Map<String, String>>> _safeRead(
+    MikrotikService service,
+    String path,
+  ) async {
+    try {
+      return await service.runCommand(path);
+    } catch (_) {
+      // Some RouterOS versions do not expose every wireless menu.
+      // Keep the other read-only discovery sources available.
+      return <Map<String, String>>[];
+    }
+  }
+
   Future<void> _refresh() async {
     final service = ref.read(mikrotikProvider);
     if (!service.isConnected) {
@@ -80,11 +93,11 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final results = await Future.wait([
-        service.runCommand('/interface/wireless/registration-table'),
-        service.runCommand('/interface/wifi/registration-table'),
-        service.runCommand('/ip/neighbor'),
-        service.runCommand('/ip/dhcp-server/lease'),
-        service.runCommand('/ip/arp'),
+        _safeRead(service, '/interface/wireless/registration-table'),
+        _safeRead(service, '/interface/wifi/registration-table'),
+        _safeRead(service, '/ip/neighbor'),
+        _safeRead(service, '/ip/dhcp-server/lease'),
+        _safeRead(service, '/ip/arp'),
       ]);
       final merged = <Map<String, String>>[];
       final seen = <String>{};
