@@ -132,7 +132,7 @@ class MainShell extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'TikPlus ULTRA',
+                    'SAIF.NET',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -142,7 +142,7 @@ class MainShell extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'المنصة الاحترافية لإدارة MikroTik',
+                    'مركز القيادة الذكي لشبكات MikroTik',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.85),
                       fontSize: 11,
@@ -193,7 +193,7 @@ class MainShell extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'TikPlus ULTRA · v1.0.0',
+              'SAIF.NET · v1.0.0',
               style: TextStyle(
                 color: AppColors.textMuted.withOpacity(0.7),
                 fontSize: 11,
