@@ -12,6 +12,7 @@ class MikrotikService {
   Future<List<dynamic>> getActivePPPoE() => _api.getActivePPPoE();
   Future<bool> createPPPoEUser(String u, String p, String prof) => _api.createPPPoEUser(u, p, prof);
   Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
+  Future<List<dynamic>> getIpAddresses() => _api.getIpAddresses();
   Future<List<dynamic>> getQueues() => _api.getQueues();
   Future<String> executeRawCommand(String command) => _api.executeRawCommand(command);
   Future<bool> runSystemScript(String script) => _api.runSystemScript(script);
