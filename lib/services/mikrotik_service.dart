@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:io';
+import 'dart:io';
 
 import '../models/hotspot_user.dart';
 import '../models/pppoe_user.dart';
@@ -713,7 +714,6 @@ class MikrotikService {
       );
     }
     await _rest!.patch('/queue/simple/$id', {'max-limit': maxLimit.trim()});
-  }
   bool _isValidRatePair(String value) {
     final parts = value.trim().split('/');
     if (parts.length != 2) return false;
@@ -872,7 +872,8 @@ class MikrotikService {
   }
 
 
-  /// Applies a fresh RouterOS v7 PCC policy set with per-table gateway failover.
+
+  /// Applies a fresh RouterOS v7 PCC policy set with end-to-end recursive failover.
   /// Existing routing/mangle/NAT configuration is never replaced or removed.
   Future<void> applyPccLoadBalance({
     required List<Map<String, String>> wanLines,
@@ -896,90 +897,7 @@ class MikrotikService {
       throw const RouterOsException('اختر من خطين إلى أربعة خطوط إنترنت.', kind: RouterOsErrorKind.badRequest);
     }
     final lanName = lanListName.trim();
-    if (lanName.isEmpty || lanName.length > 32 || !RegExp(r'^[A-Za-z0-9_.-]+
-    '/ip/hotspot/user',
-    '/ip/hotspot/active',
-    '/ip/hotspot/user/profile',
-    '/ppp/secret',
-    '/ppp/active',
-    '/interface',
-    '/ip/address',
-    '/ip/dhcp-server/lease',
-    '/ip/dhcp-client',
-    '/ip/firewall/filter',
-    '/ip/route',
-    '/routing/table',
-    '/interface/list',
-    '/interface/list/member',
-    '/ip/firewall/mangle',
-    '/ip/firewall/nat',
-    '/ip/service',
-    '/queue/simple',
-    '/system/resource',
-    '/system/identity',
-    '/system/clock',
-    '/system/package',
-    '/log',
-  };
-
-  static bool isReadOnlyCommandPath(String path) {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    final base = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-    return _readOnlyCommandPaths.contains(base) &&
-        (normalized == base || normalized == '$base/print');
-  }
-
-  Future<List<Map<String, String>>> runCommand(String path) async {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    if (!isReadOnlyCommandPath(normalized)) {
-      throw const RouterOsException(
-        'الطرفية الحالية للقراءة فقط وتسمح بمسارات فحص محددة. أوامر التغيير أو إعادة التشغيل غير مسموحة.',
-        kind: RouterOsErrorKind.forbidden,
-      );
-    }
-
-    final endpoint = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-
-    if (_rest != null) {
-      final data = await _rest!.get(endpoint);
-      return _asList(data).map(_toRow).toList();
-    }
-    if (_binary != null) {
-      return _binary!.command('$endpoint/print');
-    }
-    throw const RouterOsException('اتصل بالراوتر أولاً',
-        kind: RouterOsErrorKind.network);
-  }
-
-  List<Map<String, dynamic>> _asList(dynamic data) {
-    if (data is List) {
-      return data
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-    if (data is Map) return [Map<String, dynamic>.from(data)];
-    return [];
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _binary?.close();
-    } catch (_) {}
-    try {
-      _rest?.close();
-    } catch (_) {}
-    _rest = null;
-    _binary = null;
-    _activeProtocol = null;
-    _profile = null;
-  }
-}
-).hasMatch(lanName)) {
+    if (lanName.isEmpty || lanName.length > 32 || !RegExp(r'^[A-Za-z0-9_.-]+$').hasMatch(lanName)) {
       throw const RouterOsException('اسم قائمة LAN غير صالح.', kind: RouterOsErrorKind.badRequest);
     }
     final normalized = <Map<String, String>>[];
@@ -1032,17 +950,38 @@ class MikrotikService {
       throw const RouterOsException('توجد إعدادات سابقة باسم SAIFLB-WIZARD/SAIF_WAN. لم يتم تكرارها أو تعديلها؛ راجعها يدوياً أولاً.');
     }
 
+    final localAddresses = _asList(await _rest!.get('/ip/address')).map(_toRow).toList();
+    final localCidrs = <String>{};
+    for (final row in localAddresses) {
+      final address = (row['address'] ?? '').trim();
+      final slash = address.lastIndexOf('/');
+      if (slash <= 0) continue;
+      final ip = InternetAddress.tryParse(address.substring(0, slash));
+      final prefixLength = int.tryParse(address.substring(slash + 1));
+      if (ip != null && ip.type == InternetAddressType.IPv4 && prefixLength != null && prefixLength >= 0 && prefixLength <= 32) {
+        final network = (row['network'] ?? '').trim();
+        final net = InternetAddress.tryParse(network);
+        if (net != null && net.type == InternetAddressType.IPv4) {
+          localCidrs.add('$network/$prefixLength');
+        }
+      }
+    }
+    if (localCidrs.isEmpty) {
+      throw const RouterOsException('لم يستطع المعالج تحديد شبكات LAN من IP > Addresses؛ لم يتم تطبيق أي تغيير.', kind: RouterOsErrorKind.badRequest);
+    }
+
     final added = <Map<String, String>>[];
     Future<void> create(String path, Map<String, dynamic> body) async {
       final response = await _rest!.post(path, body);
       final row = _extractMap(response);
-      final id = (row['.id'] ?? row['id'] ?? '').toString();
+      final id = (row['.id'] ?? row['id'] ?? row['ret'] ?? '').toString();
       if (id.isEmpty) {
         throw RouterOsException('أنشأ الراوتر عنصراً لكن لم يرجع معرّفه لمسار $path. أوقف المعالج وافحص إعدادات الراوتر يدوياً.');
       }
       added.add({'path': path, 'id': id});
     }
 
+    const probes = ['1.1.1.1', '8.8.8.8', '9.9.9.9', '208.67.222.222'];
     try {
       for (var i = 0; i < normalized.length; i++) {
         await create('/routing/table', {
@@ -1050,19 +989,39 @@ class MikrotikService {
           'comment': '$prefix table ${i + 1}',
         });
       }
-      for (var i = 0; i < normalized.length; i++) {
-        final table = 'SAIF_WAN${i + 1}';
+
+      // Recursive probe routes test Internet reachability, not just the local gateway.
+      for (var tableIndex = 0; tableIndex < normalized.length; tableIndex++) {
+        final table = 'SAIF_WAN${tableIndex + 1}';
         for (var hop = 0; hop < normalized.length; hop++) {
-          final gatewayIndex = (i + hop) % normalized.length;
+          final gatewayIndex = (tableIndex + hop) % normalized.length;
+          final probe = probes[gatewayIndex];
           await create('/ip/route', {
-            'dst-address': '0.0.0.0/0',
+            'dst-address': '$probe/32',
             'gateway': normalized[gatewayIndex]['gateway']!,
             'routing-table': table,
+            'scope': '10',
+            'comment': '$prefix probe $table via ${normalized[gatewayIndex]['interface']}',
+          });
+          await create('/ip/route', {
+            'dst-address': '0.0.0.0/0',
+            'gateway': probe,
+            'routing-table': table,
             'distance': (hop + 1).toString(),
+            'target-scope': '11',
             'check-gateway': 'ping',
             'comment': '$prefix route $table via ${normalized[gatewayIndex]['interface']}',
           });
         }
+      }
+
+      // Do not policy-route traffic to any directly connected local subnet.
+      for (final cidr in localCidrs) {
+        await create('/ip/firewall/mangle', {
+          'chain': 'prerouting', 'in-interface-list': lanName,
+          'dst-address': cidr, 'action': 'accept',
+          'comment': '$prefix LAN bypass $cidr',
+        });
       }
       for (var i = 0; i < normalized.length; i++) {
         await create('/ip/firewall/mangle', {
@@ -1090,7 +1049,9 @@ class MikrotikService {
     } catch (e) {
       for (final item in added.reversed) {
         try {
-          await _rest!.delete('${item['path']}/${item['id']}');
+          final path = item['path']!;
+          final id = item['id']!;
+          await _rest!.delete('$path/$id');
         } catch (_) {
           // Keep original error; if rollback fails, verify RouterOS manually.
         }
@@ -1098,6 +1059,7 @@ class MikrotikService {
       rethrow;
     }
   }
+
 
   static const Set<String> _readOnlyCommandPaths = {
     '/ip/hotspot/user',
@@ -1111,6 +1073,11 @@ class MikrotikService {
     '/ip/dhcp-client',
     '/ip/firewall/filter',
     '/ip/route',
+    '/routing/table',
+    '/interface/list',
+    '/interface/list/member',
+    '/ip/firewall/mangle',
+    '/ip/firewall/nat',
     '/ip/service',
     '/queue/simple',
     '/system/resource',
