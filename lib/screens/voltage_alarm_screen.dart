@@ -188,7 +188,7 @@ class _VoltageAlarmScreenState extends ConsumerState<VoltageAlarmScreen> {
               final threshold = double.tryParse(_threshold.text.trim().replaceAll(',', '.')) ?? 21.5;
               await _sendTelegram(v ?? 0, threshold);
               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت محاولة إرسال رسالة الاختبار؛ تحقق من Telegram.')));
-            }, icon: const Icon(Icons.send_rounded), label: const Text('إرسال رسالة اختبار')),
+            }, icon: const Icon(Icons.send_rounded), label: const Text('إرسال رسالة اختبار'))),
           ]),
           if (_error != null) ...[
             const SizedBox(height: 12),
