@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/pppoe_screen.dart';
+import '../screens/hotspot_screen.dart';
+import '../screens/load_balancing_wizard_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -15,8 +17,8 @@ class _MainShellState extends State<MainShell> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const PppoeScreen(),
-    const Center(child: Text('الدمج (قريباً)', style: TextStyle(color: Colors.white))),
-    const Center(child: Text('الإعدادات (قريباً)', style: TextStyle(color: Colors.white))),
+    const HotspotScreen(),
+    const LoadBalancingWizardScreen(),
   ];
 
   @override
@@ -35,9 +37,9 @@ class _MainShellState extends State<MainShell> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _navItem(0, Icons.dashboard_rounded, 'الرئيسية'),
-            _navItem(1, Icons.group_rounded, 'المشتركون'),
-            _navItem(2, Icons.alt_route_rounded, 'الدمج'),
-            _navItem(3, Icons.settings_rounded, 'الإعدادات'),
+            _navItem(1, Icons.group_rounded, 'PPPoE'),
+            _navItem(2, Icons.wifi_rounded, 'الهوتسبوت'),
+            _navItem(3, Icons.alt_route_rounded, 'الدمج'),
           ],
         ),
       ),
@@ -50,7 +52,7 @@ class _MainShellState extends State<MainShell> {
       onTap: () => setState(() => _index = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.primaryPurple.withOpacity(0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -61,7 +63,7 @@ class _MainShellState extends State<MainShell> {
             Icon(icon, color: isActive ? AppTheme.primaryPurple : AppTheme.textMuted, size: 26),
             if (isActive) ...[
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(color: AppTheme.primaryPurple, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(color: AppTheme.primaryPurple, fontSize: 10, fontWeight: FontWeight.bold)),
             ]
           ],
         ),
