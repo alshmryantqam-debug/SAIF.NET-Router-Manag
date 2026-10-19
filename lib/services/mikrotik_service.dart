@@ -716,7 +716,60 @@ class MikrotikService {
   bool _isValidRatePair(String value) {
     final parts = value.trim().split('/');
     if (parts.length != 2) return false;
-    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?
+    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?$');
+    return rate.hasMatch(parts[0]) && rate.hasMatch(parts[1]);
+  }
+
+  /// Disconnects one active Hotspot session (does not delete its user).
+  Future<void> disconnectHotspotSession(
+    String id, {
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'فصل جلسة Hotspot متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف الجلسة غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.delete('/ip/hotspot/active/$id');
+  }
+
+  /// Disconnects a PPP active session by its RouterOS internal id.
+  Future<void> disconnectPppoeSession(
+    String id, {
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'فصل جلسة PPP متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف الجلسة غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.delete('/ppp/active/$id');
+  }
+
   Future<void> setInterfaceDisabled(
     String id,
     bool disabled, {
@@ -835,238 +888,6 @@ class MikrotikService {
     '/queue/simple',
     '/system/resource',
     '/system/health',
-    '/system/identity',
-    '/system/clock',
-    '/system/package',
-    '/log',
-  };
-
-  static bool isReadOnlyCommandPath(String path) {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    final base = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-    return _readOnlyCommandPaths.contains(base) &&
-        (normalized == base || normalized == '$base/print');
-  }
-
-  Future<List<Map<String, String>>> runCommand(String path) async {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    if (!isReadOnlyCommandPath(normalized)) {
-      throw const RouterOsException(
-        'الطرفية الحالية للقراءة فقط وتسمح بمسارات فحص محددة. أوامر التغيير أو إعادة التشغيل غير مسموحة.',
-        kind: RouterOsErrorKind.forbidden,
-      );
-    }
-
-    final endpoint = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-
-    if (_rest != null) {
-      final data = await _rest!.get(endpoint);
-      return _asList(data).map(_toRow).toList();
-    }
-    if (_binary != null) {
-      return _binary!.command('$endpoint/print');
-    }
-    throw const RouterOsException('اتصل بالراوتر أولاً',
-        kind: RouterOsErrorKind.network);
-  }
-
-  List<Map<String, dynamic>> _asList(dynamic data) {
-    if (data is List) {
-      return data
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-    if (data is Map) return [Map<String, dynamic>.from(data)];
-    return [];
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _binary?.close();
-    } catch (_) {}
-    try {
-      _rest?.close();
-    } catch (_) {}
-    _rest = null;
-    _binary = null;
-    _activeProtocol = null;
-    _profile = null;
-  }
-}
-);
-    return rate.hasMatch(parts[0]) && rate.hasMatch(parts[1]);
-  }
-
-  /// Disconnects one active Hotspot session (does not delete its user).
-  Future<void> disconnectHotspotSession(
-    String id, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'فصل جلسة Hotspot متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف الجلسة غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.delete('/ip/hotspot/active/$id');
-  }
-
-  /// Disconnects a PPP active session by its RouterOS internal id.
-  Future<void> disconnectPppoeSession(
-    String id, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'فصل جلسة PPP متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف الجلسة غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.delete('/ppp/active/$id');
-  }
-
-  /// Changes an interface state on RouterOS v7 after explicit safety approval.
-  Future<void> setInterfaceDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تغيير الواجهات متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف الواجهة غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/interface/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  /// Enables/disables an existing firewall filter rule; does not create rules.
-  Future<void> setFirewallRuleDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تعديل قواعد الجدار الناري متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف قاعدة الجدار الناري غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/ip/firewall/filter/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  /// Enables/disables a simple queue. Does not rewrite queue limits.
-  Future<void> setSimpleQueueDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تعديل Simple Queue متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف Queue غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/queue/simple/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  void _requireWriteApproval({
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) {
-    RouterOperationGuard.requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (!isConnected) {
-      throw const RouterOsException('اتصل بالراوتر أولاً.',
-          kind: RouterOsErrorKind.network);
-    }
-  }
-
-  static const Set<String> _readOnlyCommandPaths = {
-    '/ip/hotspot/user',
-    '/ip/hotspot/active',
-    '/ip/hotspot/user/profile',
-    '/ppp/secret',
-    '/ppp/active',
-    '/interface',
-    '/ip/address',
-    '/ip/dhcp-server/lease',
-    '/ip/dhcp-client',
-    '/ip/firewall/filter',
-    '/ip/route',
-    '/ip/service',
-    '/queue/simple',
-    '/system/resource',
     '/system/identity',
     '/system/clock',
     '/system/package',
