@@ -161,7 +161,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             shaderCallback: (bounds) =>
                                 AppGradients.primary.createShader(bounds),
                             child: const Text(
-                              'TikPlus ULTRA',
+                              'SAIF.NET',
                               style: TextStyle(
                                 fontSize: 34,
                                 fontWeight: FontWeight.w900,
@@ -172,7 +172,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'المنصة الاحترافية لإدارة شبكات MikroTik',
+                            'مركز القيادة الذكي لشبكات MikroTik',
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 13,
@@ -252,7 +252,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 opacity: _textFade,
                 child: const Center(
                   child: Text(
-                    'v1.0.0 · TikPlus ULTRA',
+                    'v1.1.0 · SAIF.NET',
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 10,
