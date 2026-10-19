@@ -716,7 +716,10 @@ class MikrotikService {
   bool _isValidRatePair(String value) {
     final parts = value.trim().split('/');
     if (parts.length != 2) return false;
-    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?
+    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?$');
+    return parts.every((part) => rate.hasMatch(part.trim()));
+  }
+
   Future<void> setInterfaceDisabled(
     String id,
     bool disabled, {
