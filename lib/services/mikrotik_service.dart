@@ -714,6 +714,8 @@ class MikrotikService {
       );
     }
     await _rest!.patch('/queue/simple/$id', {'max-limit': maxLimit.trim()});
+  }
+
   bool _isValidRatePair(String value) {
     final parts = value.trim().split('/');
     if (parts.length != 2) return false;
