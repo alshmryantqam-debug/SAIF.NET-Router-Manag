@@ -12,7 +12,7 @@ class RouterosRestApi {
     ));
   }
 
-  void connect(RouterConfig config) {
+  void connect(MikrotikConfig config) {
     final basicAuth = 'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
     _dio.options.baseUrl = 'https://${config.ipAddress}/rest';
     _dio.options.headers = {
