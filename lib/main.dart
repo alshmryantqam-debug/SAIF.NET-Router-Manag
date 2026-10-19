@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
-import 'theme.dart';
 import 'providers/connection_provider.dart';
+import 'providers/dashboard_provider.dart';
 import 'screens/auth/app_login_screen.dart';
+import 'theme.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ConnectionProvider()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              DashboardProvider(context.read<ConnectionProvider>()),
+        ),
       ],
       child: const NovaApp(),
     ),
@@ -37,7 +42,6 @@ class NovaApp extends StatelessWidget {
         textDirection: TextDirection.rtl,
         child: child ?? const SizedBox.shrink(),
       ),
-      // Start directly at the administrator login screen.
       home: const AppLoginScreen(),
     );
   }
