@@ -17,6 +17,7 @@ class RouterosRestApi {
     ));
 
     // MikroTik self-signed certificates: use only on a trusted management LAN.
+    // TODO(security): prefer certificate pinning for production deployments.
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
