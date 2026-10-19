@@ -3,6 +3,7 @@ import 'dart:async';
 import '../models/hotspot_user.dart';
 import '../models/pppoe_user.dart';
 import '../models/router_config.dart';
+import '../core/security/router_operation_guard.dart';
 import 'routeros_binary_api.dart';
 import 'routeros_rest_api.dart';
 
@@ -573,6 +574,106 @@ class MikrotikService {
           .toList();
     }
     return [];
+  }
+
+  /// Changes an interface state on RouterOS v7 after explicit safety approval.
+  Future<void> setInterfaceDisabled(
+    String id,
+    bool disabled, {
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'تغيير الواجهات متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف الواجهة غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.patch('/interface/$id', {
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Enables/disables an existing firewall filter rule; does not create rules.
+  Future<void> setFirewallRuleDisabled(
+    String id,
+    bool disabled, {
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'تعديل قواعد الجدار الناري متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف قاعدة الجدار الناري غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.patch('/ip/firewall/filter/$id', {
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Enables/disables a simple queue. Does not rewrite queue limits.
+  Future<void> setSimpleQueueDisabled(
+    String id,
+    bool disabled, {
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'تعديل Simple Queue متاح حالياً عبر REST API في RouterOS v7 فقط.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (id.trim().isEmpty) {
+      throw const RouterOsException('معرّف Queue غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    await _rest!.patch('/queue/simple/$id', {
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  void _requireWriteApproval({
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (!isConnected) {
+      throw const RouterOsException('اتصل بالراوتر أولاً.',
+          kind: RouterOsErrorKind.network);
+    }
   }
 
   static const Set<String> _readOnlyCommandPaths = {

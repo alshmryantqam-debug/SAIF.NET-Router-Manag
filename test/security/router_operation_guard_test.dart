@@ -36,7 +36,7 @@ void main() {
       );
     });
 
-    test('allows writes only when every safety condition is satisfied', () {
+    test('allows writes only when all safety conditions pass', () {
       expect(
         () => RouterOperationGuard.requireWriteApproval(
           explicitlyConfirmed: true,
