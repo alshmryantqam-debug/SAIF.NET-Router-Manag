@@ -74,4 +74,54 @@ class RouterosRestApi {
       return false;
     }
   }
+
+  // --- دوال الهوتسبوت ---
+  Future<List<dynamic>> getHotspotUsers() async {
+    final response = await _dio.get('/ip/hotspot/user');
+    return response.data;
+  }
+
+  Future<bool> createHotspotUser(String name, String password, String profile) async {
+    try {
+      await _dio.put('/ip/hotspot/user', data: {
+        'name': name,
+        'password': password,
+        'profile': profile,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> removeHotspotUser(String id) async {
+    try {
+      await _dio.delete('/ip/hotspot/user/$id');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- دوال دمج الخطوط (Load Balancing) ---
+  Future<List<dynamic>> getInterfaces() async {
+    final response = await _dio.get('/interface');
+    return response.data;
+  }
+
+  Future<List<dynamic>> getIpAddresses() async {
+    final response = await _dio.get('/ip/address');
+    return response.data;
+  }
+
+  // دالة لتنفيذ أوامر الدمج (Mangle & Routes)
+  Future<bool> applyLoadBalancingScript(String script) async {
+    try {
+      // إرسال السكربت للراوتر لتنفيذه
+      await _dio.post('/system/script/run', data: {'script': script});
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
