@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/router_config.dart';
+import '../models/pppoe_user.dart';
 import '../services/mikrotik_service.dart';
 
 class ConnectionProvider extends ChangeNotifier {
@@ -11,6 +12,8 @@ class ConnectionProvider extends ChangeNotifier {
   
   Map<String, dynamic> _systemResource = {};
   List<dynamic> _activePPPoE = [];
+  List<PPPoEUser> _pppoeUsers = [];
+  List<PPPoEUser> get pppoeUsers => _pppoeUsers;
 
   bool get isLoading => _isLoading;
   bool get isConnected => _isConnected;
