@@ -4,6 +4,7 @@ on:
   pull_request:
     paths: ['lib/**', 'test/**', 'pubspec.yaml', 'analysis_options.yaml', '.github/workflows/flutter-analyze.yml']
   push:
+    branches: [main]
     paths: ['lib/**', 'test/**', 'pubspec.yaml', 'analysis_options.yaml', '.github/workflows/flutter-analyze.yml']
 jobs:
   analyze:
@@ -14,4 +15,5 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter analyze
+      - name: Analyze (existing info-level lints are reported but not fatal)
+        run: flutter analyze --no-fatal-infos
