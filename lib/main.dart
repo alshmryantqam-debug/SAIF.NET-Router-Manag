@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'theme.dart';
 import 'providers/connection_provider.dart';
-import 'screens/splash_screen.dart';
+import 'screens/auth/app_login_screen.dart';
 
 void main() {
   runApp(
@@ -23,7 +23,7 @@ class NovaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Nova',
+      title: 'SAIF.NET',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       locale: const Locale('ar'),
@@ -33,13 +33,12 @@ class NovaApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
-      },
-      home: const SplashScreen(),
+      builder: (context, child) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: child ?? const SizedBox.shrink(),
+      ),
+      // Start directly at the administrator login screen.
+      home: const AppLoginScreen(),
     );
   }
 }
