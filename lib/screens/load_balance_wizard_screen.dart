@@ -77,8 +77,8 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
     if (_lines.length >= 4) return;
     setState(() {
       final used = _lines.map((e) => e.interfaceName).whereType<String>().toSet();
-      final candidate = _interfaces.where((i) => !used.contains(i.name)).firstOrNull;
-      _lines.add(_WanLine(interfaceName: candidate?.name));
+      final candidates = _interfaces.where((i) => !used.contains(i.name)).toList();
+      _lines.add(_WanLine(interfaceName: candidates.isEmpty ? null : candidates.first.name));
     });
   }
 
