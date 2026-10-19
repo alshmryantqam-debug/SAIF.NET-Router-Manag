@@ -96,14 +96,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF402263), Color(0xFF24183F), Color(0xFF151126)]),
+                  gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF1E5B64), Color(0xFF183744), Color(0xFF111F2A)]),
                   borderRadius: BorderRadius.circular(26), border: Border.all(color: AppColors.primary.withOpacity(.4)),
                   boxShadow: AppShadows.glow(AppColors.primary, opacity: .12),
                 ),
                 child: Stack(children: [
                   Positioned(left: -18, top: -28, child: Icon(Icons.radar_rounded, size: 132, color: Colors.white.withOpacity(.04))),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [const Icon(Icons.auto_awesome_rounded, color: Color(0xFFD8B7FF), size: 18), const SizedBox(width: 7), Text('مركز قيادة الشبكة', style: TextStyle(color: Colors.white.withOpacity(.8), fontSize: 12, fontWeight: FontWeight.w700)), const Spacer(), const Icon(Icons.bolt_rounded, color: AppColors.accent)]),
+                    Row(children: [const Icon(Icons.auto_awesome_rounded, color: Color(0xFF9FE9E1), size: 18), const SizedBox(width: 7), Text('مركز قيادة الشبكة', style: TextStyle(color: Colors.white.withOpacity(.8), fontSize: 12, fontWeight: FontWeight.w700)), const Spacer(), const Icon(Icons.bolt_rounded, color: AppColors.accent)]),
                     const SizedBox(height: 16),
                     const Text('مركز عمليات شبكتك', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2)),
                     const SizedBox(height: 7),
