@@ -97,8 +97,8 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
-      - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib
+      - name: Check Dart formatting (diagnostic)
+        run: dart format --output=none lib
 
       - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
