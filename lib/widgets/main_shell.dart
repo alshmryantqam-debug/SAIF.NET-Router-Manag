@@ -18,7 +18,7 @@ class _MainShellState extends State<MainShell> {
     const DashboardScreen(),
     const PppoeScreen(),
     const HotspotScreen(),
-    const SettingsScreen(),
+    const SettingsScreen(), // شاشة المزيد التي تحتوي على الطرفية والمنافذ
   ];
 
   @override
