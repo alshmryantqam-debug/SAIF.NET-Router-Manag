@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/connection_provider.dart';
@@ -240,11 +241,11 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
           _section('03', 'أدوات مراقبة البرج', 'Power + RF'),
           const SizedBox(height: 10),
           _panel([
-            _tool(Icons.bolt_rounded, 'منبه البطاريات والطاقة', 'قراءة الفولتية المتاحة وإرسال إنذار عند الهبوط', () => Navigator.pushNamed(context, '/voltage-alarm')),
+            _tool(Icons.bolt_rounded, 'منبه البطاريات والطاقة', 'قراءة الفولتية المتاحة وإرسال إنذار عند الهبوط', () => context.push('/voltage-alarm')),
             const Divider(color: AppColors.border),
-            _tool(Icons.radar_rounded, 'رادار صحون البث', 'أجهزة مسجلة وإشارات RF المتاحة عبر MikroTik / SNMP', () => Navigator.pushNamed(context, '/radio-radar')),
+            _tool(Icons.radar_rounded, 'رادار صحون البث', 'أجهزة مسجلة وإشارات RF المتاحة عبر MikroTik / SNMP', () => context.push('/radio-radar')),
             const Divider(color: AppColors.border),
-            _tool(Icons.router_rounded, 'إدارة الراوترات', 'إدارة ملفات الراوتر والاتصال', () => Navigator.pushNamed(context, '/routers')),
+            _tool(Icons.router_rounded, 'إدارة الراوترات', 'إدارة ملفات الراوتر والاتصال', () => context.push('/routers')),
           ]),
           const SizedBox(height: 16),
           _message(Icons.info_outline_rounded, connected ? 'الراوتر متصل. اقرأ الواجهات أولاً ثم تحقق يدويًا من أسماء الخطوط والبوابات.' : 'اتصل بالراوتر أولاً لتفعيل اكتشاف الواجهات وبيانات الشبكة.', connected ? AppColors.secondary : AppColors.warning),
