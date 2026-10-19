@@ -419,7 +419,14 @@ class MikrotikService {
       final data = await _rest!.get('/ip/hotspot/active');
       return _asList(data).map(_toRow).toList();
     }
-    return [];
+    if (_binary != null) {
+      final rows = await _binary!.command('/ip/hotspot/active/print');
+      return rows.map((row) => Map<String, String>.from(row)).toList();
+    }
+    throw const RouterOsException(
+      'اتصل بالراوتر أولاً',
+      kind: RouterOsErrorKind.network,
+    );
   }
 
   Future<List<Map<String, String>>> hotspotProfiles() async {
@@ -491,7 +498,14 @@ class MikrotikService {
       final data = await _rest!.get('/ppp/active');
       return _asList(data).map((e) => PppoeActive.fromRow(_toRow(e))).toList();
     }
-    return [];
+    if (_binary != null) {
+      final rows = await _binary!.command('/ppp/active/print');
+      return rows.map(PppoeActive.fromRow).toList();
+    }
+    throw const RouterOsException(
+      'اتصل بالراوتر أولاً',
+      kind: RouterOsErrorKind.network,
+    );
   }
 
   Future<void> addPppoeUser(PppoeUser user) async {
