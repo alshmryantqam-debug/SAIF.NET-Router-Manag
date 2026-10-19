@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
-import '../services/mikrotik_service.dart';
 import '../theme.dart';
 
 class InterfacesScreen extends ConsumerWidget {
@@ -105,7 +104,7 @@ class InterfacesScreen extends ConsumerWidget {
                 if (list.isEmpty) return _emptyBox('لا توجد واجهات');
                 return Column(
                   children: list
-                      .map((i) => _ifaceTile(i))
+                      .map((i) => _ifaceTile(i, context, ref))
                       .toList(),
                 );
               },
@@ -178,7 +177,7 @@ class InterfacesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _ifaceTile(InterfaceInfo i) {
+  Widget _ifaceTile(InterfaceInfo i, BuildContext context, WidgetRef ref) {
     final running = i.running && !i.disabled;
     final color = i.disabled
         ? AppColors.textMuted
