@@ -42,6 +42,19 @@ class ConnectionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshDashboard() async {
+    _errorMessage = '';
+    try {
+      await fetchPPPoEUsers();
+      _systemResource = await _service.getSystemResource();
+      _isConnected = true;
+    } catch (e) {
+      _errorMessage = 'فشل تحديث لوحة التحكم: $e';
+    } finally {
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchInterfaces() async {
     try {
       _interfaces = await _service.getInterfaces();
