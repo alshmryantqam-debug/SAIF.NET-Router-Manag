@@ -12,18 +12,15 @@ class ConnectionProvider extends ChangeNotifier {
   String _errorMessage = '';
   
   Map<String, dynamic> _systemResource = {};
-  List<dynamic> _activePPPoE = [];
   List<PPPoEUser> _pppoeUsers = [];
-  List<PPPoEUser> get pppoeUsers => _pppoeUsers;
-
   List<HotspotUser> _hotspotUsers = [];
-  List<HotspotUser> get hotspotUsers => _hotspotUsers;
 
   bool get isLoading => _isLoading;
   bool get isConnected => _isConnected;
   String get errorMessage => _errorMessage;
   Map<String, dynamic> get systemResource => _systemResource;
-  List<dynamic> get activePPPoE => _activePPPoE;
+  List<PPPoEUser> get pppoeUsers => _pppoeUsers;
+  List<HotspotUser> get hotspotUsers => _hotspotUsers;
 
   Future<void> connect(RouterConfig config) async {
     _isLoading = true;
@@ -33,8 +30,9 @@ class ConnectionProvider extends ChangeNotifier {
     try {
       _service.connect(config);
       _systemResource = await _service.getSystemResource();
-      _activePPPoE = await _service.getActivePPPoE();
       _isConnected = true;
+      await fetchPPPoEUsers();
+      await fetchHotspotUsers();
     } catch (e) {
       _isConnected = false;
       _errorMessage = e.toString();
@@ -53,11 +51,6 @@ class ConnectionProvider extends ChangeNotifier {
       _errorMessage = 'فشل جلب المشتركين: $e';
       notifyListeners();
     }
-  }
-
-  Future<void> addPPPoEUser(String username, String password, String profile) async {
-    final success = await _service.createPPPoEUser(username, password, profile);
-    if (success) await fetchPPPoEUsers();
   }
 
   Future<void> togglePPPoEUser(String id, bool disabled) async {
@@ -79,11 +72,6 @@ class ConnectionProvider extends ChangeNotifier {
       _errorMessage = 'فشل جلب الهوتسبوت: $e';
       notifyListeners();
     }
-  }
-
-  Future<void> addHotspotUser(String name, String password, String profile) async {
-    final success = await _service.createHotspotUser(name, password, profile);
-    if (success) await fetchHotspotUsers();
   }
 
   Future<void> deleteHotspotUser(String id) async {
