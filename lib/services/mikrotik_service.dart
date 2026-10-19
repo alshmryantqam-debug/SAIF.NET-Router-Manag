@@ -914,7 +914,8 @@ class MikrotikService {
     }
 
     final allInterfaces = await interfaces();
-    final existingNames = allInterfaces.map((e) => e.name).toSet();
+    final interfacesByName = {for (final iface in allInterfaces) iface.name: iface};
+    final existingNames = interfacesByName.keys.toSet();
     if (normalized.any((line) => !existingNames.contains(line['interface']))) {
       throw const RouterOsException('إحدى واجهات WAN المختارة غير موجودة على الراوتر.', kind: RouterOsErrorKind.badRequest);
     }
@@ -923,8 +924,41 @@ class MikrotikService {
       throw RouterOsException('قائمة الواجهات $lanName غير موجودة. اختر قائمة LAN الصحيحة أولاً.');
     }
     final members = _asList(await _rest!.get('/interface/list/member')).map(_toRow).toList();
-    if (!members.any((r) => r['list'] == lanName)) {
+    final lanMembers = members
+        .where((r) => r['list'] == lanName)
+        .map((r) => r['interface'] ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    if (lanMembers.isEmpty) {
       throw RouterOsException('قائمة $lanName لا تحتوي أعضاء. أوقف المعالج وأصلح عضوية LAN أولاً.');
+    }
+    final wanNames = normalized.map((line) => line['interface']!).toSet();
+    final wanAlsoInLan = wanNames.intersection(lanMembers);
+    if (wanAlsoInLan.isNotEmpty) {
+      throw RouterOsException(
+        'الواجهات التالية محددة كـ WAN وعضو في قائمة LAN بنفس الوقت: ${wanAlsoInLan.join(', ')}. صحح اختيار الواجهات قبل التطبيق.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final disabledWan = normalized
+        .where((line) => interfacesByName[line['interface']]!.disabled)
+        .map((line) => line['interface']!)
+        .toList();
+    if (disabledWan.isNotEmpty) {
+      throw RouterOsException(
+        'واجهات WAN التالية معطّلة: ${disabledWan.join(', ')}. فعّلها أو اختر واجهات أخرى قبل الدمج.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final nonRunningWan = normalized
+        .where((line) => !interfacesByName[line['interface']]!.running)
+        .map((line) => line['interface']!)
+        .toList();
+    if (nonRunningWan.isNotEmpty) {
+      throw RouterOsException(
+        'لا توجد إشارة تشغيل حالية على واجهات WAN التالية: ${nonRunningWan.join(', ')}. قد تكون الواجهة PPPoE/DHCP غير متصلة أو المنفذ غير موصول؛ لم يتم التطبيق.',
+        kind: RouterOsErrorKind.badRequest,
+      );
     }
 
     final mangle = _asList(await _rest!.get('/ip/firewall/mangle')).map(_toRow).toList();
@@ -950,9 +984,13 @@ class MikrotikService {
       throw const RouterOsException('توجد إعدادات سابقة باسم SAIFLB-WIZARD/SAIF_WAN. لم يتم تكرارها أو تعديلها؛ راجعها يدوياً أولاً.');
     }
 
+    // Only use directly attached subnets on members of the selected LAN list.
+    // Including WAN-side addresses here would bypass PCC for traffic aimed at ISP networks.
     final localAddresses = _asList(await _rest!.get('/ip/address')).map(_toRow).toList();
     final localCidrs = <String>{};
     for (final row in localAddresses) {
+      if (!lanMembers.contains(row['interface'] ?? '')) continue;
+      if (row['disabled'] == 'true' || row['disabled'] == 'yes') continue;
       final address = (row['address'] ?? '').trim();
       final slash = address.lastIndexOf('/');
       if (slash <= 0) continue;
