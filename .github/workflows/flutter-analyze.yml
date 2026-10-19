@@ -1,0 +1,17 @@
+name: Flutter Analyze
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['lib/**', 'test/**', 'pubspec.yaml', 'analysis_options.yaml', '.github/workflows/flutter-analyze.yml']
+  push:
+    paths: ['lib/**', 'test/**', 'pubspec.yaml', 'analysis_options.yaml', '.github/workflows/flutter-analyze.yml']
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
