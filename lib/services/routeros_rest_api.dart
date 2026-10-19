@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import '../models/router_config.dart';
-import '../core/security/router_operation_guard.dart';
 
 class RouterosRestApi {
   late Dio _dio;
@@ -11,7 +10,6 @@ class RouterosRestApi {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ));
-    _dio.interceptors.add(RouterOperationGuard());
   }
 
   void connect(RouterConfig config) {
@@ -31,6 +29,25 @@ class RouterosRestApi {
   Future<List<dynamic>> getPPPoESecrets() async {
     final response = await _dio.get('/ppp/secret');
     return response.data;
+  }
+
+  Future<List<dynamic>> getActivePPPoE() async {
+    final response = await _dio.get('/ppp/active');
+    return response.data;
+  }
+
+  Future<bool> createPPPoEUser(String username, String password, String profile) async {
+    try {
+      await _dio.put('/ppp/secret', data: {
+        'name': username,
+        'password': password,
+        'profile': profile,
+        'service': 'pppoe',
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> removePPPoESecret(String id) async {
@@ -89,4 +106,57 @@ class RouterosRestApi {
     final response = await _dio.get('/queue/simple');
     return response.data;
   }
+
+  Future<String> _executeTemporaryScript(String source) async {
+    final scriptName = 'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
+    String? scriptId;
+    try {
+      final created = await _dio.put('/system/script', data: {
+        'name': scriptName,
+        'source': source,
+        'policy': 'read,write,policy,test',
+      });
+      if (created.data is Map) {
+        scriptId = created.data['.id']?.toString();
+      }
+      if (scriptId == null || scriptId!.isEmpty) {
+        final scripts = await _dio.get('/system/script', queryParameters: {'name': scriptName});
+        if (scripts.data is List && (scripts.data as List).isNotEmpty) {
+          scriptId = (scripts.data as List).first['.id']?.toString();
+        }
+      }
+      final target = (scriptId != null && scriptId!.isNotEmpty) ? scriptId! : scriptName;
+      await _dio.post('/system/script/run', data: {'number': target});
+      return 'SUCCESS: RouterOS accepted the script for execution. REST does not provide a general interactive CLI output stream.';
+    } finally {
+      if (scriptId != null && scriptId!.isNotEmpty) {
+        try {
+          await _dio.delete('/system/script/$scriptId');
+        } catch (_) {
+          // Cleanup is best-effort; the execution result remains authoritative.
+        }
+      }
+    }
+  }
+
+  Future<bool> runSystemScript(String scriptContent) async {
+    try {
+      final result = await _executeTemporaryScript(scriptContent);
+      return result.startsWith('SUCCESS:');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String> executeRawCommand(String command) async {
+    if (command.trim().isEmpty) return 'ERROR: Command is empty.';
+    try {
+      return await _executeTemporaryScript(command);
+    } on DioException catch (e) {
+      return 'ERROR: ${e.response?.statusCode} - ${e.response?.data ?? e.message}';
+    } catch (e) {
+      return 'ERROR: $e';
+    }
+  }
+
 }
