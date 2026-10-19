@@ -918,7 +918,7 @@ class MikrotikService {
         for (var step = 0; step < wans.length; step++) {
           final index = (i + step) % wans.length;
           final wan = wans[index];
-          final tableName = 'saif_\${names[i]}';
+          final tableName = 'saif_${names[i]}';
           final existingSame = routes.any((route) =>
             (route['dst-address'] ?? '') == '0.0.0.0/0' &&
             (route['routing-table'] ?? 'main') == tableName &&
@@ -928,27 +928,27 @@ class MikrotikService {
             'dst-address': '0.0.0.0/0',
             'gateway': wan['gateway']!.trim(),
             'routing-table': tableName,
-            'distance': '\${step + 1}',
+            'distance': '${step + 1}',
             'check-gateway': 'ping',
-            'comment': 'SAIF.NET LB \${names[i]} via \${names[index]}',
+            'comment': 'SAIF.NET LB ${names[i]} via ${names[index]}',
           });
           final row = _firstMap(res);
           if ((row['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/route', 'id': row['.id']!});
         }
       }
       for (var i = 0; i < wans.length; i++) {
-        final mark = 'SAIF_\${names[i]}_conn';
-        final tableName = 'saif_\${names[i]}';
+        final mark = 'SAIF_${names[i]}_conn';
+        final tableName = 'saif_${names[i]}';
         final connectionRes = await _rest!.post('/ip/firewall/mangle', {
           'chain': 'prerouting',
           'in-interface': lanInterface.trim(),
           'dst-address-type': '!local',
           'connection-mark': 'no-mark',
-          'per-connection-classifier': 'both-addresses-and-ports:\${wans.length}/$i',
+          'per-connection-classifier': 'both-addresses-and-ports:${wans.length}/$i',
           'action': 'mark-connection',
           'new-connection-mark': mark,
           'passthrough': 'yes',
-          'comment': 'SAIF.NET LB PCC connection \${names[i]}',
+          'comment': 'SAIF.NET LB PCC connection ${names[i]}',
         });
         final connectionRow = _firstMap(connectionRes);
         if ((connectionRow['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/firewall/mangle', 'id': connectionRow['.id']!});
@@ -959,14 +959,14 @@ class MikrotikService {
           'action': 'mark-routing',
           'new-routing-mark': tableName,
           'passthrough': 'no',
-          'comment': 'SAIF.NET LB PCC route \${names[i]}',
+          'comment': 'SAIF.NET LB PCC route ${names[i]}',
         });
         final routeRow = _firstMap(routeRes);
         if ((routeRow['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/firewall/mangle', 'id': routeRow['.id']!});
       }
     } catch (e) {
       for (final item in created.reversed) {
-        try { await _rest!.delete('\${item['path']}/\${item['id']}'); } catch (_) {}
+        try { await _rest!.delete('${item['path']}/${item['id']}'); } catch (_) {}
       }
       throw RouterOsException('فشل تطبيق الدمج وتمت محاولة التراجع عن العناصر التي أُنشئت. افحص الراوتر قبل إعادة المحاولة. التفاصيل: $e', kind: RouterOsErrorKind.server);
     }
