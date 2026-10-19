@@ -64,7 +64,7 @@ class ConnectionProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> connect(RouterConfig config) async {
+  Future<void> connect(MikrotikConfig config) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
