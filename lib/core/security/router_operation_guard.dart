@@ -1,7 +1,7 @@
 /// Safety gate for future RouterOS write operations.
 ///
-/// Read operations should not call this guard. Any configuration-changing
-/// operation must require explicit user confirmation and a recovery plan.
+/// Read operations do not need this guard. Configuration changes must have
+/// explicit approval, a verified backup, and a rollback plan.
 class RouterOperationGuard {
   const RouterOperationGuard._();
 

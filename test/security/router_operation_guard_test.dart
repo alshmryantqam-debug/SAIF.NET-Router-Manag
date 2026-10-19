@@ -25,7 +25,7 @@ void main() {
       );
     });
 
-    test('rejects a write without rollback plan', () {
+    test('rejects a write without a rollback plan', () {
       expect(
         () => RouterOperationGuard.requireWriteApproval(
           explicitlyConfirmed: true,
@@ -36,7 +36,7 @@ void main() {
       );
     });
 
-    test('allows a write only when all safety conditions are satisfied', () {
+    test('allows writes only when every safety condition is satisfied', () {
       expect(
         () => RouterOperationGuard.requireWriteApproval(
           explicitlyConfirmed: true,
