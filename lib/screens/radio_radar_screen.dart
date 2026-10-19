@@ -180,8 +180,15 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     return result;
   }
 
-  Future<void> _manageRadioInterface(Map<String, String> radio) async {
-    final interfaceName = (radio['interface'] ?? '').trim();
+  bool _isWirelessInterface(InterfaceInfo iface) {
+    final type = iface.type.toLowerCase();
+    final name = iface.name.toLowerCase();
+    return type.contains('wireless') || type.contains('wifi') ||
+        type == 'wlan' || name.startsWith('wlan') || name.startsWith('wifi');
+  }
+
+  Future<void> _manageRadioInterface(String requestedName) async {
+    final interfaceName = requestedName.trim();
     if (interfaceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('اسم واجهة الراديو غير متاح من الراوتر.')),
@@ -196,13 +203,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
       return;
     }
     final iface = matches.first;
-    final interfaceType = iface.type.toLowerCase();
-    final interfaceLabel = iface.name.toLowerCase();
-    final isWireless = interfaceType.contains('wireless') ||
-        interfaceType.contains('wifi') ||
-        interfaceLabel.startsWith('wlan') ||
-        interfaceLabel.startsWith('wifi');
-    if (!isWireless) {
+    if (!_isWirelessInterface(iface)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('رفضت العملية لأن نوع الواجهة لا يبدو لاسلكياً.')),
       );
@@ -398,21 +399,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
               title: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي'),
               subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}\nالواجهة: ${row['interface'] ?? '—'} • ${_interfaces.any((i) => i.name == row['interface'] && i.disabled) ? 'معطلة' : 'مفعلة/غير معروفة'}'),
               isThreeLine: true,
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    tooltip: 'إدارة واجهة القطاع',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _busyInterfaces.contains(row['interface']) ? null : () => _manageRadioInterface(row),
-                    icon: _busyInterfaces.contains(row['interface'])
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.power_settings_new_rounded, size: 20),
-                  ),
-                ],
-              ),
+              trailing: Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
             ),
           );
         }),
@@ -441,6 +428,27 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
               trailing: Text(signal == null ? 'الإشارة غير متاحة' : '${signal} dBm',
                   textAlign: TextAlign.end,
                   style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+        Text('إدارة واجهات الراديو (${_interfaces.where(_isWirelessInterface).length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('هذه أوامر تغيير حقيقية على الراوتر. تعطيل واجهة قطاع يفصل عملاءها؛ لا تستخدمها على واجهة الإدارة.', style: TextStyle(color: AppColors.warning, fontSize: 12)),
+        ..._interfaces.where(_isWirelessInterface).map((iface) {
+          final busy = _busyInterfaces.contains(iface.name);
+          return Card(
+            child: ListTile(
+              leading: Icon(iface.disabled ? Icons.portable_wifi_off_rounded : Icons.wifi_rounded,
+                  color: iface.disabled ? AppColors.danger : AppColors.success),
+              title: Text(iface.name),
+              subtitle: Text('${iface.type} • ${iface.running ? 'تعمل' : 'متوقفة'} • ${iface.disabled ? 'معطلة إدارياً' : 'مفعلة'}'),
+              trailing: FilledButton.tonal(
+                onPressed: busy ? null : () => _manageRadioInterface(iface.name),
+                child: busy
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(iface.disabled ? 'تفعيل' : 'تعطيل'),
+              ),
             ),
           );
         }),
