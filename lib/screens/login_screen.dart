@@ -261,7 +261,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           shaderCallback: (bounds) =>
               AppGradients.primary.createShader(bounds),
           child: const Text(
-            'TikPlus ULTRA',
+            'SAIF.NET',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -272,7 +272,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
         const SizedBox(height: 6),
         const Text(
-          'المنصة الاحترافية لإدارة MikroTik',
+          'منصة إدارة الشبكات الاحترافية',
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: 12.5,
@@ -587,7 +587,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return const Column(
       children: [
         Text(
-          'TikPlus ULTRA · الإصدار 1.0.0',
+          'SAIF.NET · الإصدار 1.0.0',
           style: TextStyle(
             color: AppColors.textMuted,
             fontSize: 11,
