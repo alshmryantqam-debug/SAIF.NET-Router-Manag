@@ -28,7 +28,8 @@ class RadioManagementLauncher {
     final address = InternetAddress.tryParse(normalized);
     if (address == null) return false;
     if (address.type == InternetAddressType.IPv6) {
-      return address.isLoopback || address.isLinkLocal || address.isPrivate;
+      return address.isLoopback || address.isLinkLocal ||
+          (address.rawAddress.isNotEmpty && (address.rawAddress.first & 0xfe) == 0xfc);
     }
     final parts = normalized.split('.');
     if (parts.length != 4) return false;
