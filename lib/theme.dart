@@ -1,33 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color bgDark = Color(0xFF0B0F19);
-  static const Color cardDark = Color(0xFF1A2235);
-  static const Color primaryPurple = Color(0xFF8B5CF6);
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color textMain = Color(0xFFF8FAFC);
-  static const Color textMuted = Color(0xFF94A3B8);
-  static const Color successGreen = Color(0xFF10B981);
-  static const Color dangerRed = Color(0xFFEF4444);
-  static const Color warningOrange = Color(0xFFF59E0B);
+  static const Color backgroundColor = Color(0xFF0B0F19);
+  static const Color primaryColor = Color(0xFF6B8CE6);
+  static const Color cardColor = Color(0xFF161B2B);
+  static const Color cardBorderColor = Color(0xFF2C3550);
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFFA0A5BB);
+  static const Color successColor = Color(0xFF4CAE7D);
+  static const Color dangerColor = Color(0xFFD65C5C);
+  static const Color warningColor = Color(0xFFE5C158);
+
+  static const LinearGradient glassGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF3A4B75), Color(0xFF1F2A47)],
+  );
 
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: bgDark,
-      primaryColor: primaryPurple,
+      scaffoldBackgroundColor: backgroundColor,
+      primaryColor: primaryColor,
+      fontFamily: 'Cairo',
       colorScheme: const ColorScheme.dark(
-        primary: primaryPurple,
-        secondary: primaryBlue,
-        surface: cardDark,
-        error: dangerRed,
+        primary: primaryColor,
+        surface: cardColor,
+        background: backgroundColor,
       ),
-      textTheme: GoogleFonts.tajawalTextTheme().apply(
-        bodyColor: textMain,
-        displayColor: textMain,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: textPrimary),
+        titleTextStyle: TextStyle(
+          color: textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Cairo',
+        ),
       ),
-      useMaterial3: true,
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
+        bodyMedium: TextStyle(color: textSecondary, fontSize: 14),
+        titleLarge: TextStyle(
+          color: textPrimary,
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      iconTheme: const IconThemeData(color: textSecondary),
     );
   }
 }
