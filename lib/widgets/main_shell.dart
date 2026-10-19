@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 import '../theme.dart';
+import '../providers/connection_provider.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/pppoe_screen.dart';
 import '../screens/hotspot_screen.dart';
@@ -8,7 +9,6 @@ import '../screens/settings_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
-
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -36,13 +36,7 @@ class _MainShellState extends State<MainShell> {
             color: const Color(0xFF1A2235).withOpacity(0.95),
             borderRadius: BorderRadius.circular(35),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10))],
           ),
           child: Stack(
             clipBehavior: Clip.none,
@@ -58,25 +52,28 @@ class _MainShellState extends State<MainShell> {
                   _navItem(3, Icons.menu_rounded, 'المزيد'),
                 ],
               ),
+              // الزر العائم (يعمل الآن)
               Positioned(
                 top: -25,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)],
+                child: GestureDetector(
+                  onTap: () {
+                    // استدعاء دالة التحديث من الـ Provider
+                    context.read<ConnectionProvider>().refreshDashboard();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('جاري تحديث البيانات...'), duration: Duration(seconds: 1)),
+                    );
+                  },
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)]),
+                      border: Border.all(color: AppTheme.bgDark, width: 4),
+                      boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.5), blurRadius: 15)],
                     ),
-                    border: Border.all(color: AppTheme.bgDark, width: 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.5),
-                        blurRadius: 15,
-                      ),
-                    ],
+                    child: const Icon(Icons.sync, color: Colors.white, size: 30),
                   ),
-                  child: const Icon(Icons.sync, color: Colors.white, size: 30),
                 ),
               ),
             ],
@@ -87,26 +84,17 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _navItem(int index, IconData icon, String label) {
-    final isActive = _index == index;
+    bool isActive = _index == index;
     return GestureDetector(
       onTap: () => setState(() => _index = index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon,
-              color: isActive ? AppTheme.primaryPurple : Colors.grey,
-              size: 26),
+          Icon(icon, color: isActive ? AppTheme.primaryPurple : Colors.grey, size: 26),
           if (isActive) ...[
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.primaryPurple,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+            Text(label, style: const TextStyle(color: AppTheme.primaryPurple, fontSize: 10, fontWeight: FontWeight.bold)),
+          ]
         ],
       ),
     );
