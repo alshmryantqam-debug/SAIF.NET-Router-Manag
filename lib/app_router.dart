@@ -22,6 +22,7 @@ import 'screens/terminal_screen.dart';
 import 'screens/voucher_screen.dart';
 import 'screens/voltage_alarm_screen.dart';
 import 'screens/radio_radar_screen.dart';
+import 'screens/network_engineering_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
 
@@ -122,6 +123,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/network-engineering',
+        name: 'network-engineering',
+        builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: NetworkEngineeringScreen()),
       ),
       GoRoute(
         path: '/routers',

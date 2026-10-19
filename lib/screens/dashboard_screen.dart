@@ -171,6 +171,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _action('Terminal', Icons.terminal_rounded, AppColors.warning, () => context.push('/terminal')),
                   _action('المشتركون', Icons.people_alt_rounded, AppColors.success, () => context.go('/hotspot')),
                   _action('تحديث الآن', Icons.sync_rounded, AppColors.secondary, _refresh),
+                  _action('مهندس الشبكة', Icons.hub_rounded, AppColors.primary, () => context.push('/network-engineering')),
                 ],
               ),
               const SizedBox(height: 18),
