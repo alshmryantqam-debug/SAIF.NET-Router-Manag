@@ -16,12 +16,21 @@ class RouterosRestApi {
       receiveTimeout: const Duration(seconds: 10),
     ));
 
-    // ملاحظة أمنية: هذا الإجراء يتجاوز التحقق من شهادة SSL للسماح بالاتصال براوتر MikroTik (شهادة ذاتية).
-    // هذا التجاوز مؤقت للاختبار المحلي فقط؛ في بيئة الإنتاج، استخدم Certificate Pinning أو قناة إدارة آمنة.
+    // تجاوز شهادة ذاتية للاختبار المحلي فقط، ومقيّد بالمضيف والمنفذ اللذين
+    // تم ضبطهما في connect() بدلاً من قبول أي شهادة لأي مضيف.
+    // لا تستخدم هذا التطبيق على شبكة عامة أو غير موثوقة؛ للإنتاج تحقّق من
+    // شهادة الراوتر أو استخدم certificate pinning.
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+          final target = Uri.tryParse(_dio.options.baseUrl);
+          return target != null &&
+              target.scheme == 'https' &&
+              host == target.host &&
+              port == target.port;
+        };
         return client;
       },
     );
