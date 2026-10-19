@@ -30,6 +30,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
   List<Map<String, String>> _radios = [];
   List<Map<String, String>> _neighbors = [];
   List<Map<String, String>> _leases = [];
+  List<Map<String, String>> _arp = [];
   DateTime? _updated;
 
   @override
@@ -83,6 +84,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
         service.runCommand('/interface/wifi/registration-table'),
         service.runCommand('/ip/neighbor'),
         service.runCommand('/ip/dhcp-server/lease'),
+        service.runCommand('/ip/arp'),
       ]);
       final merged = <Map<String, String>>[];
       final seen = <String>{};
@@ -98,6 +100,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
         _radios = merged;
         _neighbors = results[2];
         _leases = results[3];
+        _arp = results[4];
         _updated = DateTime.now();
       });
       for (final target in List<Map<String, String>>.from(_targets)) {
@@ -114,6 +117,49 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     final value = row['signal-strength'] ?? row['signal'] ?? '';
     final match = RegExp(r'-?\d+').firstMatch(value);
     return match == null ? null : int.tryParse(match.group(0)!);
+  }
+
+  List<Map<String, String>> _networkDevices() {
+    final devices = <String, Map<String, String>>{};
+
+    void add(Map<String, String> row, String source) {
+      final mac = (row['mac-address'] ?? row['mac-addresses'] ?? '').trim().toUpperCase();
+      final ip = (row['address'] ?? row['ip-address'] ?? '').trim();
+      final key = mac.isNotEmpty ? mac : ip;
+      if (key.isEmpty) return;
+      final existing = devices[key] ?? <String, String>{};
+      devices[key] = {
+        ...existing,
+        ...row,
+        if (mac.isNotEmpty) 'mac-address': mac,
+        if (ip.isNotEmpty) 'address': ip,
+        '_source': source,
+      };
+    }
+
+    for (final row in _neighbors) {
+      add(row, 'جار MikroTik');
+    }
+    for (final row in _leases) {
+      add(row, 'DHCP');
+    }
+    for (final row in _arp) {
+      add(row, 'ARP');
+    }
+    for (final row in _radios) {
+      add(row, 'عميل لاسلكي مسجل');
+    }
+    final result = devices.values.toList();
+    result.sort((a, b) {
+      final aSignal = _signal(a);
+      final bSignal = _signal(b);
+      if (aSignal != null && bSignal == null) return -1;
+      if (aSignal == null && bSignal != null) return 1;
+      if (aSignal != null && bSignal != null) return aSignal.compareTo(bSignal);
+      return (a['host-name'] ?? a['identity'] ?? a['address'] ?? '')
+          .compareTo(b['host-name'] ?? b['identity'] ?? b['address'] ?? '');
+    });
+    return result;
   }
 
   Future<void> _addTarget() async {
@@ -236,6 +282,34 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
               subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}'),
               isThreeLine: true,
               trailing: Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+        Text('كل الأجهزة المكتشفة (${_networkDevices().length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('دمج من جدول اللاسلكي والجيران وDHCP وARP؛ تظهر الإشارة فقط عندما يزوّد MikroTik بقيمة فعلية.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        ..._networkDevices().map((device) {
+          final signal = _signal(device);
+          final weakSignal = signal != null && signal < -78;
+          final color = weakSignal ? AppColors.danger : (signal == null ? AppColors.textSecondary : AppColors.success);
+          final name = device['host-name']?.isNotEmpty == true
+              ? device['host-name']!
+              : device['identity']?.isNotEmpty == true
+                  ? device['identity']!
+                  : device['radio-name']?.isNotEmpty == true
+                      ? device['radio-name']!
+                      : device['address'] ?? device['mac-address'] ?? 'جهاز شبكة';
+          return Card(
+            color: weakSignal ? AppColors.danger.withOpacity(.12) : AppColors.bgCard,
+            child: ListTile(
+              leading: Icon(weakSignal ? Icons.signal_wifi_bad_rounded : Icons.devices_other_rounded, color: color),
+              title: Text(name),
+              subtitle: Text('${device['address'] ?? 'IP غير معروف'} • ${device['mac-address'] ?? 'MAC غير معروف'}\nالمصدر: ${device['_source'] ?? 'اكتشاف الشبكة'}'),
+              isThreeLine: true,
+              trailing: Text(signal == null ? 'الإشارة غير متاحة' : '${signal} dBm',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
             ),
           );
         }),
