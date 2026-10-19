@@ -156,6 +156,7 @@ class MainShell extends StatelessWidget {
           _drawerItem(context, icon: Icons.receipt_long_rounded, label: 'الفوترة', route: '/billing'),
           _drawerItem(context, icon: Icons.person_pin_circle_rounded, label: 'بوابة المشترك', route: '/customer-portal'),
           _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'الأدوار والصلاحيات', route: '/roles'),
+          _drawerItem(context, icon: Icons.alt_route_rounded, label: 'مهندس دمج الخطوط وFailover', route: '/load-balance'),
           _drawerItem(context, icon: Icons.radar_rounded, label: 'رادار صحون البث', route: '/radio-radar'),
           _drawerItem(context, icon: Icons.battery_alert_rounded, label: 'إنذار فولتية البطاريات', route: '/voltage-alarm'),
           _drawerItem(context, icon: Icons.auto_awesome_rounded, label: 'الأتمتة الذكية', route: '/automation'),

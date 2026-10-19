@@ -22,6 +22,7 @@ import 'screens/terminal_screen.dart';
 import 'screens/voucher_screen.dart';
 import 'screens/voltage_alarm_screen.dart';
 import 'screens/radio_radar_screen.dart';
+import 'screens/load_balance_wizard_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
 
@@ -98,6 +99,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'voucher',
             pageBuilder: (_, __) => const NoTransitionPage(
               child: BusinessGate(allowed: const [BusinessRole.manager, BusinessRole.distributor], child: VoucherScreen()),
+            ),
+          ),
+          GoRoute(
+            path: '/load-balance',
+            name: 'load-balance',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: LoadBalanceWizardScreen()),
             ),
           ),
           GoRoute(

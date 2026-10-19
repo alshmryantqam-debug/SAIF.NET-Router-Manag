@@ -30,6 +30,9 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
   List<Map<String, String>> _radios = [];
   List<Map<String, String>> _neighbors = [];
   List<Map<String, String>> _leases = [];
+  List<Map<String, String>> _arp = [];
+  List<InterfaceInfo> _interfaces = [];
+  final Set<String> _busyInterfaces = {};
   DateTime? _updated;
 
   @override
@@ -70,6 +73,19 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     await _storage.write(key: _key, value: jsonEncode(_targets));
   }
 
+  Future<List<Map<String, String>>> _safeRead(
+    MikrotikService service,
+    String path,
+  ) async {
+    try {
+      return await service.runCommand(path);
+    } catch (_) {
+      // Some RouterOS versions do not expose every wireless menu.
+      // Keep the other read-only discovery sources available.
+      return <Map<String, String>>[];
+    }
+  }
+
   Future<void> _refresh() async {
     final service = ref.read(mikrotikProvider);
     if (!service.isConnected) {
@@ -79,11 +95,14 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final results = await Future.wait([
-        service.runCommand('/interface/wireless/registration-table'),
-        service.runCommand('/interface/wifi/registration-table'),
-        service.runCommand('/ip/neighbor'),
-        service.runCommand('/ip/dhcp-server/lease'),
+        _safeRead(service, '/interface/wireless/registration-table'),
+        _safeRead(service, '/interface/wifi/registration-table'),
+        _safeRead(service, '/ip/neighbor'),
+        _safeRead(service, '/ip/dhcp-server/lease'),
+        _safeRead(service, '/ip/arp'),
       ]);
+      List<InterfaceInfo> interfaceRows = [];
+      try { interfaceRows = await service.interfaces(); } catch (_) {}
       final merged = <Map<String, String>>[];
       final seen = <String>{};
       for (var i = 0; i < 2; i++) {
@@ -98,6 +117,8 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
         _radios = merged;
         _neighbors = results[2];
         _leases = results[3];
+        _arp = results[4];
+        _interfaces = interfaceRows;
         _updated = DateTime.now();
       });
       for (final target in List<Map<String, String>>.from(_targets)) {
@@ -114,6 +135,149 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
     final value = row['signal-strength'] ?? row['signal'] ?? '';
     final match = RegExp(r'-?\d+').firstMatch(value);
     return match == null ? null : int.tryParse(match.group(0)!);
+  }
+
+  List<Map<String, String>> _networkDevices() {
+    final devices = <String, Map<String, String>>{};
+
+    void add(Map<String, String> row, String source) {
+      final mac = (row['mac-address'] ?? row['mac-addresses'] ?? '').trim().toUpperCase();
+      final ip = (row['address'] ?? row['ip-address'] ?? '').trim();
+      final key = mac.isNotEmpty ? mac : ip;
+      if (key.isEmpty) return;
+      final existing = devices[key] ?? <String, String>{};
+      devices[key] = {
+        ...existing,
+        ...row,
+        if (mac.isNotEmpty) 'mac-address': mac,
+        if (ip.isNotEmpty) 'address': ip,
+        '_source': source,
+      };
+    }
+
+    for (final row in _neighbors) {
+      add(row, 'جار MikroTik');
+    }
+    for (final row in _leases) {
+      add(row, 'DHCP');
+    }
+    for (final row in _arp) {
+      add(row, 'ARP');
+    }
+    for (final row in _radios) {
+      add(row, 'عميل لاسلكي مسجل');
+    }
+    final result = devices.values.toList();
+    result.sort((a, b) {
+      final aSignal = _signal(a);
+      final bSignal = _signal(b);
+      if (aSignal != null && bSignal == null) return -1;
+      if (aSignal == null && bSignal != null) return 1;
+      if (aSignal != null && bSignal != null) return aSignal.compareTo(bSignal);
+      return (a['host-name'] ?? a['identity'] ?? a['address'] ?? '')
+          .compareTo(b['host-name'] ?? b['identity'] ?? b['address'] ?? '');
+    });
+    return result;
+  }
+
+  bool _isWirelessInterface(InterfaceInfo iface) {
+    final type = iface.type.toLowerCase();
+    final name = iface.name.toLowerCase();
+    return type.contains('wireless') || type.contains('wifi') ||
+        type == 'wlan' || name.startsWith('wlan') || name.startsWith('wifi');
+  }
+
+  Future<void> _manageRadioInterface(String requestedName) async {
+    final interfaceName = requestedName.trim();
+    if (interfaceName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اسم واجهة الراديو غير متاح من الراوتر.')),
+      );
+      return;
+    }
+    final matches = _interfaces.where((i) => i.name == interfaceName).toList();
+    if (matches.isEmpty || matches.first.id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لم أجد معرّف الواجهة في RouterOS REST API. تأكد من اتصال RouterOS v7 وصلاحيات القراءة.')),
+      );
+      return;
+    }
+    final iface = matches.first;
+    if (!_isWirelessInterface(iface)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('رفضت العملية لأن نوع الواجهة لا يبدو لاسلكياً.')),
+      );
+      return;
+    }
+    final nextDisabled = !iface.disabled;
+    var backupVerified = false;
+    var rollbackReady = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialog) => AlertDialog(
+          title: Text(nextDisabled ? 'تعطيل واجهة الراديو؟' : 'تفعيل واجهة الراديو؟'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('الواجهة: ${iface.name} • ${iface.type}'),
+              const SizedBox(height: 8),
+              if (nextDisabled)
+                const Text('تحذير: تعطيل هذه الواجهة قد يفصل جميع المشتركين المتصلين بهذا القطاع. لا تعطّل واجهة الإدارة أو WAN.', style: TextStyle(color: AppColors.danger)),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: backupVerified,
+                onChanged: (v) => setDialog(() => backupVerified = v ?? false),
+                title: const Text('تحققت بنفسي من نسخة احتياطية حديثة'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: rollbackReady,
+                onChanged: (v) => setDialog(() => rollbackReady = v ?? false),
+                title: const Text('لدي خطة لاستعادة الخدمة إذا انقطع القطاع'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(
+              onPressed: backupVerified && rollbackReady
+                  ? () => Navigator.pop(dialogContext, true)
+                  : null,
+              child: Text(nextDisabled ? 'تأكيد التعطيل' : 'تأكيد التفعيل'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busyInterfaces.add(interfaceName));
+    try {
+      await ref.read(mikrotikProvider).setInterfaceDisabled(
+        iface.id,
+        nextDisabled,
+        explicitlyConfirmed: true,
+        backupVerified: backupVerified,
+        rollbackPlanAvailable: rollbackReady,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(nextDisabled ? 'تم إرسال أمر تعطيل ${iface.name}' : 'تم إرسال أمر تفعيل ${iface.name}')),
+      );
+      await _refresh();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشلت العملية: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busyInterfaces.remove(interfaceName));
+    }
   }
 
   Future<void> _addTarget() async {
@@ -233,9 +397,58 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
             child: ListTile(
               leading: Icon(Icons.settings_input_antenna_rounded, color: color),
               title: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي'),
-              subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}'),
+              subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}\nالواجهة: ${row['interface'] ?? '—'} • ${_interfaces.any((i) => i.name == row['interface'] && i.disabled) ? 'معطلة' : 'مفعلة/غير معروفة'}'),
               isThreeLine: true,
               trailing: Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+        Text('كل الأجهزة المكتشفة (${_networkDevices().length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('دمج من جدول اللاسلكي والجيران وDHCP وARP؛ تظهر الإشارة فقط عندما يزوّد MikroTik بقيمة فعلية.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        ..._networkDevices().map((device) {
+          final signal = _signal(device);
+          final weakSignal = signal != null && signal < -78;
+          final color = weakSignal ? AppColors.danger : (signal == null ? AppColors.textSecondary : AppColors.success);
+          final name = device['host-name']?.isNotEmpty == true
+              ? device['host-name']!
+              : device['identity']?.isNotEmpty == true
+                  ? device['identity']!
+                  : device['radio-name']?.isNotEmpty == true
+                      ? device['radio-name']!
+                      : device['address'] ?? device['mac-address'] ?? 'جهاز شبكة';
+          return Card(
+            color: weakSignal ? AppColors.danger.withOpacity(.12) : AppColors.bgCard,
+            child: ListTile(
+              leading: Icon(weakSignal ? Icons.signal_wifi_bad_rounded : Icons.devices_other_rounded, color: color),
+              title: Text(name),
+              subtitle: Text('${device['address'] ?? 'IP غير معروف'} • ${device['mac-address'] ?? 'MAC غير معروف'}\nالمصدر: ${device['_source'] ?? 'اكتشاف الشبكة'}'),
+              isThreeLine: true,
+              trailing: Text(signal == null ? 'الإشارة غير متاحة' : '${signal} dBm',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+        Text('إدارة واجهات الراديو (${_interfaces.where(_isWirelessInterface).length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        const Text('هذه أوامر تغيير حقيقية على الراوتر. تعطيل واجهة قطاع يفصل عملاءها؛ لا تستخدمها على واجهة الإدارة.', style: TextStyle(color: AppColors.warning, fontSize: 12)),
+        ..._interfaces.where(_isWirelessInterface).map((iface) {
+          final busy = _busyInterfaces.contains(iface.name);
+          return Card(
+            child: ListTile(
+              leading: Icon(iface.disabled ? Icons.portable_wifi_off_rounded : Icons.wifi_rounded,
+                  color: iface.disabled ? AppColors.danger : AppColors.success),
+              title: Text(iface.name),
+              subtitle: Text('${iface.type} • ${iface.running ? 'تعمل' : 'متوقفة'} • ${iface.disabled ? 'معطلة إدارياً' : 'مفعلة'}'),
+              trailing: FilledButton.tonal(
+                onPressed: busy ? null : () => _manageRadioInterface(iface.name),
+                child: busy
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(iface.disabled ? 'تفعيل' : 'تعطيل'),
+              ),
             ),
           );
         }),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import '../models/hotspot_user.dart';
 import '../models/pppoe_user.dart';
@@ -716,189 +717,7 @@ class MikrotikService {
   bool _isValidRatePair(String value) {
     final parts = value.trim().split('/');
     if (parts.length != 2) return false;
-    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?
-  Future<void> setInterfaceDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تغيير الواجهات متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف الواجهة غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/interface/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  /// Enables/disables an existing firewall filter rule; does not create rules.
-  Future<void> setFirewallRuleDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تعديل قواعد الجدار الناري متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف قاعدة الجدار الناري غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/ip/firewall/filter/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  /// Enables/disables a simple queue. Does not rewrite queue limits.
-  Future<void> setSimpleQueueDisabled(
-    String id,
-    bool disabled, {
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    _requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (_rest == null) {
-      throw const RouterOsException(
-        'تعديل Simple Queue متاح حالياً عبر REST API في RouterOS v7 فقط.',
-        kind: RouterOsErrorKind.methodNotAllowed,
-      );
-    }
-    if (id.trim().isEmpty) {
-      throw const RouterOsException('معرّف Queue غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    await _rest!.patch('/queue/simple/$id', {
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  void _requireWriteApproval({
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) {
-    RouterOperationGuard.requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    if (!isConnected) {
-      throw const RouterOsException('اتصل بالراوتر أولاً.',
-          kind: RouterOsErrorKind.network);
-    }
-  }
-
-  static const Set<String> _readOnlyCommandPaths = {
-    '/ip/hotspot/user',
-    '/ip/hotspot/active',
-    '/ip/hotspot/user/profile',
-    '/ppp/secret',
-    '/ppp/active',
-    '/interface',
-    '/ip/address',
-    '/ip/dhcp-server/lease',
-    '/ip/dhcp-client',
-    '/interface/wireless/registration-table',
-    '/interface/wifi/registration-table',
-    '/ip/neighbor',
-    '/ip/firewall/filter',
-    '/ip/route',
-    '/ip/service',
-    '/queue/simple',
-    '/system/resource',
-    '/system/health',
-    '/system/identity',
-    '/system/clock',
-    '/system/package',
-    '/log',
-  };
-
-  static bool isReadOnlyCommandPath(String path) {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    final base = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-    return _readOnlyCommandPaths.contains(base) &&
-        (normalized == base || normalized == '$base/print');
-  }
-
-  Future<List<Map<String, String>>> runCommand(String path) async {
-    final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
-    if (!isReadOnlyCommandPath(normalized)) {
-      throw const RouterOsException(
-        'الطرفية الحالية للقراءة فقط وتسمح بمسارات فحص محددة. أوامر التغيير أو إعادة التشغيل غير مسموحة.',
-        kind: RouterOsErrorKind.forbidden,
-      );
-    }
-
-    final endpoint = normalized.endsWith('/print')
-        ? normalized.substring(0, normalized.length - '/print'.length)
-        : normalized;
-
-    if (_rest != null) {
-      final data = await _rest!.get(endpoint);
-      return _asList(data).map(_toRow).toList();
-    }
-    if (_binary != null) {
-      return _binary!.command('$endpoint/print');
-    }
-    throw const RouterOsException('اتصل بالراوتر أولاً',
-        kind: RouterOsErrorKind.network);
-  }
-
-  List<Map<String, dynamic>> _asList(dynamic data) {
-    if (data is List) {
-      return data
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-    if (data is Map) return [Map<String, dynamic>.from(data)];
-    return [];
-  }
-
-  Future<void> disconnect() async {
-    try {
-      _binary?.close();
-    } catch (_) {}
-    try {
-      _rest?.close();
-    } catch (_) {}
-    _rest = null;
-    _binary = null;
-    _activeProtocol = null;
-    _profile = null;
-  }
-}
-);
+    final rate = RegExp(r'^(?:0|[1-9][0-9]*)(?:[kKmMgG])?$');
     return rate.hasMatch(parts[0]) && rate.hasMatch(parts[1]);
   }
 
@@ -1052,6 +871,234 @@ class MikrotikService {
     }
   }
 
+
+
+  /// Applies a fresh RouterOS v7 PCC policy set with end-to-end recursive failover.
+  /// Existing routing/mangle/NAT configuration is never replaced or removed.
+  Future<void> applyPccLoadBalance({
+    required List<Map<String, String>> wanLines,
+    required String lanListName,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    if (_rest == null) {
+      throw const RouterOsException(
+        'مهندس الدمج يحتاج RouterOS v7 عبر REST API. لم يتم تغيير أي إعداد.',
+        kind: RouterOsErrorKind.methodNotAllowed,
+      );
+    }
+    if (wanLines.length < 2 || wanLines.length > 4) {
+      throw const RouterOsException('اختر من خطين إلى أربعة خطوط إنترنت.', kind: RouterOsErrorKind.badRequest);
+    }
+    final lanName = lanListName.trim();
+    if (lanName.isEmpty || lanName.length > 32 || !RegExp(r'^[A-Za-z0-9_.-]+$').hasMatch(lanName)) {
+      throw const RouterOsException('اسم قائمة LAN غير صالح.', kind: RouterOsErrorKind.badRequest);
+    }
+    final normalized = <Map<String, String>>[];
+    final names = <String>{};
+    final gatewayKeys = <String>{};
+    for (final line in wanLines) {
+      final name = (line['interface'] ?? '').trim();
+      final gateway = (line['gateway'] ?? '').trim();
+      final ip = InternetAddress.tryParse(gateway);
+      if (name.isEmpty || !names.add(name) || ip == null || ip.type != InternetAddressType.IPv4 || !gatewayKeys.add('$name|${ip.address}')) {
+        throw const RouterOsException('كل خط يجب أن يملك واجهة مختلفة وبوابة IPv4 صحيحة وفريدة.', kind: RouterOsErrorKind.badRequest);
+      }
+      normalized.add({'interface': name, 'gateway': ip.address, 'gatewayRoute': '${ip.address}%$name'});
+    }
+
+    final allInterfaces = await interfaces();
+    final interfacesByName = {for (final iface in allInterfaces) iface.name: iface};
+    final existingNames = interfacesByName.keys.toSet();
+    if (normalized.any((line) => !existingNames.contains(line['interface']))) {
+      throw const RouterOsException('إحدى واجهات WAN المختارة غير موجودة على الراوتر.', kind: RouterOsErrorKind.badRequest);
+    }
+    final lists = _asList(await _rest!.get('/interface/list')).map(_toRow).toList();
+    if (!lists.any((r) => r['name'] == lanName)) {
+      throw RouterOsException('قائمة الواجهات $lanName غير موجودة. اختر قائمة LAN الصحيحة أولاً.');
+    }
+    final members = _asList(await _rest!.get('/interface/list/member')).map(_toRow).toList();
+    final lanMembers = members
+        .where((r) => r['list'] == lanName)
+        .map((r) => r['interface'] ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    if (lanMembers.isEmpty) {
+      throw RouterOsException('قائمة $lanName لا تحتوي أعضاء. أوقف المعالج وأصلح عضوية LAN أولاً.');
+    }
+    final wanNames = normalized.map((line) => line['interface']!).toSet();
+    final wanAlsoInLan = wanNames.intersection(lanMembers);
+    if (wanAlsoInLan.isNotEmpty) {
+      throw RouterOsException(
+        'الواجهات التالية محددة كـ WAN وعضو في قائمة LAN بنفس الوقت: ${wanAlsoInLan.join(', ')}. صحح اختيار الواجهات قبل التطبيق.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final disabledWan = normalized
+        .where((line) => interfacesByName[line['interface']]!.disabled)
+        .map((line) => line['interface']!)
+        .toList();
+    if (disabledWan.isNotEmpty) {
+      throw RouterOsException(
+        'واجهات WAN التالية معطّلة: ${disabledWan.join(', ')}. فعّلها أو اختر واجهات أخرى قبل الدمج.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final nonRunningWan = normalized
+        .where((line) => !interfacesByName[line['interface']]!.running)
+        .map((line) => line['interface']!)
+        .toList();
+    if (nonRunningWan.isNotEmpty) {
+      throw RouterOsException(
+        'لا توجد إشارة تشغيل حالية على واجهات WAN التالية: ${nonRunningWan.join(', ')}. قد تكون الواجهة PPPoE/DHCP غير متصلة أو المنفذ غير موصول؛ لم يتم التطبيق.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+
+    final mangle = _asList(await _rest!.get('/ip/firewall/mangle')).map(_toRow).toList();
+    final hasActiveRoutingPolicy = mangle.any((r) =>
+      (r['disabled'] != 'true' && r['disabled'] != 'yes') &&
+      (r['action'] == 'mark-connection' || r['action'] == 'mark-routing' ||
+       (r['per-connection-classifier'] ?? '').isNotEmpty));
+    if (hasActiveRoutingPolicy) {
+      throw const RouterOsException(
+        'تم اكتشاف قواعد Mangle لتوجيه/تمييز الاتصالات. لحماية PCC وQueue الحاليين، رفض المعالج إضافة دمج ثانٍ. يلزم فحص القواعد الحالية وخطة ترحيل منفصلة.',
+        kind: RouterOsErrorKind.forbidden,
+      );
+    }
+
+    const prefix = 'SAIFLB-WIZARD';
+    final routes = _asList(await _rest!.get('/ip/route')).map(_toRow).toList();
+    final tables = _asList(await _rest!.get('/routing/table')).map(_toRow).toList();
+    final nat = _asList(await _rest!.get('/ip/firewall/nat')).map(_toRow).toList();
+    if (routes.any((r) => (r['comment'] ?? '').startsWith(prefix)) ||
+        mangle.any((r) => (r['comment'] ?? '').startsWith(prefix)) ||
+        nat.any((r) => (r['comment'] ?? '').startsWith(prefix)) ||
+        tables.any((r) => (r['name'] ?? '').startsWith('SAIF_WAN'))) {
+      throw const RouterOsException('توجد إعدادات سابقة باسم SAIFLB-WIZARD/SAIF_WAN. لم يتم تكرارها أو تعديلها؛ راجعها يدوياً أولاً.');
+    }
+
+    // Only use directly attached subnets on members of the selected LAN list.
+    // Including WAN-side addresses here would bypass PCC for traffic aimed at ISP networks.
+    final localAddresses = _asList(await _rest!.get('/ip/address')).map(_toRow).toList();
+    final localCidrs = <String>{};
+    for (final row in localAddresses) {
+      if (!lanMembers.contains(row['interface'] ?? '')) continue;
+      if (row['disabled'] == 'true' || row['disabled'] == 'yes') continue;
+      final address = (row['address'] ?? '').trim();
+      final slash = address.lastIndexOf('/');
+      if (slash <= 0) continue;
+      final ip = InternetAddress.tryParse(address.substring(0, slash));
+      final prefixLength = int.tryParse(address.substring(slash + 1));
+      if (ip != null && ip.type == InternetAddressType.IPv4 && prefixLength != null && prefixLength >= 0 && prefixLength <= 32) {
+        final network = (row['network'] ?? '').trim();
+        final net = InternetAddress.tryParse(network);
+        if (net != null && net.type == InternetAddressType.IPv4) {
+          localCidrs.add('$network/$prefixLength');
+        }
+      }
+    }
+    if (localCidrs.isEmpty) {
+      throw const RouterOsException('لم يستطع المعالج تحديد شبكات LAN من IP > Addresses؛ لم يتم تطبيق أي تغيير.', kind: RouterOsErrorKind.badRequest);
+    }
+
+    final added = <Map<String, String>>[];
+    Future<void> create(String path, Map<String, dynamic> body) async {
+      final response = await _rest!.post(path, body);
+      final row = _extractMap(response);
+      final id = (row['.id'] ?? row['id'] ?? row['ret'] ?? '').toString();
+      if (id.isEmpty) {
+        throw RouterOsException('أنشأ الراوتر عنصراً لكن لم يرجع معرّفه لمسار $path. أوقف المعالج وافحص إعدادات الراوتر يدوياً.');
+      }
+      added.add({'path': path, 'id': id});
+    }
+
+    const probes = ['1.1.1.1', '8.8.8.8', '9.9.9.9', '208.67.222.222'];
+    try {
+      for (var i = 0; i < normalized.length; i++) {
+        await create('/routing/table', {
+          'name': 'SAIF_WAN${i + 1}', 'fib': 'true',
+          'comment': '$prefix table ${i + 1}',
+        });
+      }
+
+      // Recursive probe routes test Internet reachability, not just the local gateway.
+      for (var tableIndex = 0; tableIndex < normalized.length; tableIndex++) {
+        final table = 'SAIF_WAN${tableIndex + 1}';
+        for (var hop = 0; hop < normalized.length; hop++) {
+          final gatewayIndex = (tableIndex + hop) % normalized.length;
+          final probe = probes[gatewayIndex];
+          await create('/ip/route', {
+            'dst-address': '$probe/32',
+            'gateway': normalized[gatewayIndex]['gatewayRoute']!,
+            'routing-table': table,
+            'scope': '10',
+            'comment': '$prefix probe $table via ${normalized[gatewayIndex]['interface']}',
+          });
+          await create('/ip/route', {
+            'dst-address': '0.0.0.0/0',
+            'gateway': probe,
+            'routing-table': table,
+            'distance': (hop + 1).toString(),
+            'target-scope': '11',
+            'check-gateway': 'ping',
+            'comment': '$prefix route $table via ${normalized[gatewayIndex]['interface']}',
+          });
+        }
+      }
+
+      // Do not policy-route traffic to any directly connected local subnet.
+      for (final cidr in localCidrs) {
+        await create('/ip/firewall/mangle', {
+          'chain': 'prerouting', 'in-interface-list': lanName,
+          'dst-address': cidr, 'action': 'accept',
+          'comment': '$prefix LAN bypass $cidr',
+        });
+      }
+      for (var i = 0; i < normalized.length; i++) {
+        await create('/ip/firewall/mangle', {
+          'chain': 'prerouting', 'in-interface-list': lanName,
+          'dst-address-type': '!local', 'connection-mark': 'no-mark',
+          'per-connection-classifier': 'both-addresses-and-ports:${normalized.length}/$i',
+          'action': 'mark-connection', 'new-connection-mark': 'SAIF_WAN${i + 1}_conn',
+          'passthrough': 'yes', 'comment': '$prefix PCC connection ${i + 1}',
+        });
+      }
+      for (var i = 0; i < normalized.length; i++) {
+        await create('/ip/firewall/mangle', {
+          'chain': 'prerouting', 'in-interface-list': lanName,
+          'dst-address-type': '!local', 'connection-mark': 'SAIF_WAN${i + 1}_conn',
+          'action': 'mark-routing', 'new-routing-mark': 'SAIF_WAN${i + 1}',
+          'passthrough': 'no', 'comment': '$prefix PCC route ${i + 1}',
+        });
+      }
+      for (var i = 0; i < normalized.length; i++) {
+        await create('/ip/firewall/nat', {
+          'chain': 'srcnat', 'out-interface': normalized[i]['interface']!,
+          'action': 'masquerade', 'comment': '$prefix NAT ${i + 1}',
+        });
+      }
+    } catch (e) {
+      for (final item in added.reversed) {
+        try {
+          final path = item['path']!;
+          final id = item['id']!;
+          await _rest!.delete('$path/$id');
+        } catch (_) {
+          // Keep original error; if rollback fails, verify RouterOS manually.
+        }
+      }
+      rethrow;
+    }
+  }
+
+
   static const Set<String> _readOnlyCommandPaths = {
     '/ip/hotspot/user',
     '/ip/hotspot/active',
@@ -1064,6 +1111,11 @@ class MikrotikService {
     '/ip/dhcp-client',
     '/ip/firewall/filter',
     '/ip/route',
+    '/routing/table',
+    '/interface/list',
+    '/interface/list/member',
+    '/ip/firewall/mangle',
+    '/ip/firewall/nat',
     '/ip/service',
     '/queue/simple',
     '/system/resource',

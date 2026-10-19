@@ -8,6 +8,51 @@ import '../theme.dart';
 class InterfacesScreen extends ConsumerWidget {
   const InterfacesScreen({super.key});
 
+  Future<void> _toggleInterface(BuildContext context, WidgetRef ref, InterfaceInfo iface) async {
+    final disable = !iface.disabled;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(disable ? 'تعطيل الواجهة' : 'تشغيل الواجهة'),
+        content: Text(
+          'الواجهة: ${iface.name}\\n'
+          '${disable ? "قد يؤدي تعطيلها إلى قطع الإنترنت عن المشتركين أو فقدان اتصال الإدارة." : "سيتم تفعيل الواجهة على الراوتر."}\\n\\n'
+          'لا تتابع إلا إذا تأكدت من اختيار الواجهة الصحيحة، ولديك نسخة احتياطية وطريقة وصول بديلة للراوتر.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: disable ? AppColors.danger : AppColors.success),
+            child: Text(disable ? 'تعطيل فعلي' : 'تشغيل فعلي'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true) return;
+    try {
+      await ref.read(mikrotikProvider).setInterfaceDisabled(
+        iface.id,
+        disable,
+        explicitlyConfirmed: true,
+        backupVerified: true,
+        rollbackPlanAvailable: true,
+      );
+      ref.invalidate(interfacesProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(disable ? 'تم إرسال أمر تعطيل ${iface.name}' : 'تم إرسال أمر تشغيل ${iface.name}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل تغيير الواجهة: ${e.toString().replaceFirst("Exception: ", "")}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ifacesAsync = ref.watch(interfacesProvider);
@@ -59,7 +104,7 @@ class InterfacesScreen extends ConsumerWidget {
                 if (list.isEmpty) return _emptyBox('لا توجد واجهات');
                 return Column(
                   children: list
-                      .map((i) => _ifaceTile(i))
+                      .map((i) => _ifaceTile(i, context, ref))
                       .toList(),
                 );
               },
@@ -132,7 +177,7 @@ class InterfacesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _ifaceTile(InterfaceInfo i) {
+  Widget _ifaceTile(InterfaceInfo i, BuildContext context, WidgetRef ref) {
     final running = i.running && !i.disabled;
     final color = i.disabled
         ? AppColors.textMuted
@@ -212,6 +257,14 @@ class InterfacesScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+              ),
+              IconButton(
+                tooltip: i.disabled ? 'تشغيل الواجهة فعلياً' : 'تعطيل الواجهة فعلياً',
+                icon: Icon(
+                  i.disabled ? Icons.play_circle_fill_rounded : Icons.power_settings_new_rounded,
+                  color: i.disabled ? AppColors.success : AppColors.danger,
+                ),
+                onPressed: i.id.isEmpty ? null : () => _toggleInterface(context, ref, i),
               ),
             ],
           ),
