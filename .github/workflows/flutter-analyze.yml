@@ -17,3 +17,14 @@ jobs:
       - run: flutter pub get
       - name: Analyze (existing info-level lints are reported but not fatal)
         run: flutter analyze --no-fatal-infos
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Build debug Android APK
+        run: flutter build apk --debug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: saifnet-router-manager-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
