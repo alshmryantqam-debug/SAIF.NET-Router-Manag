@@ -14,6 +14,7 @@ import 'screens/firewall_screen.dart';
 import 'screens/hotspot_screen.dart';
 import 'screens/interfaces_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/load_balancing_wizard_screen.dart';
 import 'screens/pppoe_screen.dart';
 import 'screens/queues_screen.dart';
 import 'screens/routers_list_screen.dart';
@@ -60,6 +61,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(path: '/queues', name: 'queues', builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: QueuesScreen())),
+          GoRoute(path: '/load-balancing', name: 'load-balancing', builder: (_, __) => const BusinessGate(allowed: [BusinessRole.manager, BusinessRole.technician], child: LoadBalancingWizardScreen())),
           GoRoute(
             path: '/dashboard',
             name: 'dashboard',
