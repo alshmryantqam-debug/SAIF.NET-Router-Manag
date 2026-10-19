@@ -11,4 +11,6 @@ class MikrotikService {
   Future<Map<String, dynamic>> getSystemResource() => _api.getSystemResource();
   Future<List<dynamic>> getActivePPPoE() => _api.getActivePPPoE();
   Future<bool> createPPPoEUser(String u, String p, String prof) => _api.createPPPoEUser(u, p, prof);
+  Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
+  Future<List<dynamic>> getQueues() => _api.getQueues();
 }
