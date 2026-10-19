@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/connection_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/pppoe_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
 
@@ -23,6 +24,17 @@ void main() {
             }
             dashboardProvider.updateConnectionProvider(connectionProvider);
             return dashboardProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, PppoeProvider>(
+          create: (context) =>
+              PppoeProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, pppoeProvider) {
+            if (pppoeProvider == null) {
+              return PppoeProvider(connectionProvider);
+            }
+            pppoeProvider.updateConnectionProvider(connectionProvider);
+            return pppoeProvider;
           },
         ),
       ],
