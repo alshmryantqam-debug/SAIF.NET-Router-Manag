@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dart_snmp/dart_snmp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,8 @@ class RadioRadarScreen extends ConsumerStatefulWidget {
 
 class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
   bool _loading = false;
+  static const _secureStorage = FlutterSecureStorage();
+  static const _targetsKey = 'saifnet.radio_radar.targets';
 
   final _snmpTargets = <Map<String, String>>[];
   final _snmpName = TextEditingController();
@@ -66,7 +70,29 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    WidgetsBinding.instance.addPostFrameCallback((_) async { await _loadSnmpDevices(); await _refresh(); });
+  }
+
+  @override
+  void dispose() {
+    _snmpName.dispose();
+    _snmpHost.dispose();
+    _snmpCommunity.dispose();
+    _snmpOid.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSnmpDevices() async {
+    try {
+      final raw = await _secureStorage.read(key: _targetsKey);
+      if (raw == null || raw.isEmpty || !mounted) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is List) setState(() { _snmpTargets..clear()..addAll(decoded.whereType<Map>().map((e) => Map<String, String>.from(e.map((k, v) => MapEntry(k.toString(), v.toString()))))); });
+    } catch (_) {}
+  }
+
+  Future<void> _saveSnmpDevices() async {
+    await _secureStorage.write(key: _targetsKey, value: jsonEncode(_snmpTargets));
   }
 
   Future<void> _refresh() async {
@@ -217,6 +243,7 @@ class _InfoTile extends StatelessWidget {
             final device = <String, String>{'name': _snmpName.text.trim(), 'host': ip.address, 'community': _snmpCommunity.text.trim(), 'oid': oid, 'vendor': _snmpVendor};
             setState(() { _snmpTargets.removeWhere((e) => e['host'] == device['host']); _snmpTargets.add(device); });
             Navigator.pop(ctx);
+            await _saveSnmpDevices();
             await _readSnmp(device);
           }, child: const Text('حفظ واختبار')),
         ],
@@ -239,6 +266,7 @@ class _InfoTile extends StatelessWidget {
           final i = _snmpTargets.indexWhere((e) => e['host'] == device['host']);
           if (i >= 0) _snmpTargets[i] = {..._snmpTargets[i], 'signal': signal.toStringAsFixed(1), 'snmpError': ''};
         });
+        await _saveSnmpDevices();
       } finally { session.close(); }
     } catch (_) {
       if (!mounted) return;
@@ -246,6 +274,7 @@ class _InfoTile extends StatelessWidget {
         final i = _snmpTargets.indexWhere((e) => e['host'] == device['host']);
         if (i >= 0) _snmpTargets[i] = {..._snmpTargets[i], 'snmpError': 'تعذر قراءة SNMP: تحقق من التفعيل وOID وCommunity'};
       });
+      await _saveSnmpDevices();
     }
   }
 
