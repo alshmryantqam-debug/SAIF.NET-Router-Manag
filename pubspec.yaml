@@ -1,5 +1,5 @@
 name: tikplus_ultra
-description: TikPlus ULTRA - المنصة الاحترافية لإدارة راوترات MikroTik
+description: SAIF.NET - منصة احترافية لإدارة شبكات MikroTik
 publish_to: "none"
 version: 1.0.0+1
 
@@ -22,6 +22,7 @@ dependencies:
   intl: ^0.20.3
   speech_to_text: ^7.4.0
   dart_snmp: ^3.0.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
