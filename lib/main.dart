@@ -1,34 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import 'app_router.dart';
 import 'theme.dart';
+import 'providers/connection_provider.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: TikPlusApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ConnectionProvider()),
+      ],
+      child: const NovaApp(),
+    ),
+  );
 }
 
-class TikPlusApp extends ConsumerWidget {
-  const TikPlusApp({super.key});
+class NovaApp extends StatelessWidget {
+  const NovaApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final GoRouter router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: 'SAIF.NET Router Manager',
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Nova',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      routerConfig: router,
+      theme: AppTheme.darkTheme,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: child ?? const SizedBox.shrink(),
-      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child!,
+        );
+      },
+      home: const SplashScreen(),
     );
   }
 }
