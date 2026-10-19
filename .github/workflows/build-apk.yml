@@ -1,4 +1,4 @@
-name: Build TikPlus ULTRA APK
+name: Build SAIF.NET Router Manager APK
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: tikplus-ultra-build-${{ github.ref }}
+  group: saifnet-router-manager-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +39,8 @@ jobs:
 
       - name: Generate Android platform files if missing
         run: |
-          if [ ! -d android ]; then
+          if [ ! -f android/app/src/main/AndroidManifest.xml ]; then
+            rm -rf android
             flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .
           fi
 
@@ -85,7 +86,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TikPlus-ULTRA-APK
+          name: SAIF.NET-Router-Manager-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
