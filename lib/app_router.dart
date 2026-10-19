@@ -22,6 +22,7 @@ import 'screens/terminal_screen.dart';
 import 'screens/voucher_screen.dart';
 import 'screens/voltage_alarm_screen.dart';
 import 'screens/radio_radar_screen.dart';
+import 'screens/radio_access_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
 
@@ -105,6 +106,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'radio-radar',
             pageBuilder: (_, __) => const NoTransitionPage(
               child: BusinessGate(allowed: const [BusinessRole.manager, BusinessRole.technician], child: RadioRadarScreen()),
+            ),
+          ),
+          GoRoute(
+            path: '/radio-access',
+            name: 'radio-access',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: BusinessGate(allowed: const [BusinessRole.manager, BusinessRole.technician], child: RadioAccessScreen()),
             ),
           ),
           GoRoute(
