@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/connection_provider.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
@@ -10,6 +11,16 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ConnectionProvider>();
+    final resource = provider.systemResource;
+
+    String metric(String key, {String suffix = ''}) {
+      final value = resource[key];
+      if (value == null || value.toString().trim().isEmpty) return '--';
+      return '$value$suffix';
+    }
+
+    String countOrPlaceholder(int count) =>
+        provider.isConnected ? count.toString() : '--';
 
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
@@ -18,48 +29,74 @@ class DashboardScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Column(
+                  const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('نوڨا', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryPurple)),
-                      Text('لوحة تحكم الميكروتك', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                    children: [
+                      Text('SAIF.NET',
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryPurple)),
+                      Text('لوحة تحكم الميكروتك',
+                          style: TextStyle(
+                              color: AppTheme.textMuted, fontSize: 13)),
                     ],
                   ),
                   CircleAvatar(
                     backgroundColor: AppTheme.cardDark,
-                    child: IconButton(icon: const Icon(Icons.logout, color: AppTheme.dangerRed), onPressed: () {}),
-                  )
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh,
+                          color: AppTheme.primaryBlue),
+                      tooltip: 'تحديث بيانات الراوتر',
+                      onPressed: () async {
+                        await provider.fetchSystemResource();
+                      },
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Row 1: CPU, Voltage, Temp
               Row(
                 children: [
-                  Expanded(flex: 2, child: _buildStatCard('المعالج', '${provider.systemResource['cpu-load'] ?? 0}%', AppTheme.primaryBlue)),
+                  Expanded(
+                    flex: 2,
+                    child: _buildStatCard(
+                        'المعالج', metric('cpu-load', suffix: '%'),
+                        AppTheme.primaryBlue),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(flex: 1, child: _buildStatCard('الفولت', 'غير متوفر', AppTheme.successGreen)),
+                  Expanded(
+                    child: _buildStatCard(
+                        'الفولت', metric('voltage'), AppTheme.successGreen),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(flex: 1, child: _buildStatCard('الحرارة', '47°', AppTheme.warningOrange)),
+                  Expanded(
+                    child: _buildStatCard(
+                        'الحرارة',
+                        metric('temperature', suffix: '°'),
+                        AppTheme.warningOrange),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
-
-              // Row 2: Uptime, Net Speed
               Row(
                 children: [
-                  Expanded(child: _buildStatCard('وقت التشغيل', '${provider.systemResource['uptime'] ?? '--'}', AppTheme.primaryPurple)),
+                  Expanded(
+                    child: _buildStatCard(
+                        'وقت التشغيل', metric('uptime'),
+                        AppTheme.primaryPurple),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildStatCard('سرعة النت', '18.7 م/ث', AppTheme.primaryBlue)),
+                  Expanded(
+                    child: _buildStatCard(
+                        'سرعة النت', '--', AppTheme.primaryBlue),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
-
-              // Search / Action Buttons
               GlassCard(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -70,23 +107,44 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Grid of Stats
               Row(
                 children: [
-                  Expanded(child: _buildGridCard(Icons.router, 'البرودباند', '195 من 274')),
+                  Expanded(
+                    child: _buildGridCard(
+                        Icons.router,
+                        'البرودباند',
+                        countOrPlaceholder(provider.pppoeUsers.length)),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildGridCard(Icons.wifi, 'هوتسبوت', '1964')),
+                  Expanded(
+                    child: _buildGridCard(
+                        Icons.wifi,
+                        'هوتسبوت',
+                        countOrPlaceholder(provider.hotspotUsers.length)),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Expanded(child: _buildGridCard(Icons.people, 'يوزر منجر', '30')),
+                  Expanded(
+                    child: _buildGridCard(Icons.people, 'يوزر منجر', '--'),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildGridCard(Icons.miscellaneous_services, 'الإضافات', '')),
+                  Expanded(
+                    child: _buildGridCard(
+                        Icons.miscellaneous_services, 'الإضافات', '--'),
+                  ),
                 ],
               ),
+              if (!provider.isConnected && provider.errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    provider.errorMessage,
+                    style: const TextStyle(color: AppTheme.dangerRed),
+                  ),
+                ),
             ],
           ),
         ),
@@ -99,9 +157,14 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          Text(title, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+          Text(title,
+              style: const TextStyle(
+                  color: AppTheme.textMuted, fontSize: 12)),
           const SizedBox(height: 5),
-          Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold), textDirection: TextDirection.ltr),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 20, fontWeight: FontWeight.bold),
+              textDirection: TextDirection.ltr),
         ],
       ),
     );
@@ -114,7 +177,10 @@ class DashboardScreen extends StatelessWidget {
           Icon(icon, color: AppTheme.primaryBlue, size: 40),
           const SizedBox(height: 10),
           Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          if(subtitle.isNotEmpty) Text(subtitle, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+          if (subtitle.isNotEmpty)
+            Text(subtitle,
+                style: const TextStyle(
+                    color: AppTheme.textMuted, fontSize: 12)),
         ],
       ),
     );
