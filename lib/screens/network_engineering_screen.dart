@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/router_config.dart';
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
 import '../theme.dart';
