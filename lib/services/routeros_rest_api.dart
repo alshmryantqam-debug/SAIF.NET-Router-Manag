@@ -107,6 +107,11 @@ class RouterosRestApi {
     return response.data;
   }
 
+  Future<List<dynamic>> getIpAddresses() async {
+    final response = await _dio.get('/ip/address');
+    return response.data;
+  }
+
   Future<String> _executeTemporaryScript(String source) async {
     final scriptName = 'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
     String? scriptId;
