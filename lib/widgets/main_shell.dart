@@ -3,6 +3,7 @@ import '../theme.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/pppoe_screen.dart';
 import '../screens/hotspot_screen.dart';
+import '../screens/load_balancing_wizard_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -17,7 +18,7 @@ class _MainShellState extends State<MainShell> {
     const DashboardScreen(),
     const PppoeScreen(),
     const HotspotScreen(),
-    const Center(child: Text('الدمج (قريباً)', style: TextStyle(color: Colors.white))),
+    const LoadBalancingWizardScreen(),
   ];
 
   @override
