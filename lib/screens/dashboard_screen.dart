@@ -6,6 +6,7 @@ import '../providers/dashboard_provider.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 import 'hotspot_screen.dart';
+import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -293,6 +294,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.warningColor)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(
+                      color: AppTheme.primaryColor,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoadBalancingWizardScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.alt_route,
+                    color: AppTheme.primaryColor,
+                  ),
+                  label: const Text(
+                    'معالج دمج الخطوط (PCC)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
