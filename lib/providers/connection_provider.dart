@@ -39,4 +39,30 @@ class ConnectionProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> fetchPPPoEUsers() async {
+    try {
+      final data = await _service.getPPPoESecrets();
+      _pppoeUsers = data.map((json) => PPPoEUser.fromJson(json)).toList();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'فشل جلب المشتركين: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> addPPPoEUser(String username, String password, String profile) async {
+    final success = await _service.createPPPoEUser(username, password, profile);
+    if (success) await fetchPPPoEUsers();
+  }
+
+  Future<void> togglePPPoEUser(String id, bool disabled) async {
+    final success = await _service.togglePPPoESecret(id, disabled);
+    if (success) await fetchPPPoEUsers();
+  }
+
+  Future<void> deletePPPoEUser(String id) async {
+    final success = await _service.removePPPoESecret(id);
+    if (success) await fetchPPPoEUsers();
+  }
 }
