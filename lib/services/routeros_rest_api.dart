@@ -79,4 +79,14 @@ class RouterosRestApi {
       return false;
     }
   }
+
+  Future<List<dynamic>> getInterfaces() async {
+    final response = await _dio.get('/interface');
+    return response.data;
+  }
+
+  Future<List<dynamic>> getQueues() async {
+    final response = await _dio.get('/queue/simple');
+    return response.data;
+  }
 }
