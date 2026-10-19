@@ -6,7 +6,7 @@ import 'connection_provider.dart';
 
 /// Reads and manages PPPoE secrets through the active RouterOS REST session.
 class PppoeProvider with ChangeNotifier {
-  final ConnectionProvider _connectionProvider;
+  ConnectionProvider _connectionProvider;
 
   List<PppoeUser> _users = [];
   bool _isLoading = false;
@@ -14,6 +14,11 @@ class PppoeProvider with ChangeNotifier {
   String _errorMessage = '';
 
   PppoeProvider(this._connectionProvider);
+
+  void updateConnectionProvider(ConnectionProvider connectionProvider) {
+    if (identical(_connectionProvider, connectionProvider)) return;
+    _connectionProvider = connectionProvider;
+  }
 
   List<PppoeUser> get users => List.unmodifiable(_users);
   bool get isLoading => _isLoading;
