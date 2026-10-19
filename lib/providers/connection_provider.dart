@@ -117,4 +117,8 @@ class ConnectionProvider extends ChangeNotifier {
   Future<bool> executeLoadBalancingScript(String script) async {
     return await _service.runSystemScript(script);
   }
+
+  Future<String> executeCommand(String command) async {
+    return await _service.executeRawCommand(command);
+  }
 }
