@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/router_config.dart';
 import '../models/pppoe_user.dart';
+import '../models/hotspot_user.dart';
 import '../services/mikrotik_service.dart';
 
 class ConnectionProvider extends ChangeNotifier {
@@ -14,6 +15,9 @@ class ConnectionProvider extends ChangeNotifier {
   List<dynamic> _activePPPoE = [];
   List<PPPoEUser> _pppoeUsers = [];
   List<PPPoEUser> get pppoeUsers => _pppoeUsers;
+
+  List<HotspotUser> _hotspotUsers = [];
+  List<HotspotUser> get hotspotUsers => _hotspotUsers;
 
   bool get isLoading => _isLoading;
   bool get isConnected => _isConnected;
@@ -64,5 +68,26 @@ class ConnectionProvider extends ChangeNotifier {
   Future<void> deletePPPoEUser(String id) async {
     final success = await _service.removePPPoESecret(id);
     if (success) await fetchPPPoEUsers();
+  }
+
+  Future<void> fetchHotspotUsers() async {
+    try {
+      final data = await _service.getHotspotUsers();
+      _hotspotUsers = data.map((json) => HotspotUser.fromJson(json)).toList();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'فشل جلب الهوتسبوت: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> addHotspotUser(String name, String password, String profile) async {
+    final success = await _service.createHotspotUser(name, password, profile);
+    if (success) await fetchHotspotUsers();
+  }
+
+  Future<void> deleteHotspotUser(String id) async {
+    final success = await _service.removeHotspotUser(id);
+    if (success) await fetchHotspotUsers();
   }
 }
