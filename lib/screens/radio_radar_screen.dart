@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:io';
+
 import 'package:dart_snmp/dart_snmp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
@@ -11,32 +12,120 @@ import '../theme.dart';
 
 class RadioRadarScreen extends ConsumerStatefulWidget {
   const RadioRadarScreen({super.key});
-
   @override
   ConsumerState<RadioRadarScreen> createState() => _RadioRadarScreenState();
 }
 
 class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
+  static const _storage = FlutterSecureStorage();
+  static const _key = 'saifnet.radio_radar.targets';
+  final _targets = <Map<String, String>>[];
+  final _name = TextEditingController();
+  final _host = TextEditingController();
+  final _community = TextEditingController(text: 'public');
+  final _oid = TextEditingController();
+  String _vendor = 'Ubiquiti';
   bool _loading = false;
-  static const _secureStorage = FlutterSecureStorage();
-  static const _targetsKey = 'saifnet.radio_radar.targets';
+  String? _error;
+  List<Map<String, String>> _radios = [];
+  List<Map<String, String>> _neighbors = [];
+  List<Map<String, String>> _leases = [];
+  DateTime? _updated;
 
-  final _snmpTargets = <Map<String, String>>[];
-  final _snmpName = TextEditingController();
-  final _snmpHost = TextEditingController();
-  final _snmpCommunity = TextEditingController(text: 'public');
-  final _snmpOid = TextEditingController();
-  String _snmpVendor = 'Ubiquiti';
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadTargets();
+      await _refresh();
+    });
+  }
 
-  Future<void> _addSnmpDevice() async {
+  @override
+  void dispose() {
+    _name.dispose();
+    _host.dispose();
+    _community.dispose();
+    _oid.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTargets() async {
+    try {
+      final raw = await _storage.read(key: _key);
+      if (raw == null || !mounted) return;
+      final data = jsonDecode(raw);
+      if (data is List) {
+        setState(() {
+          _targets
+            ..clear()
+            ..addAll(data.whereType<Map>().map((e) =>
+                Map<String, String>.from(e.map((k, v) => MapEntry(k.toString(), v.toString())))));
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveTargets() async {
+    await _storage.write(key: _key, value: jsonEncode(_targets));
+  }
+
+  Future<void> _refresh() async {
+    final service = ref.read(mikrotikProvider);
+    if (!service.isConnected) {
+      if (mounted) setState(() => _error = 'اتصل بالراوتر أولاً لعرض بيانات الرادار.');
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
+    try {
+      final results = await Future.wait([
+        service.runCommand('/interface/wireless/registration-table'),
+        service.runCommand('/interface/wifi/registration-table'),
+        service.runCommand('/ip/neighbor'),
+        service.runCommand('/ip/dhcp-server/lease'),
+      ]);
+      final merged = <Map<String, String>>[];
+      final seen = <String>{};
+      for (var i = 0; i < 2; i++) {
+        for (final row in results[i]) {
+          final mac = row['mac-address'] ?? row['mac-addresses'] ?? '';
+          final key = '$mac-${row['interface'] ?? ''}';
+          if (mac.isNotEmpty && seen.add(key)) merged.add({...row, '_source': i == 0 ? 'Wireless' : 'WiFi'});
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _radios = merged;
+        _neighbors = results[2];
+        _leases = results[3];
+        _updated = DateTime.now();
+      });
+      for (final target in List<Map<String, String>>.from(_targets)) {
+        await _readSnmp(target);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'تعذر قراءة بيانات الرادار: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  int? _signal(Map<String, String> row) {
+    final value = row['signal-strength'] ?? row['signal'] ?? '';
+    final match = RegExp(r'-?\d+').firstMatch(value);
+    return match == null ? null : int.tryParse(match.group(0)!);
+  }
+
+  Future<void> _addTarget() async {
+    _name.clear(); _host.clear(); _oid.clear(); _community.text = 'public'; _vendor = 'Ubiquiti';
     await showDialog<void>(context: context, builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialog) => AlertDialog(
-        title: const Text('ربط جهاز لاسلكي عبر SNMP'),
+        title: const Text('إضافة صحن عبر SNMP'),
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: _snmpName, decoration: const InputDecoration(labelText: 'اسم الصحن')),
-          TextField(controller: _snmpHost, decoration: const InputDecoration(labelText: 'IPv4 للجهاز'), keyboardType: TextInputType.number),
+          TextField(controller: _name, decoration: const InputDecoration(labelText: 'اسم الصحن/القطاع')),
+          TextField(controller: _host, decoration: const InputDecoration(labelText: 'عنوان IPv4'), keyboardType: TextInputType.number),
           DropdownButtonFormField<String>(
-            value: _snmpVendor,
+            value: _vendor,
             decoration: const InputDecoration(labelText: 'الشركة'),
             items: const [
               DropdownMenuItem(value: 'Ubiquiti', child: Text('Ubiquiti airOS')),
@@ -45,402 +134,143 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
               DropdownMenuItem(value: 'Generic', child: Text('OID مخصص')),
             ],
             onChanged: (v) => setDialog(() {
-              _snmpVendor = v ?? 'Generic';
-              if (_snmpVendor == 'Mimosa') _snmpOid.text = '1.3.6.1.4.1.43356.2.1.2.6.6';
-              else if (_snmpVendor == 'Ubiquiti') _snmpOid.text = '1.3.6.1.4.1.41112.1.4.5.1.1.6.1';
-              else _snmpOid.clear();
+              _vendor = v ?? 'Generic';
+              _oid.text = _vendor == 'Mimosa' ? '1.3.6.1.4.1.43356.2.1.2.6.6' : '';
             }),
           ),
-          TextField(controller: _snmpCommunity, decoration: const InputDecoration(labelText: 'SNMP Community قراءة فقط')),
-          TextField(controller: _snmpOid, decoration: const InputDecoration(labelText: 'OID لقوة الإشارة')),
-          const Text('SNMP v2c غير مشفر. استخدم Community قراءة فقط وعلى شبكة إدارة موثوقة. قد يختلف OID حسب الموديل والبرنامج.', style: TextStyle(color: AppColors.warning, fontSize: 12)),
+          TextField(controller: _community, decoration: const InputDecoration(labelText: 'SNMP community للقراءة فقط')),
+          TextField(controller: _oid, decoration: const InputDecoration(labelText: 'OID رقمي لقوة الإشارة')),
+          const SizedBox(height: 8),
+          const Text('هذا يختبر OID واحداً فقط ولا يكتشف كل العملاء تلقائياً. SNMP v2c غير مشفر؛ استخدم شبكة إدارة موثوقة وبيانات قراءة فقط.', style: TextStyle(color: AppColors.warning, fontSize: 12)),
         ])),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           FilledButton(onPressed: () async {
-            final ip = InternetAddress.tryParse(_snmpHost.text.trim());
-            final oid = _snmpOid.text.trim().replaceFirst(RegExp(r'^\.'), '');
-            if (_snmpName.text.trim().isEmpty || ip == null || ip.type != InternetAddressType.IPv4 || _snmpCommunity.text.trim().isEmpty || !RegExp(r'^\d+(\.\d+)+
-  String? _error;
-  List<Map<String, String>> _radios = [];
-  List<Map<String, String>> _neighbors = [];
-  List<Map<String, String>> _leases = [];
-  DateTime? _updated;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async { await _loadSnmpDevices(); await _refresh(); });
-  }
-
-  @override
-  void dispose() {
-    _snmpName.dispose();
-    _snmpHost.dispose();
-    _snmpCommunity.dispose();
-    _snmpOid.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadSnmpDevices() async {
-    try {
-      final raw = await _secureStorage.read(key: _targetsKey);
-      if (raw == null || raw.isEmpty || !mounted) return;
-      final decoded = jsonDecode(raw);
-      if (decoded is List) setState(() { _snmpTargets..clear()..addAll(decoded.whereType<Map>().map((e) => Map<String, String>.from(e.map((k, v) => MapEntry(k.toString(), v.toString()))))); });
-    } catch (_) {}
-  }
-
-  Future<void> _saveSnmpDevices() async {
-    await _secureStorage.write(key: _targetsKey, value: jsonEncode(_snmpTargets));
-  }
-
-  Future<void> _refresh() async {
-    final service = ref.read(mikrotikProvider);
-    if (!service.isConnected) {
-      setState(() => _error = 'اتصل بالراوتر أولاً لعرض بيانات الرادار.');
-      return;
-    }
-    setState(() { _loading = true; _error = null; });
-    try {
-      final results = await Future.wait([
-        service.runCommand('/interface/wireless/registration-table'),
-        service.runCommand('/interface/wifi/registration-table'),
-        service.runCommand('/ip/neighbor'),
-        service.runCommand('/ip/dhcp-server/lease'),
-      ]);
-      final merged = <Map<String, String>>[];
-      final seen = <String>{};
-      for (var i = 0; i < 2; i++) {
-        for (final row in results[i]) {
-          final key = '${row['mac-address'] ?? row['mac-addresses'] ?? ''}-${row['interface'] ?? ''}';
-          if (seen.add(key) && key != '-') {
-            merged.add({...row, '_source': i == 0 ? 'Wireless' : 'WiFi'});
-          }
-        }
-      }
-      if (!mounted) return;
-      setState(() {
-        _radios = merged;
-        _neighbors = results[2];
-        _leases = results[3];
-        _updated = DateTime.now();
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = 'تعذر قراءة بعض بيانات الرادار: $e');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  int? _signal(Map<String, String> row) {
-    final value = row['signal-strength'] ?? row['signal'] ?? '';
-    final match = RegExp(r'-?\d+').firstMatch(value);
-    return match == null ? null : int.tryParse(match.group(0)!);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final weak = _radios.where((r) {
-      final s = _signal(r);
-      return s != null && s < -78;
-    }).length;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('رادار صحون البث'),
-        actions: [IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded)), IconButton(onPressed: _addSnmpDevice, icon: const Icon(Icons.add_link_rounded))],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(22)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('مراقبة الإشارة اللاسلكية', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
-                const SizedBox(height: 8),
-                Text('المسجلون لاسلكياً: ${_radios.length}   •   إشارة ضعيفة: $weak', style: const TextStyle(color: Colors.white)),
-                if (_updated != null) Text('آخر تحديث: ${TimeOfDay.fromDateTime(_updated!).format(context)}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              ]),
-            ),
-            const SizedBox(height: 12),
-            if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(_error!, style: const TextStyle(color: AppColors.warning)))),
-            if (_loading) const LinearProgressIndicator(),
-            const SizedBox(height: 8),
-            const Text('الأجهزة المسجلة لاسلكياً', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_radios.isEmpty && !_loading) const _InfoTile(text: 'لا توجد بيانات تسجيل لاسلكي. قد لا يدعم الراوتر هذا المسار أو قد لا توجد أجهزة متصلة لاسلكياً به.'),
-            ..._radios.map(_radioCard),
-            const SizedBox(height: 18),
-            Text('الجيران المكتشفون (${_neighbors.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_neighbors.isEmpty) const _InfoTile(text: 'لا توجد أجهزة ظاهرة في جدول الجيران حالياً.'),
-            ..._neighbors.take(30).map((r) => _simpleCard(r, 'Neighbor')),
-            const SizedBox(height: 18),
-            Text('عناوين DHCP (${_leases.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_leases.isEmpty) const _InfoTile(text: 'لا توجد سجلات DHCP متاحة عبر هذا الاتصال.'),
-            ..._leases.take(30).map((r) => _simpleCard(r, 'DHCP')),
-            const SizedBox(height: 18),
-            Row(children: [const Expanded(child: Text('أجهزة SNMP اللاسلكية', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))), IconButton(onPressed: _addSnmpDevice, icon: const Icon(Icons.add_circle_outline_rounded))]),
-            ..._snmpTargets.map(_snmpDeviceCard),
-            const SizedBox(height: 18),
-            const _InfoTile(text: 'مهم: الرادار يقرأ بيانات MikroTik عبر API ويمكنه اختبار OID واحد لكل جهاز عبر SNMP v2c. يجب ضبط OID الصحيح حسب موديل Ubiquiti أو Mimosa، ولا يعني ذلك اكتشاف جميع العملاء تلقائياً.') أجهزة Ubiquiti وMimosa تحتاج ربط SNMP أو واجهة إدارتها حتى تظهر قوة إشارتها. جدول الجيران وDHCP لا يكشف كل أجهزة الشبكة، والإشارة الأضعف من ‎-78 dBm إنذار أولي وليست وحدها دليلاً أن القطاع كله بطيء.'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _radioCard(Map<String, String> row) {
-    final signal = _signal(row);
-    final isWeak = signal != null && signal < -78;
-    final color = isWeak ? AppColors.danger : AppColors.success;
-    return Card(
-      color: isWeak ? AppColors.danger.withOpacity(.10) : AppColors.bgCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isWeak ? AppColors.danger : AppColors.border, width: isWeak ? 1.5 : 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.settings_input_antenna_rounded, color: color, size: 27),
-            const SizedBox(width: 10),
-            Expanded(child: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي', style: const TextStyle(fontWeight: FontWeight.w800))),
-            Text(signal == null ? 'غير معروف' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.w900)),
-          ]),
-          const SizedBox(height: 8),
-          Text('الواجهة: ${row['interface'] ?? '—'}   •   النوع: ${row['_source'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text('MAC: ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text('TX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          if (isWeak) const Padding(padding: EdgeInsets.only(top: 8), child: Text('⚠ إشارة ضعيفة — افحص المحاذاة والتشويش ومعدل الإرسال', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold))),
-        ]),
-      ),
-    );
-  }
-
-  Widget _simpleCard(Map<String, String> row, String type) {
-    final name = row['identity'] ?? row['host-name'] ?? row['address'] ?? row['mac-address'] ?? 'جهاز';
-    final details = [row['address'], row['mac-address'], row['interface'], row['platform']].where((v) => v != null && v!.isNotEmpty).join(' • ');
-    return Card(child: ListTile(leading: Icon(type == 'DHCP' ? Icons.devices_rounded : Icons.hub_rounded, color: AppColors.secondary), title: Text(name), subtitle: Text(details.isEmpty ? type : details)));
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.text});
-  final String text;
-  @override
-  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(text, style: const TextStyle(color: AppColors.textSecondary))));
-}
-).hasMatch(oid)) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تحقق من الاسم وIPv4 وCommunity وOID')));
+            final ip = InternetAddress.tryParse(_host.text.trim());
+            final oid = _oid.text.trim().replaceFirst(RegExp(r'^\.'), '');
+            if (_name.text.trim().isEmpty || ip == null || ip.type != InternetAddressType.IPv4 ||
+                _community.text.trim().isEmpty || !RegExp(r'^\d+(\.\d+)+$').hasMatch(oid)) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تحقق من الاسم وعنوان IPv4 وCommunity وOID')));
               return;
             }
-            final device = <String, String>{'name': _snmpName.text.trim(), 'host': ip.address, 'community': _snmpCommunity.text.trim(), 'oid': oid, 'vendor': _snmpVendor};
-            setState(() { _snmpTargets.removeWhere((e) => e['host'] == device['host']); _snmpTargets.add(device); });
+            final target = <String, String>{
+              'name': _name.text.trim(), 'host': ip.address, 'community': _community.text.trim(),
+              'oid': oid, 'vendor': _vendor,
+            };
+            setState(() {
+              _targets.removeWhere((e) => e['host'] == ip.address);
+              _targets.add(target);
+            });
             Navigator.pop(ctx);
-            await _saveSnmpDevices();
-            await _readSnmp(device);
+            await _saveTargets();
+            await _readSnmp(target);
           }, child: const Text('حفظ واختبار')),
         ],
       ),
     ));
   }
 
-  Future<void> _readSnmp(Map<String, String> device) async {
+  Future<void> _readSnmp(Map<String, String> target) async {
     try {
-      final session = await Snmp.createSession(InternetAddress(device['host']!), community: device['community']!, port: 161, retries: 1, timeout: const Duration(seconds: 3), version: SnmpVersion.v2c);
+      final session = await Snmp.createSession(
+        InternetAddress(target['host']!), community: target['community']!,
+        port: 161, retries: 1, timeout: const Duration(seconds: 3), version: SnmpVersion.v2c,
+      );
       try {
-        final response = await session.get(Oid.fromString(device['oid']!));
-        final vars = response.pdu.varbinds;
-        if (vars.isEmpty) throw Exception('No SNMP value');
-        final raw = double.tryParse(vars.first.value.toString().replaceAll(RegExp(r'[^0-9.\-]'), ''));
-        if (raw == null) throw Exception('Non-numeric SNMP value');
-        final signal = device['vendor'] == 'Mimosa' && device['oid'] == '1.3.6.1.4.1.43356.2.1.2.6.6' ? raw / 10 : raw;
+        final response = await session.get(Oid.fromString(target['oid']!));
+        if (response.pdu.varbinds.isEmpty) throw Exception('No value');
+        final rawText = response.pdu.varbinds.first.value.toString();
+        final raw = double.tryParse(rawText.replaceAll(RegExp(r'[^0-9.\-]'), ''));
+        if (raw == null) throw Exception('Non-numeric value');
+        final signal = target['vendor'] == 'Mimosa' &&
+                target['oid'] == '1.3.6.1.4.1.43356.2.1.2.6.6' ? raw / 10 : raw;
         if (!mounted) return;
         setState(() {
-          final i = _snmpTargets.indexWhere((e) => e['host'] == device['host']);
-          if (i >= 0) _snmpTargets[i] = {..._snmpTargets[i], 'signal': signal.toStringAsFixed(1), 'snmpError': ''};
+          final i = _targets.indexWhere((e) => e['host'] == target['host']);
+          if (i >= 0) _targets[i] = {..._targets[i], 'signal': signal.toStringAsFixed(1), 'error': ''};
         });
-        await _saveSnmpDevices();
       } finally { session.close(); }
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        final i = _snmpTargets.indexWhere((e) => e['host'] == device['host']);
-        if (i >= 0) _snmpTargets[i] = {..._snmpTargets[i], 'snmpError': 'تعذر قراءة SNMP: تحقق من التفعيل وOID وCommunity'};
+        final i = _targets.indexWhere((e) => e['host'] == target['host']);
+        if (i >= 0) _targets[i] = {..._targets[i], 'error': 'فشل SNMP: تحقق من التفعيل وOID وCommunity'};
       });
-      await _saveSnmpDevices();
     }
-  }
-
-  Widget _snmpDeviceCard(Map<String, String> device) {
-    final signal = double.tryParse(device['signal'] ?? '');
-    final weak = signal != null && signal < -78;
-    final color = weak ? AppColors.danger : AppColors.success;
-    return Card(
-      color: weak ? AppColors.danger.withOpacity(.1) : AppColors.bgCard,
-      child: ListTile(
-        leading: Icon(Icons.settings_input_antenna_rounded, color: color),
-        title: Text(device['name'] ?? device['host']!),
-        subtitle: Text((device['snmpError']?.isNotEmpty == true) ? device['snmpError']! : device['host']! + ' • ' + device['vendor']! + ' • OID ' + device['oid']!),
-        trailing: signal == null ? IconButton(onPressed: () => _readSnmp(device), icon: const Icon(Icons.refresh)) : Text(signal.toStringAsFixed(1) + ' dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-        onTap: () => _readSnmp(device),
-      ),
-    );
-  }
-
-
-  String? _error;
-  List<Map<String, String>> _radios = [];
-  List<Map<String, String>> _neighbors = [];
-  List<Map<String, String>> _leases = [];
-  DateTime? _updated;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
-  }
-
-  Future<void> _refresh() async {
-    final service = ref.read(mikrotikProvider);
-    if (!service.isConnected) {
-      setState(() => _error = 'اتصل بالراوتر أولاً لعرض بيانات الرادار.');
-      return;
-    }
-    setState(() { _loading = true; _error = null; });
-    try {
-      final results = await Future.wait([
-        service.runCommand('/interface/wireless/registration-table'),
-        service.runCommand('/interface/wifi/registration-table'),
-        service.runCommand('/ip/neighbor'),
-        service.runCommand('/ip/dhcp-server/lease'),
-      ]);
-      final merged = <Map<String, String>>[];
-      final seen = <String>{};
-      for (var i = 0; i < 2; i++) {
-        for (final row in results[i]) {
-          final key = '${row['mac-address'] ?? row['mac-addresses'] ?? ''}-${row['interface'] ?? ''}';
-          if (seen.add(key) && key != '-') {
-            merged.add({...row, '_source': i == 0 ? 'Wireless' : 'WiFi'});
-          }
-        }
-      }
-      if (!mounted) return;
-      setState(() {
-        _radios = merged;
-        _neighbors = results[2];
-        _leases = results[3];
-        _updated = DateTime.now();
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = 'تعذر قراءة بعض بيانات الرادار: $e');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  int? _signal(Map<String, String> row) {
-    final value = row['signal-strength'] ?? row['signal'] ?? '';
-    final match = RegExp(r'-?\d+').firstMatch(value);
-    return match == null ? null : int.tryParse(match.group(0)!);
+    await _saveTargets();
   }
 
   @override
   Widget build(BuildContext context) {
-    final weak = _radios.where((r) {
-      final s = _signal(r);
-      return s != null && s < -78;
-    }).length;
+    final weak = _radios.where((r) { final s = _signal(r); return s != null && s < -78; }).length;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('رادار صحون البث'),
-        actions: [IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded))],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(22)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('مراقبة الإشارة اللاسلكية', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
-                const SizedBox(height: 8),
-                Text('المسجلون لاسلكياً: ${_radios.length}   •   إشارة ضعيفة: $weak', style: const TextStyle(color: Colors.white)),
-                if (_updated != null) Text('آخر تحديث: ${TimeOfDay.fromDateTime(_updated!).format(context)}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              ]),
-            ),
-            const SizedBox(height: 12),
-            if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(_error!, style: const TextStyle(color: AppColors.warning)))),
-            if (_loading) const LinearProgressIndicator(),
+      appBar: AppBar(title: const Text('رادار صحون البث'), actions: [
+        IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded)),
+        IconButton(onPressed: _addTarget, icon: const Icon(Icons.add_link_rounded)),
+      ]),
+      body: RefreshIndicator(onRefresh: _refresh, child: ListView(padding: const EdgeInsets.all(16), children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(22)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('مراقبة الإشارة اللاسلكية', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Colors.white)),
             const SizedBox(height: 8),
-            const Text('الأجهزة المسجلة لاسلكياً', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_radios.isEmpty && !_loading) const _InfoTile(text: 'لا توجد بيانات تسجيل لاسلكي. قد لا يدعم الراوتر هذا المسار أو قد لا توجد أجهزة متصلة لاسلكياً به.'),
-            ..._radios.map(_radioCard),
-            const SizedBox(height: 18),
-            Text('الجيران المكتشفون (${_neighbors.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_neighbors.isEmpty) const _InfoTile(text: 'لا توجد أجهزة ظاهرة في جدول الجيران حالياً.'),
-            ..._neighbors.take(30).map((r) => _simpleCard(r, 'Neighbor')),
-            const SizedBox(height: 18),
-            Text('عناوين DHCP (${_leases.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_leases.isEmpty) const _InfoTile(text: 'لا توجد سجلات DHCP متاحة عبر هذا الاتصال.'),
-            ..._leases.take(30).map((r) => _simpleCard(r, 'DHCP')),
-            const SizedBox(height: 18),
-            const _InfoTile(text: 'مهم: هذا الإصدار يقرأ بيانات MikroTik فقط. أجهزة Ubiquiti وMimosa تحتاج ربط SNMP أو واجهة إدارتها حتى تظهر قوة إشارتها. جدول الجيران وDHCP لا يكشف كل أجهزة الشبكة، والإشارة الأضعف من ‎-78 dBm إنذار أولي وليست وحدها دليلاً أن القطاع كله بطيء.'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _radioCard(Map<String, String> row) {
-    final signal = _signal(row);
-    final isWeak = signal != null && signal < -78;
-    final color = isWeak ? AppColors.danger : AppColors.success;
-    return Card(
-      color: isWeak ? AppColors.danger.withOpacity(.10) : AppColors.bgCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isWeak ? AppColors.danger : AppColors.border, width: isWeak ? 1.5 : 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.settings_input_antenna_rounded, color: color, size: 27),
-            const SizedBox(width: 10),
-            Expanded(child: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي', style: const TextStyle(fontWeight: FontWeight.w800))),
-            Text(signal == null ? 'غير معروف' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.w900)),
+            Text('عملاء مسجلون: ${_radios.length}  •  إشارة أضعف من -78 dBm: $weak', style: const TextStyle(color: Colors.white)),
+            if (_updated != null) Text('آخر تحديث: ${TimeOfDay.fromDateTime(_updated!).format(context)}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
           ]),
-          const SizedBox(height: 8),
-          Text('الواجهة: ${row['interface'] ?? '—'}   •   النوع: ${row['_source'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text('MAC: ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text('TX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          if (isWeak) const Padding(padding: EdgeInsets.only(top: 8), child: Text('⚠ إشارة ضعيفة — افحص المحاذاة والتشويش ومعدل الإرسال', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold))),
-        ]),
-      ),
+        ),
+        if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(12), child: Text(_error!, style: const TextStyle(color: AppColors.warning)))),
+        if (_loading) const LinearProgressIndicator(),
+        const SizedBox(height: 12),
+        const Text('عملاء MikroTik اللاسلكيون', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        if (_radios.isEmpty && !_loading) const _InfoTile('لا توجد بيانات تسجيل؛ تحقق من الاتصال أو دعم واجهة wireless/wifi.'),
+        ..._radios.map((row) {
+          final signal = _signal(row);
+          final weakSignal = signal != null && signal < -78;
+          final color = weakSignal ? AppColors.danger : AppColors.success;
+          return Card(
+            color: weakSignal ? AppColors.danger.withOpacity(.1) : AppColors.bgCard,
+            child: ListTile(
+              leading: Icon(Icons.settings_input_antenna_rounded, color: color),
+              title: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي'),
+              subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}'),
+              isThreeLine: true,
+              trailing: Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }),
+        const SizedBox(height: 18),
+        Text('أجهزة SNMP المضافة (${_targets.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        ..._targets.map((target) {
+          final signal = double.tryParse(target['signal'] ?? '');
+          final weakSignal = signal != null && signal < -78;
+          final color = weakSignal ? AppColors.danger : AppColors.success;
+          return Card(
+            color: weakSignal ? AppColors.danger.withOpacity(.1) : AppColors.bgCard,
+            child: ListTile(
+              leading: Icon(Icons.router_rounded, color: color),
+              title: Text(target['name'] ?? target['host'] ?? 'Radio'),
+              subtitle: Text(target['error']?.isNotEmpty == true ? target['error']! : '${target['host']} • ${target['vendor']}'),
+              trailing: signal == null ? IconButton(onPressed: () => _readSnmp(target), icon: const Icon(Icons.refresh)) : Text('${signal.toStringAsFixed(1)} dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              onTap: () => _readSnmp(target),
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        Text('الجيران المكتشفون: ${_neighbors.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ..._neighbors.take(25).map((r) => ListTile(leading: const Icon(Icons.hub_rounded), title: Text(r['identity'] ?? r['address'] ?? 'جهاز'), subtitle: Text('${r['address'] ?? ''} • ${r['mac-address'] ?? ''}'))),
+        const SizedBox(height: 16),
+        Text('عناوين DHCP: ${_leases.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ..._leases.take(25).map((r) => ListTile(leading: const Icon(Icons.devices_rounded), title: Text(r['host-name']?.isNotEmpty == true ? r['host-name']! : r['address'] ?? 'جهاز'), subtitle: Text('${r['address'] ?? ''} • ${r['mac-address'] ?? ''}'))),
+        const SizedBox(height: 12),
+        const _InfoTile('الإشارة الأقل من -78 dBm تظهر باللون الأحمر كتنبيه أولي. ضعف الإشارة وحده لا يثبت بطء القطاع. أجهزة Ubiquiti وMimosa تحتاج OID صحيحاً لكل موديل، وهذه النسخة لا تسوي walk تلقائياً لجدول كل عميل.'),
+      ])),
     );
-  }
-
-  Widget _simpleCard(Map<String, String> row, String type) {
-    final name = row['identity'] ?? row['host-name'] ?? row['address'] ?? row['mac-address'] ?? 'جهاز';
-    final details = [row['address'], row['mac-address'], row['interface'], row['platform']].where((v) => v != null && v!.isNotEmpty).join(' • ');
-    return Card(child: ListTile(leading: Icon(type == 'DHCP' ? Icons.devices_rounded : Icons.hub_rounded, color: AppColors.secondary), title: Text(name), subtitle: Text(details.isEmpty ? type : details)));
   }
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.text});
+  const _InfoTile(this.text);
   final String text;
   @override
   Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(text, style: const TextStyle(color: AppColors.textSecondary))));
