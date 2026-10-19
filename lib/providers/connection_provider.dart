@@ -14,6 +14,8 @@ class ConnectionProvider extends ChangeNotifier {
   Map<String, dynamic> _systemResource = {};
   List<PPPoEUser> _pppoeUsers = [];
   List<HotspotUser> _hotspotUsers = [];
+  List<dynamic> _interfaces = [];
+  List<dynamic> _queues = [];
 
   bool get isLoading => _isLoading;
   bool get isConnected => _isConnected;
@@ -21,6 +23,28 @@ class ConnectionProvider extends ChangeNotifier {
   Map<String, dynamic> get systemResource => _systemResource;
   List<PPPoEUser> get pppoeUsers => _pppoeUsers;
   List<HotspotUser> get hotspotUsers => _hotspotUsers;
+  List<dynamic> get interfaces => _interfaces;
+  List<dynamic> get queues => _queues;
+
+  Future<void> fetchInterfaces() async {
+    try {
+      _interfaces = await _service.getInterfaces();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'فشل جلب المنافذ: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchQueues() async {
+    try {
+      _queues = await _service.getQueues();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'فشل جلب الطوابير: $e';
+      notifyListeners();
+    }
+  }
 
   Future<void> connect(RouterConfig config) async {
     _isLoading = true;
