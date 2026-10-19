@@ -1,23 +1,45 @@
-/// Safety gate for future RouterOS write operations.
-///
-/// Read operations do not need this guard. Configuration changes must have
-/// explicit approval, a verified backup, and a rollback plan.
 class RouterOperationGuard {
-  const RouterOperationGuard._();
+  static const List<String> _readOnlySuffixes = [
+    '/print',
+    '/getall',
+    '/monitor',
+    '/monitor-traffic',
+    '/registration-table/print',
+    '/active/print',
+    '/resource/print',
+    '/identity/print',
+    '/health/print',
+  ];
 
-  static void requireWriteApproval({
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) {
-    if (!explicitlyConfirmed) {
-      throw StateError('تحتاج العملية إلى موافقة صريحة من المستخدم.');
+  static const List<String> _WriteOrDestructiveKeywords = [
+    '/add',
+    '/set',
+    '/remove',
+    '/disable',
+    '/enable',
+    '/reset-configuration',
+    '/reboot',
+    '/shutdown',
+  ];
+
+  /// يفحص ما إذا كان مسار الأمر في RouterOS للقراءة فقط وآمن للتنفيذ التلقائي
+  static bool isReadOnlyCommandPath(String path) {
+    final normalized = path.trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+
+    for (final keyword in _WriteOrDestructiveKeywords) {
+      if (normalized.endsWith(keyword) || normalized.contains('$keyword ')) {
+        return false;
+      }
     }
-    if (!backupVerified) {
-      throw StateError('لا يمكن المتابعة قبل التحقق من النسخة الاحتياطية.');
+
+    for (final suffix in _readOnlySuffixes) {
+      if (normalized.endsWith(suffix)) {
+        return true;
+      }
     }
-    if (!rollbackPlanAvailable) {
-      throw StateError('لا يمكن المتابعة دون خطة تراجع واضحة.');
-    }
+
+    // أوامر REST API التي تبدأ بـ GET أو مسارات موارد عامة بدون تعديل
+    return !normalized.contains('=') && !normalized.endsWith('/remove');
   }
 }
