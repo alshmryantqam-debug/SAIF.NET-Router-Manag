@@ -252,7 +252,7 @@ class _LoadBalancingWizardScreenState extends ConsumerState<LoadBalancingWizardS
                       label: Text(_applying ? 'جارٍ التطبيق...' : 'تطبيق الدمج وFailover'),
                     ),
                     const SizedBox(height: 8),
-                    const Text('ملاحظة أمان: التطبيق الآلي يرفض إضافة قواعد فوق Mangle موجودة. كما أن قيم Gateway يجب أن تكون صحيحة وثابتة؛ لا تكتب اسم مزوّد الخدمة بدل عنوان البوابة.', style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.5)),
+                    const Text('ملاحظة أمان: التطبيق الآلي يرفض إضافة قواعد فوق Mangle موجودة. قبل التطبيق تحقق من وجود NAT/masquerade لكل WAN. يجب أن تكون قيم Gateway صحيحة؛ لا تكتب اسم مزوّد الخدمة بدل عنوان البوابة.', style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.5)),
                   ],
                 ),
     );
