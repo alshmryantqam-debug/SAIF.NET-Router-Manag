@@ -297,6 +297,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 height: 60,
@@ -304,7 +305,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.cardColor,
                     side: const BorderSide(
-                      color: AppTheme.primaryColor,
+                      color: Color(0xFF9C27B0),
                       width: 1.5,
                     ),
                     shape: RoundedRectangleBorder(
@@ -320,15 +321,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   },
                   icon: const Icon(
-                    Icons.alt_route,
-                    color: AppTheme.primaryColor,
+                    Icons.call_split,
+                    color: Color(0xFF9C27B0),
                   ),
                   label: const Text(
                     'معالج دمج الخطوط (PCC)',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: Color(0xFF9C27B0),
                     ),
                   ),
                 ),
