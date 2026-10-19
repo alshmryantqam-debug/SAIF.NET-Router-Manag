@@ -831,6 +831,7 @@ class MikrotikService {
     '/ip/service',
     '/queue/simple',
     '/system/resource',
+    '/system/health',
     '/system/identity',
     '/system/clock',
     '/system/package',
