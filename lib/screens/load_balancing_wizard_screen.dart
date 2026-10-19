@@ -59,7 +59,8 @@ class _LoadBalancingWizardScreenState extends ConsumerState<LoadBalancingWizardS
         _audit = audit;
         _loading = false;
         if (_lanController.text.isEmpty) {
-          final bridge = _interfaces.where((i) => i.name.toLowerCase().contains('bridge')).firstOrNull;
+          final bridges = _interfaces.where((i) => i.name.toLowerCase().contains('bridge')).toList();
+          final bridge = bridges.isEmpty ? null : bridges.first;
           _lanController.text = bridge?.name ?? '';
         }
         for (var i = 0; i < _wans.length; i++) {
