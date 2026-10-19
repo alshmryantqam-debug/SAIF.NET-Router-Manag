@@ -203,7 +203,7 @@ class _LoadBalancingWizardScreenState extends State<LoadBalancingWizardScreen> {
                 const Text(
                   'حماية الراوتر: هذه النسخة تكتشف المنافذ والعناوين فقط. لا يمكن استنتاج البوابة من عنوان IP وحده، كما أن توليد PCC يحتاج معرفة واجهة LAN وجداول التوجيه وقواعد mangle الموجودة. لذلك التنفيذ معطّل هنا حتى لا نضيف قواعد غير صحيحة إلى شبكة الإنتاج.',
                   style: TextStyle(
-                    color: AppTheme.warningOrange,
+                    color: AppTheme.primaryBlue,
                     fontSize: 12,
                   ),
                 ),
