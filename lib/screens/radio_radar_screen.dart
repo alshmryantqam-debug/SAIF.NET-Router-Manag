@@ -31,6 +31,8 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
   List<Map<String, String>> _neighbors = [];
   List<Map<String, String>> _leases = [];
   List<Map<String, String>> _arp = [];
+  List<InterfaceInfo> _interfaces = [];
+  final Set<String> _busyInterfaces = {};
   DateTime? _updated;
 
   @override
@@ -99,6 +101,8 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
         _safeRead(service, '/ip/dhcp-server/lease'),
         _safeRead(service, '/ip/arp'),
       ]);
+      List<InterfaceInfo> interfaceRows = [];
+      try { interfaceRows = await service.interfaces(); } catch (_) {}
       final merged = <Map<String, String>>[];
       final seen = <String>{};
       for (var i = 0; i < 2; i++) {
@@ -114,6 +118,7 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
         _neighbors = results[2];
         _leases = results[3];
         _arp = results[4];
+        _interfaces = interfaceRows;
         _updated = DateTime.now();
       });
       for (final target in List<Map<String, String>>.from(_targets)) {
@@ -173,6 +178,93 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
           .compareTo(b['host-name'] ?? b['identity'] ?? b['address'] ?? '');
     });
     return result;
+  }
+
+  Future<void> _manageRadioInterface(Map<String, String> radio) async {
+    final interfaceName = (radio['interface'] ?? '').trim();
+    if (interfaceName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اسم واجهة الراديو غير متاح من الراوتر.')),
+      );
+      return;
+    }
+    final matches = _interfaces.where((i) => i.name == interfaceName).toList();
+    if (matches.isEmpty || matches.first.id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لم أجد معرّف الواجهة في RouterOS REST API. تأكد من اتصال RouterOS v7 وصلاحيات القراءة.')),
+      );
+      return;
+    }
+    final iface = matches.first;
+    final nextDisabled = !iface.disabled;
+    var backupVerified = false;
+    var rollbackReady = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialog) => AlertDialog(
+          title: Text(nextDisabled ? 'تعطيل واجهة الراديو؟' : 'تفعيل واجهة الراديو؟'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('الواجهة: ${iface.name} • ${iface.type}'),
+              const SizedBox(height: 8),
+              if (nextDisabled)
+                const Text('تحذير: تعطيل هذه الواجهة قد يفصل جميع المشتركين المتصلين بهذا القطاع. لا تعطّل واجهة الإدارة أو WAN.', style: TextStyle(color: AppColors.danger)),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: backupVerified,
+                onChanged: (v) => setDialog(() => backupVerified = v ?? false),
+                title: const Text('تحققت بنفسي من نسخة احتياطية حديثة'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: rollbackReady,
+                onChanged: (v) => setDialog(() => rollbackReady = v ?? false),
+                title: const Text('لدي خطة لاستعادة الخدمة إذا انقطع القطاع'),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(
+              onPressed: backupVerified && rollbackReady
+                  ? () => Navigator.pop(dialogContext, true)
+                  : null,
+              child: Text(nextDisabled ? 'تأكيد التعطيل' : 'تأكيد التفعيل'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busyInterfaces.add(interfaceName));
+    try {
+      await ref.read(mikrotikProvider).setInterfaceDisabled(
+        iface.id,
+        nextDisabled,
+        explicitlyConfirmed: true,
+        backupVerified: backupVerified,
+        rollbackPlanAvailable: rollbackReady,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(nextDisabled ? 'تم إرسال أمر تعطيل ${iface.name}' : 'تم إرسال أمر تفعيل ${iface.name}')),
+      );
+      await _refresh();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشلت العملية: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busyInterfaces.remove(interfaceName));
+    }
   }
 
   Future<void> _addTarget() async {
@@ -294,7 +386,21 @@ class _RadioRadarScreenState extends ConsumerState<RadioRadarScreen> {
               title: Text(row['radio-name'] ?? row['mac-address'] ?? row['mac-addresses'] ?? 'جهاز لاسلكي'),
               subtitle: Text('${row['interface'] ?? '—'} • MAC ${row['mac-address'] ?? row['mac-addresses'] ?? '—'}\nTX/RX: ${row['tx-rate'] ?? '—'} / ${row['rx-rate'] ?? '—'}'),
               isThreeLine: true,
-              trailing: Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(signal == null ? '—' : '$signal dBm', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    tooltip: 'إدارة واجهة القطاع',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _busyInterfaces.contains(row['interface']) ? null : () => _manageRadioInterface(row),
+                    icon: _busyInterfaces.contains(row['interface'])
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.power_settings_new_rounded, size: 20),
+                  ),
+                ],
+              ),
             ),
           );
         }),
