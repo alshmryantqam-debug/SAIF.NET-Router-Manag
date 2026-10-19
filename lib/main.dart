@@ -11,10 +11,19 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ConnectionProvider()),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<ConnectionProvider>(
+          create: (_) => ConnectionProvider(),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, DashboardProvider>(
           create: (context) =>
               DashboardProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, dashboardProvider) {
+            if (dashboardProvider == null) {
+              return DashboardProvider(connectionProvider);
+            }
+            dashboardProvider.updateConnectionProvider(connectionProvider);
+            return dashboardProvider;
+          },
         ),
       ],
       child: const NovaApp(),
