@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryPurple, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   onPressed: () {
-                    final config = RouterConfig(
+                    final config = MikrotikConfig(
                       id: '1', name: 'Router', ipAddress: _ipController.text,
                       username: _userController.text, password: _passController.text,
                     );
