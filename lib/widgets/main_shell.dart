@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../screens/dashboard_screen.dart';
+import '../screens/pppoe_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -13,7 +14,7 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const Center(child: Text('المشتركون (قريباً)', style: TextStyle(color: Colors.white))),
+    const PppoeScreen(),
     const Center(child: Text('الدمج (قريباً)', style: TextStyle(color: Colors.white))),
     const Center(child: Text('الإعدادات (قريباً)', style: TextStyle(color: Colors.white))),
   ];
