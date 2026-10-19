@@ -1,19 +1,37 @@
-import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+
 import '../models/router_config.dart';
+import 'router_operation_guard.dart';
 
 class RouterosRestApi {
-  late Dio _dio;
+  late final Dio _dio;
 
   RouterosRestApi() {
     _dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ));
+
+    // MikroTik self-signed certificates: use only on a trusted management LAN.
+    _dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return client;
+      },
+    );
+
+    _dio.interceptors.add(RouterOperationGuard());
   }
 
   void connect(MikrotikConfig config) {
-    final basicAuth = 'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
+    final basicAuth =
+        'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
     _dio.options.baseUrl = 'https://${config.ipAddress}/rest';
     _dio.options.headers = {
       'Authorization': basicAuth,
@@ -23,20 +41,21 @@ class RouterosRestApi {
 
   Future<Map<String, dynamic>> getSystemResource() async {
     final response = await _dio.get('/system/resource');
-    return response.data;
+    return Map<String, dynamic>.from(response.data as Map);
   }
 
   Future<List<dynamic>> getPPPoESecrets() async {
     final response = await _dio.get('/ppp/secret');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getActivePPPoE() async {
     final response = await _dio.get('/ppp/active');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
-  Future<bool> createPPPoEUser(String username, String password, String profile) async {
+  Future<bool> createPPPoEUser(
+      String username, String password, String profile) async {
     try {
       await _dio.put('/ppp/secret', data: {
         'name': username,
@@ -54,7 +73,7 @@ class RouterosRestApi {
     try {
       await _dio.delete('/ppp/secret/$id');
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -65,17 +84,18 @@ class RouterosRestApi {
         'disabled': disabled ? 'true' : 'false',
       });
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
 
   Future<List<dynamic>> getHotspotUsers() async {
     final response = await _dio.get('/ip/hotspot/user');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
-  Future<bool> createHotspotUser(String name, String password, String profile) async {
+  Future<bool> createHotspotUser(
+      String name, String password, String profile) async {
     try {
       await _dio.put('/ip/hotspot/user', data: {
         'name': name,
@@ -83,7 +103,7 @@ class RouterosRestApi {
         'profile': profile,
       });
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -92,24 +112,24 @@ class RouterosRestApi {
     try {
       await _dio.delete('/ip/hotspot/user/$id');
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
 
   Future<List<dynamic>> getInterfaces() async {
     final response = await _dio.get('/interface');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getQueues() async {
     final response = await _dio.get('/queue/simple');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getIpAddresses() async {
     final response = await _dio.get('/ip/address');
-    return response.data;
+    return List<dynamic>.from(response.data as List);
   }
 
   Future<String> _executeTemporaryScript(String source) async {
@@ -125,12 +145,14 @@ class RouterosRestApi {
         scriptId = created.data['.id']?.toString();
       }
       if (scriptId == null || scriptId.isEmpty) {
-        final scripts = await _dio.get('/system/script', queryParameters: {'name': scriptName});
+        final scripts = await _dio.get('/system/script',
+            queryParameters: {'name': scriptName});
         if (scripts.data is List && (scripts.data as List).isNotEmpty) {
           scriptId = (scripts.data as List).first['.id']?.toString();
         }
       }
-      final target = (scriptId != null && scriptId.isNotEmpty) ? scriptId : scriptName;
+      final target =
+          (scriptId != null && scriptId.isNotEmpty) ? scriptId : scriptName;
       await _dio.post('/system/script/run', data: {'number': target});
       return 'SUCCESS: RouterOS accepted the script for execution. REST does not provide a general interactive CLI output stream.';
     } finally {
@@ -138,7 +160,7 @@ class RouterosRestApi {
         try {
           await _dio.delete('/system/script/$scriptId');
         } catch (_) {
-          // Cleanup is best-effort; the execution result remains authoritative.
+          // Best-effort cleanup.
         }
       }
     }
@@ -163,5 +185,4 @@ class RouterosRestApi {
       return 'ERROR: $e';
     }
   }
-
 }
