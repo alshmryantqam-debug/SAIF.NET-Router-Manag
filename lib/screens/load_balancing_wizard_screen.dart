@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
 import '../theme.dart';
 
@@ -12,7 +13,7 @@ class LoadBalancingWizardScreen extends ConsumerStatefulWidget {
 }
 
 class _WanDraft {
-  _WanDraft({this.interfaceName = '', this.gateway = ''})
+  _WanDraft({this.interfaceName = '', String gateway = ''})
       : gatewayController = TextEditingController(text: gateway);
   String interfaceName;
   final TextEditingController gatewayController;
