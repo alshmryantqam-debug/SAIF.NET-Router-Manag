@@ -3,7 +3,7 @@ import '../theme.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/pppoe_screen.dart';
 import '../screens/hotspot_screen.dart';
-import '../screens/load_balancing_wizard_screen.dart';
+import '../screens/settings_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -18,7 +18,7 @@ class _MainShellState extends State<MainShell> {
     const DashboardScreen(),
     const PppoeScreen(),
     const HotspotScreen(),
-    const LoadBalancingWizardScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -39,7 +39,7 @@ class _MainShellState extends State<MainShell> {
             _navItem(0, Icons.dashboard_rounded, 'الرئيسية'),
             _navItem(1, Icons.group_rounded, 'PPPoE'),
             _navItem(2, Icons.wifi_rounded, 'الهوتسبوت'),
-            _navItem(3, Icons.alt_route_rounded, 'الدمج'),
+            _navItem(3, Icons.menu_rounded, 'المزيد'),
           ],
         ),
       ),
