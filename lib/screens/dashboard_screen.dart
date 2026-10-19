@@ -96,8 +96,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF1E5B64), Color(0xFF183744), Color(0xFF111F2A)]),
-                  borderRadius: BorderRadius.circular(26), border: Border.all(color: AppColors.primary.withOpacity(.4)),
+                  gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xE61E293B), Color(0xE60F172A), Color(0xFF0B1120)]),
+                  borderRadius: BorderRadius.circular(26), border: Border.all(color: const Color(0x14FFFFFF)),
                   boxShadow: AppShadows.glow(AppColors.primary, opacity: .12),
                 ),
                 child: Stack(children: [
