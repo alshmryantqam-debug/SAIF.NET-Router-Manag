@@ -59,7 +59,7 @@ class _LoadBalanceWizardScreenState extends ConsumerState<LoadBalanceWizardScree
         _interfaces = interfaces;
         for (var i = 0; i < _lines.length; i++) {
           if (_lines[i].interfaceName == null && interfaces.isNotEmpty) {
-            _lines[i].interfaceName = interfaces.first.name;
+            _lines[i].interfaceName = interfaces[i % interfaces.length].name;
           }
         }
         _loading = false;
