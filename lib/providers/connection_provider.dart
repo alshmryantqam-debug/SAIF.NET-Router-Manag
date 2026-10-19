@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/router_config.dart';
 import '../models/pppoe_user.dart';
 import '../models/hotspot_user.dart';
@@ -10,7 +11,7 @@ class ConnectionProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isConnected = false;
   String _errorMessage = '';
-  
+
   Map<String, dynamic> _systemResource = {};
   List<PPPoEUser> _pppoeUsers = [];
   List<HotspotUser> _hotspotUsers = [];
@@ -27,6 +28,19 @@ class ConnectionProvider extends ChangeNotifier {
   List<dynamic> get interfaces => _interfaces;
   List<dynamic> get ipAddresses => _ipAddresses;
   List<dynamic> get queues => _queues;
+
+  Future<void> fetchSystemResource() async {
+    try {
+      _systemResource = await _service.getSystemResource();
+      _errorMessage = '';
+      _isConnected = true;
+    } catch (e) {
+      _isConnected = false;
+      _errorMessage = 'فشل جلب موارد الراوتر: $e';
+    } finally {
+      notifyListeners();
+    }
+  }
 
   Future<void> fetchInterfaces() async {
     try {
@@ -77,7 +91,7 @@ class ConnectionProvider extends ChangeNotifier {
       await fetchHotspotUsers();
     } catch (e) {
       _isConnected = false;
-      _errorMessage = e.toString();
+      _errorMessage = 'فشل الاتصال بالراوتر: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -85,12 +99,16 @@ class ConnectionProvider extends ChangeNotifier {
   }
 
   Future<void> fetchPPPoEUsers() async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
     try {
       final data = await _service.getPPPoESecrets();
       _pppoeUsers = data.map((json) => PPPoEUser.fromJson(json)).toList();
-      notifyListeners();
     } catch (e) {
-      _errorMessage = 'فشل جلب المشتركين: $e';
+      _errorMessage = 'فشل جلب مشتركي PPPoE: $e';
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -106,12 +124,16 @@ class ConnectionProvider extends ChangeNotifier {
   }
 
   Future<void> fetchHotspotUsers() async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
     try {
       final data = await _service.getHotspotUsers();
       _hotspotUsers = data.map((json) => HotspotUser.fromJson(json)).toList();
-      notifyListeners();
     } catch (e) {
-      _errorMessage = 'فشل جلب الهوتسبوت: $e';
+      _errorMessage = 'فشل جلب مستخدمي الهوتسبوت: $e';
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -121,13 +143,16 @@ class ConnectionProvider extends ChangeNotifier {
     if (success) await fetchHotspotUsers();
   }
 
-  Future<void> addPPPoEUser(String username, String password, String profile) async {
+  Future<void> addPPPoEUser(
+      String username, String password, String profile) async {
     _errorMessage = '';
-    final success = await _service.createPPPoEUser(username, password, profile);
+    final success =
+        await _service.createPPPoEUser(username, password, profile);
     if (success) {
       await fetchPPPoEUsers();
     } else {
-      _errorMessage = 'فشل إضافة مشترك PPPoE. تحقق من صلاحيات الراوتر والباقة.';
+      _errorMessage =
+          'فشل إضافة مشترك PPPoE. تحقق من صلاحيات الراوتر والباقة.';
       notifyListeners();
     }
   }
