@@ -853,6 +853,138 @@ class MikrotikService {
         (normalized == base || normalized == '$base/print');
   }
 
+
+  Future<Map<String, List<Map<String, String>>>> loadBalancingAudit() async {
+    if (_rest == null) {
+      throw const RouterOsException('فحص الدمج الآلي متاح عبر REST API في RouterOS v7 فقط.', kind: RouterOsErrorKind.methodNotAllowed);
+    }
+    final results = await Future.wait<dynamic>([
+      _rest!.get('/ip/firewall/mangle'),
+      _rest!.get('/ip/route'),
+      _rest!.get('/routing/table'),
+      _rest!.get('/ip/dhcp-client'),
+    ]);
+    return {
+      'mangle': _asList(results[0]).map(_toRow).toList(),
+      'routes': _asList(results[1]).map(_toRow).toList(),
+      'tables': _asList(results[2]).map(_toRow).toList(),
+      'dhcpClients': _asList(results[3]).map(_toRow).toList(),
+    };
+  }
+
+  Future<void> applyLoadBalancingPlan({
+    required List<Map<String, String>> wans,
+    required String lanInterface,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    _requireWriteApproval(explicitlyConfirmed: explicitlyConfirmed, backupVerified: backupVerified, rollbackPlanAvailable: rollbackPlanAvailable);
+    if (_rest == null) {
+      throw const RouterOsException('التطبيق الآلي يحتاج REST API في RouterOS v7؛ لم يتم إجراء أي تغيير.', kind: RouterOsErrorKind.methodNotAllowed);
+    }
+    if (wans.length < 2 || wans.length > 6 || lanInterface.trim().isEmpty ||
+        wans.any((w) => (w['interface'] ?? '').trim().isEmpty || (w['gateway'] ?? '').trim().isEmpty) ||
+        wans.map((w) => w['interface']).toSet().length != wans.length) {
+      throw const RouterOsException('تحقق من واجهة LAN، وعدد الخطوط، وبوابة كل خط. يجب أن تكون واجهات WAN مختلفة.', kind: RouterOsErrorKind.badRequest);
+    }
+    final audit = await loadBalancingAudit();
+    final mangle = audit['mangle'] ?? [];
+    final hasRoutingMarks = mangle.any((r) {
+      final action = (r['action'] ?? '').toLowerCase();
+      final comment = (r['comment'] ?? '').toLowerCase();
+      return action == 'mark-routing' || action == 'mark-connection' || comment.contains('pcc') || comment.contains('load balance') || comment.contains('load-balancing');
+    });
+    if (hasRoutingMarks) {
+      throw const RouterOsException('تم إيقاف التطبيق الآلي: توجد قواعد Mangle لتوجيه/تمييز الاتصالات (قد تكون PCC موجودة). لم يتغير شيء. راجع الخطة وادمجها يدوياً بعد نسخة احتياطية.', kind: RouterOsErrorKind.forbidden);
+    }
+    final routes = audit['routes'] ?? [];
+    final tables = audit['tables'] ?? [];
+    final names = wans.map((w) => _safeRosName(w['interface']!)).toList();
+    if (names.toSet().length != names.length) {
+      throw const RouterOsException('أسماء واجهات WAN لا تنتج أسماء جداول فريدة.', kind: RouterOsErrorKind.badRequest);
+    }
+    final created = <Map<String, String>>[];
+    try {
+      for (final name in names) {
+        final tableName = 'saif_$name';
+        if (!tables.any((t) => t['name'] == tableName)) {
+          final res = await _rest!.post('/routing/table', {'name': tableName, 'fib': 'true'});
+          final row = _firstMap(res);
+          if ((row['.id'] ?? '').isNotEmpty) created.add({'path': '/routing/table', 'id': row['.id']!});
+        }
+      }
+      for (var i = 0; i < wans.length; i++) {
+        for (var step = 0; step < wans.length; step++) {
+          final index = (i + step) % wans.length;
+          final wan = wans[index];
+          final tableName = 'saif_\${names[i]}';
+          final existingSame = routes.any((route) =>
+            (route['dst-address'] ?? '') == '0.0.0.0/0' &&
+            (route['routing-table'] ?? 'main') == tableName &&
+            (route['gateway'] ?? '') == wan['gateway']);
+          if (existingSame) continue;
+          final res = await _rest!.post('/ip/route', {
+            'dst-address': '0.0.0.0/0',
+            'gateway': wan['gateway']!.trim(),
+            'routing-table': tableName,
+            'distance': '\${step + 1}',
+            'check-gateway': 'ping',
+            'comment': 'SAIF.NET LB \${names[i]} via \${names[index]}',
+          });
+          final row = _firstMap(res);
+          if ((row['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/route', 'id': row['.id']!});
+        }
+      }
+      for (var i = 0; i < wans.length; i++) {
+        final mark = 'SAIF_\${names[i]}_conn';
+        final tableName = 'saif_\${names[i]}';
+        final connectionRes = await _rest!.post('/ip/firewall/mangle', {
+          'chain': 'prerouting',
+          'in-interface': lanInterface.trim(),
+          'dst-address-type': '!local',
+          'connection-mark': 'no-mark',
+          'per-connection-classifier': 'both-addresses-and-ports:\${wans.length}/$i',
+          'action': 'mark-connection',
+          'new-connection-mark': mark,
+          'passthrough': 'yes',
+          'comment': 'SAIF.NET LB PCC connection \${names[i]}',
+        });
+        final connectionRow = _firstMap(connectionRes);
+        if ((connectionRow['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/firewall/mangle', 'id': connectionRow['.id']!});
+        final routeRes = await _rest!.post('/ip/firewall/mangle', {
+          'chain': 'prerouting',
+          'in-interface': lanInterface.trim(),
+          'connection-mark': mark,
+          'action': 'mark-routing',
+          'new-routing-mark': tableName,
+          'passthrough': 'no',
+          'comment': 'SAIF.NET LB PCC route \${names[i]}',
+        });
+        final routeRow = _firstMap(routeRes);
+        if ((routeRow['.id'] ?? '').isNotEmpty) created.add({'path': '/ip/firewall/mangle', 'id': routeRow['.id']!});
+      }
+    } catch (e) {
+      for (final item in created.reversed) {
+        try { await _rest!.delete('\${item['path']}/\${item['id']}'); } catch (_) {}
+      }
+      throw RouterOsException('فشل تطبيق الدمج وتمت محاولة التراجع عن العناصر التي أُنشئت. افحص الراوتر قبل إعادة المحاولة. التفاصيل: $e', kind: RouterOsErrorKind.server);
+    }
+  }
+
+  String _safeRosName(String input) {
+    final clean = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    return clean.length > 20 ? clean.substring(0, 20) : clean;
+  }
+
+  Map<String, String> _firstMap(dynamic data) {
+    if (data is Map) return Map<String, String>.from(data.map((k, v) => MapEntry(k.toString(), v.toString())));
+    if (data is List && data.isNotEmpty && data.first is Map) {
+      return Map<String, String>.from((data.first as Map).map((k, v) => MapEntry(k.toString(), v.toString())));
+    }
+    return <String, String>{};
+  }
+
   Future<List<Map<String, String>>> runCommand(String path) async {
     final normalized = path.trim().replaceAll(RegExp(r'/+$'), '');
     if (!isReadOnlyCommandPath(normalized)) {
