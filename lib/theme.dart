@@ -11,6 +11,17 @@ class AppTheme {
   static const Color dangerColor = Color(0xFFD65C5C);
   static const Color warningColor = Color(0xFFE5C158);
 
+  // Backward-compatible aliases used by existing screens and widgets.
+  // Keep these mapped to the new blue theme so existing UI keeps compiling.
+  static const Color bgDark = backgroundColor;
+  static const Color primaryPurple = primaryColor;
+  static const Color primaryBlue = primaryColor;
+  static const Color cardDark = cardColor;
+  static const Color textMain = textPrimary;
+  static const Color textMuted = textSecondary;
+  static const Color successGreen = successColor;
+  static const Color dangerRed = dangerColor;
+
   static const LinearGradient glassGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
