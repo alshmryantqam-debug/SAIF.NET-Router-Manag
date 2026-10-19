@@ -16,13 +16,12 @@ class RouterosRestApi {
       receiveTimeout: const Duration(seconds: 10),
     ));
 
-    // MikroTik self-signed certificates: use only on a trusted management LAN.
-    // TODO(security): prefer certificate pinning for production deployments.
+    // ملاحظة أمنية: هذا الإجراء يتجاوز التحقق من شهادة SSL للسماح بالاتصال براوتر MikroTik (شهادة ذاتية).
+    // هذا التجاوز مؤقت للاختبار المحلي فقط؛ في بيئة الإنتاج، استخدم Certificate Pinning أو قناة إدارة آمنة.
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
+        client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
         return client;
       },
     );
