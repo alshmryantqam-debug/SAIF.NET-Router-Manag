@@ -904,15 +904,15 @@ class MikrotikService {
     }
     final normalized = <Map<String, String>>[];
     final names = <String>{};
-    final gateways = <String>{};
+    final gatewayKeys = <String>{};
     for (final line in wanLines) {
       final name = (line['interface'] ?? '').trim();
       final gateway = (line['gateway'] ?? '').trim();
       final ip = InternetAddress.tryParse(gateway);
-      if (name.isEmpty || !names.add(name) || ip == null || ip.type != InternetAddressType.IPv4 || !gateways.add(ip.address)) {
+      if (name.isEmpty || !names.add(name) || ip == null || ip.type != InternetAddressType.IPv4 || !gatewayKeys.add('$name|${ip.address}')) {
         throw const RouterOsException('كل خط يجب أن يملك واجهة مختلفة وبوابة IPv4 صحيحة وفريدة.', kind: RouterOsErrorKind.badRequest);
       }
-      normalized.add({'interface': name, 'gateway': ip.address});
+      normalized.add({'interface': name, 'gateway': ip.address, 'gatewayRoute': '${ip.address}%$name'});
     }
 
     final allInterfaces = await interfaces();
@@ -1000,7 +1000,7 @@ class MikrotikService {
           final probe = probes[gatewayIndex];
           await create('/ip/route', {
             'dst-address': '$probe/32',
-            'gateway': normalized[gatewayIndex]['gateway']!,
+            'gateway': normalized[gatewayIndex]['gatewayRoute']!,
             'routing-table': table,
             'scope': '10',
             'comment': '$prefix probe $table via ${normalized[gatewayIndex]['interface']}',
