@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../providers/connection_provider.dart';
 import '../providers/dashboard_provider.dart';
-import 'pppoe_screen.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
+import 'hotspot_screen.dart';
+import 'pppoe_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,8 +27,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    // Stop this screen's polling timer when leaving the dashboard.
-    // The provider remains available for a future visit.
     context.read<DashboardProvider>().stopPolling();
     super.dispose();
   }
@@ -37,18 +36,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final connProvider = context.watch<ConnectionProvider>();
     final dashProvider = context.watch<DashboardProvider>();
 
-    final double totalRam =
-        double.tryParse(dashProvider.totalMemory) ?? 0;
-    final double freeRam =
-        double.tryParse(dashProvider.freeMemory) ?? 0;
-    final double usedRam = (totalRam - freeRam).clamp(0, totalRam);
-    final double ramUsagePercent =
-        totalRam > 0 ? (usedRam / totalRam).clamp(0.0, 1.0) : 0.0;
-    final double cpuPercent =
-        ((double.tryParse(dashProvider.cpuLoad) ?? 0) / 100)
-            .clamp(0.0, 1.0);
+    final double totalRam = double.tryParse(dashProvider.totalMemory) ?? 0;
+    final double freeRam = double.tryParse(dashProvider.freeMemory) ?? 0;
+    final double usedRam = (totalRam - freeRam).clamp(0, totalRam).toDouble();
+    final double ramUsagePercent = totalRam > 0
+        ? (usedRam / totalRam).clamp(0.0, 1.0).toDouble()
+        : 0.0;
+    final double cpuPercent = ((double.tryParse(dashProvider.cpuLoad) ?? 0) / 100)
+        .clamp(0.0, 1.0)
+        .toDouble();
     final double cpuValue =
-        (double.tryParse(dashProvider.cpuLoad) ?? 0).clamp(0.0, 100.0);
+        (double.tryParse(dashProvider.cpuLoad) ?? 0).clamp(0.0, 100.0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -128,16 +126,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       spacing: 20,
                       runSpacing: 12,
                       children: [
-                        _buildMiniStat(
-                          Icons.timer_outlined,
-                          'مدة التشغيل',
-                          dashProvider.uptime,
-                        ),
-                        _buildMiniStat(
-                          Icons.memory,
-                          'إجمالي الرام',
-                          '${dashProvider.totalMemory} MB',
-                        ),
+                        _buildMiniStat(Icons.timer_outlined, 'مدة التشغيل',
+                            dashProvider.uptime),
+                        _buildMiniStat(Icons.memory, 'إجمالي الرام',
+                            '${dashProvider.totalMemory} MB'),
                       ],
                     ),
                   ],
@@ -160,11 +152,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: GlassCard(
                       child: Column(
                         children: [
-                          const Text(
-                            'المعالج (CPU)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppTheme.textSecondary),
-                          ),
+                          const Text('المعالج (CPU)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppTheme.textSecondary)),
                           const SizedBox(height: 16),
                           SizedBox(
                             height: 90,
@@ -180,14 +170,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     color: _getColorForUsage(cpuValue),
                                   ),
                                 ),
-                                Text(
-                                  '${cpuValue.toStringAsFixed(0)}%',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
+                                Text('${cpuValue.toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textPrimary,
+                                    )),
                               ],
                             ),
                           ),
@@ -200,11 +188,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: GlassCard(
                       child: Column(
                         children: [
-                          const Text(
-                            'الذاكرة (RAM)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppTheme.textSecondary),
-                          ),
+                          const Text('الذاكرة (RAM)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppTheme.textSecondary)),
                           const SizedBox(height: 16),
                           SizedBox(
                             height: 90,
@@ -217,19 +203,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     value: ramUsagePercent,
                                     strokeWidth: 8,
                                     backgroundColor: AppTheme.backgroundColor,
-                                    color: _getColorForUsage(
-                                      ramUsagePercent * 100,
-                                    ),
+                                    color: _getColorForUsage(ramUsagePercent * 100),
                                   ),
                                 ),
-                                Text(
-                                  '${(ramUsagePercent * 100).toStringAsFixed(0)}%',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
+                                Text('${(ramUsagePercent * 100).toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textPrimary,
+                                    )),
                               ],
                             ),
                           ),
@@ -251,13 +233,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: const TextStyle(color: AppTheme.textPrimary),
                       ),
                     ),
-                    Text(
-                      'من ${dashProvider.totalMemory} MB',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text('من ${dashProvider.totalMemory} MB',
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 12)),
                   ],
                 ),
               ),
@@ -269,41 +247,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.cardColor,
                     side: const BorderSide(
-                      color: AppTheme.primaryColor,
-                      width: 1.5,
-                    ),
+                        color: AppTheme.primaryColor, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const PppoeScreen(),
-                      ),
+                          builder: (context) => const PppoeScreen()),
                     );
                   },
-                  icon: const Icon(
-                    Icons.people_alt,
-                    color: AppTheme.primaryColor,
+                  icon: const Icon(Icons.people_alt,
+                      color: AppTheme.primaryColor),
+                  label: const Text('إدارة مشتركي PPPoE',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(
+                        color: AppTheme.warningColor, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
-                  label: const Text(
-                    'إدارة مشتركي PPPoE',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HotspotScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.wifi_tethering,
+                      color: AppTheme.warningColor),
+                  label: const Text('إدارة شبكة الهوتسبوت',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.warningColor)),
                 ),
               ),
               const SizedBox(height: 12),
               if (!connProvider.isConnected)
-                const Text(
-                  'حالة الاتصال: غير متصل',
-                  style: TextStyle(color: AppTheme.dangerColor),
-                ),
+                const Text('حالة الاتصال: غير متصل',
+                    style: TextStyle(color: AppTheme.dangerColor)),
             ],
           ),
         ),
@@ -320,21 +315,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12, color: AppTheme.textSecondary)),
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary)),
           ],
         ),
       ],
