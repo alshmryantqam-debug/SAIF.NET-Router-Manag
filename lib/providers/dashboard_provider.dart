@@ -10,7 +10,7 @@ import 'connection_provider.dart';
 /// This provider only reads /system/resource; it does not change router
 /// configuration. It polls every three seconds while polling is started.
 class DashboardProvider with ChangeNotifier {
-  final ConnectionProvider _connectionProvider;
+  ConnectionProvider _connectionProvider;
 
   Timer? _timer;
   bool _isFetching = false;
@@ -24,6 +24,16 @@ class DashboardProvider with ChangeNotifier {
   String _version = '';
 
   DashboardProvider(this._connectionProvider);
+
+  /// Keep the provider attached to the current ConnectionProvider instance.
+  /// Usually that instance is stable for the app lifetime.
+  void updateConnectionProvider(ConnectionProvider connectionProvider) {
+    if (identical(_connectionProvider, connectionProvider)) return;
+    _connectionProvider = connectionProvider;
+    if (_timer?.isActive ?? false) {
+      fetchResources();
+    }
+  }
 
   String get cpuLoad => _cpuLoad;
   String get uptime => _uptime;
