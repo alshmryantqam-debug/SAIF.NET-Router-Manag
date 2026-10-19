@@ -4,7 +4,7 @@ import 'routeros_rest_api.dart';
 class MikrotikService {
   final RouterosRestApi _api = RouterosRestApi();
 
-  void connect(RouterConfig config) {
+  void connect(MikrotikConfig config) {
     _api.connect(config);
   }
 
