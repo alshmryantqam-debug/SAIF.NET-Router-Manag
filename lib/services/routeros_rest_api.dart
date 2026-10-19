@@ -23,7 +23,6 @@ class RouterosRestApi {
     };
   }
 
-  // قراءة
   Future<Map<String, dynamic>> getSystemResource() async {
     final response = await _dio.get('/system/resource');
     return response.data;
@@ -34,7 +33,6 @@ class RouterosRestApi {
     return response.data;
   }
 
-  // إدارة (كتابة)
   Future<bool> createPPPoEUser(String username, String password, String profile) async {
     try {
       await _dio.put('/ppp/secret', data: {
@@ -42,6 +40,34 @@ class RouterosRestApi {
         'password': password,
         'profile': profile,
         'service': 'pppoe',
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // جلب قائمة مشتركي PPPoE (الأسرار)
+  Future<List<dynamic>> getPPPoESecrets() async {
+    final response = await _dio.get('/ppp/secret');
+    return response.data;
+  }
+
+  // حذف مشترك
+  Future<bool> removePPPoESecret(String id) async {
+    try {
+      await _dio.delete('/ppp/secret/$id');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // إيقاف/تفعيل مشترك
+  Future<bool> togglePPPoESecret(String id, bool disabled) async {
+    try {
+      await _dio.patch('/ppp/secret/$id', data: {
+        'disabled': disabled ? 'true' : 'false',
       });
       return true;
     } catch (e) {
