@@ -642,7 +642,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       selectedInterface: selectedInterface,
                       latest: latest,
                       onSelect: connection.isConnected
-                          ? (name) => traffic.selectInterface(name)
+                          ? (name) {
+                              if (name != null) traffic.selectInterface(name);
+                            }
                           : null,
                       onMeasure: () => _measureSpeed(traffic, selectedName),
                       onAdjust: () => _openPage(const QueuesScreen()),
@@ -1035,7 +1037,7 @@ class _InternetCard extends StatelessWidget {
   final String? selectedName;
   final RosInterface? selectedInterface;
   final TrafficSample? latest;
-  final ValueChanged<String>? onSelect;
+  final ValueChanged<String?>? onSelect;
   final VoidCallback onMeasure;
   final VoidCallback onAdjust;
   final bool isConnected;
