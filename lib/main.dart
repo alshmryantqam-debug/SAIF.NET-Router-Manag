@@ -8,7 +8,7 @@ import 'providers/hotspot_provider.dart';
 import 'providers/subscribers_provider.dart';
 import 'providers/traffic_provider.dart';
 import 'screens/auth/app_login_screen.dart';
-import 'theme.dart';
+import 'core/theme/nova_theme.dart';
 
 void main() {
   runApp(MultiProvider(
@@ -58,7 +58,7 @@ class NovaApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'SAIF.NET',
     debugShowCheckedModeBanner: false,
-    theme: AppTheme.darkTheme,
+    theme: novaTheme(),
     locale: const Locale('ar'),
     supportedLocales: const [Locale('ar'), Locale('en')],
     localizationsDelegates: const [
