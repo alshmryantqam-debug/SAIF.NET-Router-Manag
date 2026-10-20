@@ -129,165 +129,180 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: ParticleMatrixBg(
-        child: Column(
-          children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE040FB).withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE040FB).withOpacity(0.45),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFE040FB).withOpacity(0.10),
-                        blurRadius: 14,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.wifi_tethering_rounded,
-                    color: Color(0xFFE040FB),
-                    size: 23,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'HOTSPOT MATRIX',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.4,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'SUBSCRIBER CONTROL INTERFACE',
-                        style: TextStyle(
-                          color: Color(0xFFCE93D8),
-                          fontSize: 9,
-                          letterSpacing: 1.1,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'تحديث القائمة',
-                  onPressed: _refresh,
-                  icon: const Icon(
-                    Icons.sync_rounded,
-                    color: Color(0xFFE040FB),
-                  ),
-                ),
-              ],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text(
+          'HOTSPOT MATRIX',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+            color: Colors.white,
+            shadows: [
+              Shadow(color: Color(0xFFE040FB), blurRadius: 10),
+            ],
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'تحديث القائمة',
+            onPressed: _refresh,
+            icon: const Icon(
+              Icons.sync_rounded,
+              color: Color(0xFFE040FB),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: (v) => setState(() => _query = v.trim()),
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-              ),
-              decoration: InputDecoration(
-                hintText: 'بحث بالاسم أو التعليق...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon: _query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() => _query = '');
-                        },
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildFilterChip(
-                  label: 'الكل',
-                  selected: !_showActiveOnly,
-                  onTap: () => setState(() => _showActiveOnly = false),
-                ),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                  label: 'النشطون',
-                  selected: _showActiveOnly,
-                  onTap: () => setState(() => _showActiveOnly = true),
-                  badge: activeAsync.valueOrNull?.length ?? 0,
-                ),
-                const Spacer(),
-                if (usersAsync.hasValue)
-                  Text(
-                    '${_filter(usersAsync.value!).length} مستخدم',
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 11.5,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refresh,
-              color: AppColors.primary,
-              backgroundColor: AppColors.bgCard,
-              child: usersAsync.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                  ),
-                ),
-                error: (e, _) => _errorView(e),
-                data: (users) {
-                  final filtered = _filter(users);
-                  if (filtered.isEmpty) return _emptyView();
-                  return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                    itemCount: filtered.length,
-                    itemBuilder: (_, i) => _buildTile(filtered[i]),
-                  );
-                },
-              ),
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
+      ),
+      body: ParticleMatrixBg(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (v) => setState(() => _query = v.trim()),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'بحث بالاسم أو التعليق...',
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    suffixIcon: _query.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _query = '');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: const Color(0xCC070B14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: const Color(0xFFE040FB).withOpacity(0.25),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: const Color(0xFFE040FB).withOpacity(0.25),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE040FB),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildFilterChip(
+                      label: 'الكل',
+                      selected: !_showActiveOnly,
+                      onTap: () => setState(() => _showActiveOnly = false),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      label: 'النشطون',
+                      selected: _showActiveOnly,
+                      onTap: () => setState(() => _showActiveOnly = true),
+                      badge: activeAsync.valueOrNull?.length ?? 0,
+                    ),
+                    const Spacer(),
+                    if (usersAsync.hasValue)
+                      Text(
+                        '${_filter(usersAsync.value!).length} مستخدم',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _refresh,
+                  color: const Color(0xFFE040FB),
+                  backgroundColor: const Color(0xFF070B14),
+                  child: usersAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFE040FB),
+                      ),
+                    ),
+                    error: (e, _) => _errorView(e),
+                    data: (users) {
+                      final filteredUsers = _filter(users);
+                      if (filteredUsers.isEmpty) return _emptyView();
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: 120,
+                          top: 16,
+                        ),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          final user = filteredUsers[index];
+                          return CyberHotspotCard(
+                            name: user.name,
+                            profile: user.profile,
+                            limitUptime: user.limitUptime,
+                            isDisabled: user.disabled,
+                            onToggle: () => _toggle(user, !user.disabled),
+                            onDelete: () => _remove(user),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final added = await context.push<bool>('/hotspot/add');
-          if (added == true) {
-            ref.invalidate(hotspotUsersProvider);
-          }
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'مستخدم جديد',
-          style: TextStyle(fontWeight: FontWeight.w800),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE040FB).withOpacity(0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF070B14),
+          shape: const CircleBorder(
+            side: BorderSide(color: Color(0xFFE040FB), width: 2),
+          ),
+          onPressed: () async {
+            final added = await context.push<bool>('/hotspot/add');
+            if (added == true) {
+              ref.invalidate(hotspotUsersProvider);
+            }
+          },
+          child: const Icon(Icons.add, color: Color(0xFFE040FB)),
         ),
       ),
     );
