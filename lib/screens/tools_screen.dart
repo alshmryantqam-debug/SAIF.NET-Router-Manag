@@ -187,6 +187,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/roles',
       ),
       _ToolEntry(
+        title: 'لوحة التحكم',
+        subtitle: 'مركز محركات الشبكة والصيانة',
+        icon: Icons.tune_rounded,
+        accent: _cyan,
+        route: '/control-panel',
+      ),
+      _ToolEntry(
         title: 'إعدادات النظام',
         subtitle: 'الاتصال وتفضيلات التطبيق',
         icon: Icons.settings_rounded,
