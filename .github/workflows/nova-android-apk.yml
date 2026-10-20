@@ -73,6 +73,15 @@ jobs:
                   source = re.sub(r'applicationId\s+"[^"]+"', 'applicationId "net.saif.nova"', source)
                   source = re.sub(r'minSdkVersion\s+flutter.minSdkVersion', 'minSdkVersion 24', source)
                   gradle.write_text(source)
+          activity_files = list(Path("android/app/src/main").rglob("MainActivity.kt")) + list(Path("android/app/src/main").rglob("MainActivity.java"))
+          if not activity_files:
+              raise SystemExit("Flutter MainActivity was not generated.")
+          activity = activity_files[0]
+          activity_source = activity.read_text()
+          activity_source = activity_source.replace("import io.flutter.embedding.android.FlutterActivity", "import io.flutter.embedding.android.FlutterFragmentActivity")
+          activity_source = activity_source.replace("extends FlutterActivity", "extends FlutterFragmentActivity")
+          activity_source = activity_source.replace(": FlutterActivity()", ": FlutterFragmentActivity()")
+          activity.write_text(activity_source)
           PY
 
       - name: Resolve packages
