@@ -128,7 +128,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'tools',
             pageBuilder: (_, __) => const NoTransitionPage(
               child: BusinessGate(
-                allowed: const [BusinessRole.manager, BusinessRole.technician],
+                allowed: const [BusinessRole.manager],
                 child: ToolsScreen(),
               ),
             ),
