@@ -14,10 +14,12 @@ class InterfacesScreen extends ConsumerWidget {
     final ipsAsync = ref.watch(ipAddressesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('الواجهات'),
-        backgroundColor: AppColors.bgCard,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -37,7 +39,7 @@ class InterfacesScreen extends ConsumerWidget {
         color: AppColors.primary,
         backgroundColor: AppColors.bgCard,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 100, 16, 100),
           children: [
             _sectionTitle(
               'الواجهات',
