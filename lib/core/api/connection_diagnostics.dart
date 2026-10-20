@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'routeros_client.dart';
+import 'router_client.dart';
+import 'routeros_client.dart' show RestClient, RosException, RosErrorType;
 
 class DiagStep {
   final String title;
@@ -44,7 +45,7 @@ class ConnectionDiagnostics {
         continue;
       }
 
-      final client = RouterOsClient(
+      final client = RestClient(
           host: host, user: user, pass: pass, https: c.https, port: c.port);
       try {
         final res = await client.get('/system/resource');

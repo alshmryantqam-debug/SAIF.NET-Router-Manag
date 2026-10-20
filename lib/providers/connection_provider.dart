@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/router_config.dart';
-import '../core/api/routeros_client.dart';
+import '../core/api/router_client.dart';
+import '../core/api/routeros_client.dart' show RestClient, RosException;
 import '../core/api/connection_diagnostics.dart';
 import '../models/pppoe_user.dart';
 import '../models/hotspot_user.dart';
@@ -71,7 +72,7 @@ class ConnectionProvider extends ChangeNotifier {
     final raw = config.ipAddress.trim();
     final uri = Uri.parse(raw.contains('://') ? raw : 'https://$raw');
     final port = uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80);
-    final client = RouterOsClient(host: uri.host, user: config.username, pass: config.password, https: uri.scheme == 'https', port: port);
+    final client = RestClient(host: uri.host, user: config.username, pass: config.password, https: uri.scheme == 'https', port: port);
     await useClient(client: client, host: uri.host, username: config.username, password: config.password, https: uri.scheme == 'https', port: port);
   }
   void markConnectionLost([String? message]) {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'api_log.dart';
+import 'router_client.dart';
 
 enum RosErrorType { network, timeout, tls, auth, forbidden, notFound, server, unknown }
 
@@ -15,7 +16,7 @@ class RosException implements Exception {
   String toString() => message;
 }
 
-class RouterOsClient {
+class RestClient implements RouterOsClient {
   final String host;
   final String user;
   final String pass;
@@ -23,7 +24,7 @@ class RouterOsClient {
   final int port;
   late final Dio _dio;
 
-  RouterOsClient({
+  RestClient({
     required this.host,
     required this.user,
     required this.pass,
@@ -50,11 +51,19 @@ class RouterOsClient {
     );
   }
 
+  @override
+  String get kind => 'REST';
+
+  @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _send('GET', path, query: query);
+  @override
   Future<dynamic> post(String path, [Object? data]) => _send('POST', path, data: data);
+  @override
   Future<dynamic> put(String path, Object data) => _send('PUT', path, data: data);
+  @override
   Future<dynamic> patch(String path, Object data) => _send('PATCH', path, data: data);
+  @override
   Future<dynamic> delete(String path) => _send('DELETE', path);
 
   Future<dynamic> _send(String method, String path,
@@ -107,18 +116,30 @@ class RouterOsClient {
   }
 
 
+  @override
   Future<List<dynamic>> getPPPoESecrets() async => List<dynamic>.from(await get('ppp/secret') as List);
+  @override
   Future<List<dynamic>> getActivePPPoE() async => List<dynamic>.from(await get('ppp/active') as List);
+  @override
   Future<List<dynamic>> getHotspotUsers() async => List<dynamic>.from(await get('ip/hotspot/user') as List);
+  @override
   Future<List<dynamic>> getInterfaces() async => List<dynamic>.from(await get('interface') as List);
+  @override
   Future<List<dynamic>> getIpAddresses() async => List<dynamic>.from(await get('ip/address') as List);
+  @override
   Future<List<dynamic>> getQueues() async => List<dynamic>.from(await get('queue/simple') as List);
+  @override
   Future<void> createPPPoEUser(String username, String password, String profile) => put('ppp/secret', {'name': username, 'password': password, 'profile': profile, 'service': 'pppoe'});
+  @override
   Future<void> togglePPPoESecret(String id, bool disabled) => patch('ppp/secret/${Uri.encodeComponent(id)}', {'disabled': disabled ? 'true' : 'false'});
+  @override
   Future<void> removePPPoESecret(String id) => delete('ppp/secret/${Uri.encodeComponent(id)}');
+  @override
   Future<void> toggleHotspotUser(String id, bool disabled) => patch('ip/hotspot/user/${Uri.encodeComponent(id)}', {'disabled': disabled ? 'true' : 'false'});
+  @override
   Future<void> createHotspotUser({required String name, required String password, required String profile, String server = 'all', String comment = ''}) =>
       put('ip/hotspot/user', {'server': server, 'name': name, 'password': password, 'profile': profile, 'comment': comment});
+  @override
   Future<void> removeHotspotUser(String id) => delete('ip/hotspot/user/${Uri.encodeComponent(id)}');
   Future<void> _executeTemporaryScript(String source) async {
     final scriptName = 'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
@@ -137,7 +158,9 @@ class RouterOsClient {
       }
     }
   }
+  @override
   Future<bool> runSystemScript(String source) async { await _executeTemporaryScript(source); return true; }
+  @override
   Future<String> executeRawCommand(String command) async {
     if (command.trim().isEmpty) return 'ERROR: Command is empty.';
     try {
@@ -146,5 +169,6 @@ class RouterOsClient {
     } on RosException catch (e) { return 'ERROR: ${e.status ?? e.type.name} - ${e.message}'; }
     catch (e) { return 'ERROR: $e'; }
   }
+  @override
   void close() => _dio.close(force: true);
 }
