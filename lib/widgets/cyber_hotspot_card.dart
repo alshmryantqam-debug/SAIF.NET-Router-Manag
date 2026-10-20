@@ -112,7 +112,9 @@ class CyberHotspotCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'DATA USED: ${mbOut.toStringAsFixed(1)} MB',
+                          bytesOut.trim().isEmpty
+                              ? 'DATA USED: N/A'
+                              : 'DATA USED: ${mbOut.toStringAsFixed(1)} MB',
                           style: TextStyle(
                             color: accentColor.withOpacity(0.8),
                             fontSize: 10,
