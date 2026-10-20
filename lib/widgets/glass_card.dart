@@ -15,7 +15,8 @@ class GlassCard extends StatelessWidget {
     this.glowColor,
     this.radius,
     this.elevated = false,
-    this.blur = 12,
+    this.blur = 25,
+    this.useGradient = false,
   });
 
   final Widget child;
@@ -27,6 +28,7 @@ class GlassCard extends StatelessWidget {
   final double? radius;
   final bool elevated;
   final double blur;
+  final bool useGradient;
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +65,38 @@ class GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
           child: Container(
             decoration: BoxDecoration(
-              gradient: AppGradients.glass,
+              color: useGradient
+                  ? AppColors.primary.withOpacity(0.15)
+                  : Colors.white.withOpacity(0.04),
+              gradient: useGradient
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withOpacity(0.15),
+                        AppColors.primaryStrong.withOpacity(0.06),
+                        Colors.white.withOpacity(0.025),
+                      ],
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(r),
-              border: Border.all(color: border, width: 1),
-              color: AppColors.bgCard.withOpacity(0.55),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.15),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+                if (glow != null)
+                  BoxShadow(
+                    color: glow.withOpacity(0.12),
+                    blurRadius: 22,
+                    spreadRadius: -2,
+                  ),
+              ],
             ),
             child: content,
           ),
