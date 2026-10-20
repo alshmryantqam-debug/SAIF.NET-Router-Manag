@@ -7,28 +7,35 @@ import 'package:dio/io.dart';
 import '../models/router_config.dart';
 import 'router_operation_guard.dart';
 
+/// RouterOS REST client. Self-signed certificates are accepted only for the
+/// configured router endpoint; do not use this on an untrusted network.
 class RouterosRestApi {
   late final Dio _dio;
+  Uri? _routerUri;
 
   RouterosRestApi() {
-    _dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ));
+    _dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
+        responseType: ResponseType.json,
+      ),
+    );
 
-    // تجاوز شهادة ذاتية للاختبار المحلي فقط، ومقيّد بالمضيف والمنفذ اللذين
-    // تم ضبطهما في connect() بدلاً من قبول أي شهادة لأي مضيف.
-    // لا تستخدم هذا التطبيق على شبكة عامة أو غير موثوقة؛ للإنتاج تحقّق من
-    // شهادة الراوتر أو استخدم certificate pinning.
+    // IOHttpClientAdapter must own the HttpClient for this Dio instance.
+    // The callback is restricted to the configured router host/port, while
+    // allowing its self-signed certificate. It cannot fix TLS protocol or
+    // network-level handshake failures unrelated to certificate validation.
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
         client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) {
-          final target = Uri.tryParse(_dio.options.baseUrl);
+            (X509Certificate certificate, String host, int port) {
+          final target = _routerUri;
           return target != null &&
               target.scheme == 'https' &&
-              host == target.host &&
+              host.toLowerCase() == target.host.toLowerCase() &&
               port == target.port;
         };
         return client;
@@ -39,11 +46,31 @@ class RouterosRestApi {
   }
 
   void connect(MikrotikConfig config) {
-    final basicAuth =
-        'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}';
-    _dio.options.baseUrl = 'https://${config.ipAddress}/rest';
+    final configuredAddress = config.ipAddress.trim();
+    final parsed = Uri.parse(
+      configuredAddress.contains('://')
+          ? configuredAddress
+          : 'https://$configuredAddress',
+    );
+
+    if (parsed.scheme != 'https' || parsed.host.isEmpty) {
+      throw ArgumentError('Router address must be a valid HTTPS host.');
+    }
+
+    // Keep an explicitly supplied port (e.g. 192.168.88.1:8443); default to
+    // the standard HTTPS port when none is provided.
+    final port = parsed.hasPort ? parsed.port : 443;
+    _routerUri = Uri(
+      scheme: 'https',
+      host: parsed.host,
+      port: port,
+      path: '/rest',
+    );
+    _dio.options.baseUrl = _routerUri.toString();
     _dio.options.headers = {
-      'Authorization': basicAuth,
+      'Authorization':
+          'Basic ${base64Encode(utf8.encode('${config.username}:${config.password}'))}',
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
   }
@@ -142,7 +169,8 @@ class RouterosRestApi {
   }
 
   Future<String> _executeTemporaryScript(String source) async {
-    final scriptName = 'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
+    final scriptName =
+        'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
     String? scriptId;
     try {
       final created = await _dio.put('/system/script', data: {
