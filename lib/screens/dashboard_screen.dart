@@ -53,28 +53,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(appBar: AppBar(title: const Text('نوڨا · مركز التحكم')), body: RefreshIndicator(
       onRefresh: _refresh, color: NovaColors.primary,
       child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
-        GlassCard(useGradient: true, useBlur: true, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(padding: const EdgeInsets.all(12), decoration: const BoxDecoration(gradient: NovaColors.gradient, borderRadius: BorderRadius.all(Radius.circular(16))), child: const Icon(Icons.shield_rounded, color: Colors.white, size: 28)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(c.routerIdentity.isEmpty ? 'راوتر MikroTik' : c.routerIdentity, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              Text(d.boardName, style: const TextStyle(color: NovaColors.muted)),
-            ])),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              StatusPill(c.isConnected ? 'متصل' : 'مقطوع', c.isConnected ? NovaColors.success : NovaColors.danger),
-              if (c.isConnected && c.client != null) ...[
-                const SizedBox(height: 6),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: NovaColors.primary.withOpacity(.14), borderRadius: BorderRadius.circular(8), border: Border.all(color: NovaColors.primary.withOpacity(.45))), child: Text(c.client!.kind, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: NovaColors.primary))),
-              ],
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF596A91), Color(0xFF303A59), Color(0xFF252A40)]),
+            borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withOpacity(.18)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.18), blurRadius: 22, offset: const Offset(0, 10))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              _NovaCircle(icon: Icons.notifications_none_rounded, label: c.isConnected ? '✓' : '!', onTap: _refresh),
+              const Spacer(),
+              Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white.withOpacity(.14), borderRadius: BorderRadius.circular(28)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  _NovaSegment(label: 'نوڨا', active: true),
+                  _NovaSegment(label: c.isConnected ? 'متصل' : 'غير متصل', active: false, color: c.isConnected ? const Color(0xFF79D8B0) : const Color(0xFFFF858D)),
+                ])),
+              const Spacer(), _NovaCircle(icon: Icons.router_rounded, label: '', onTap: () => _showNovaInfo(context, 'معلومات الراوتر', 'الاسم: ${c.routerIdentity.isEmpty ? 'غير معروف' : c.routerIdentity}\\nRouterOS: ${d.version.isEmpty ? '—' : d.version}')),
+            ]),
+            const SizedBox(height: 25),
+            Text(c.routerIdentity.isEmpty ? 'مركز تحكم نوڨا' : c.routerIdentity, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+            const SizedBox(height: 6),
+            Text(c.isConnected ? 'حالة الشبكة · الاتصال يعمل بشكل طبيعي' : 'حالة الشبكة · تحقق من اتصال الراوتر', textAlign: TextAlign.right, style: TextStyle(color: Colors.white.withOpacity(.78), fontSize: 14)),
+            const SizedBox(height: 12),
+            Row(children: [
+              Container(width: 58, height: 58, decoration: BoxDecoration(color: Colors.white.withOpacity(.15), borderRadius: BorderRadius.circular(18)), child: const Icon(Icons.visibility_off_outlined, color: Colors.white, size: 27)),
+              const Spacer(),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('${cpu.toStringAsFixed(0)}% CPU', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white)),
+                Text('RAM ${(ram * 100).toStringAsFixed(0)}% مستخدمة', style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(.8))),
+                Text('RouterOS ${d.version.isEmpty ? '—' : d.version}', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(.72))),
+              ]),
+            ]),
+            const SizedBox(height: 22),
+            Row(children: [
+              Expanded(child: _NovaAction(icon: Icons.refresh_rounded, label: 'تحديث البيانات', color: const Color(0xFF7CD7B1), onTap: _refresh)),
+              const SizedBox(width: 12),
+              Expanded(child: _NovaAction(icon: Icons.settings_ethernet_rounded, label: 'واجهات الشبكة', color: const Color(0xFFFF9099), onTap: () => _showNovaInfo(context, 'ملخص الشبكة', 'واجهات الشبكة: ${t.interfaces.length}\\nالمشتركون المتصلون: $connected'))),
             ]),
           ]),
-          const Divider(height: 24),
-          Wrap(spacing: 16, runSpacing: 8, children: [
-            Text('RouterOS: ${d.version.isEmpty ? '—' : d.version}', style: const TextStyle(color: NovaColors.muted)),
-            Text('مدة التشغيل: ${d.uptime}', style: const TextStyle(color: NovaColors.muted)),
-          ]),
-        ])),
+        ),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: _NovaQuick(icon: Icons.people_alt_rounded, label: 'المشتركون', onTap: () => _showNovaInfo(context, 'المشتركون', 'متصلون الآن: $connected\\nتنتهي خلال 3 أيام: $expiring\\nاشتراكات منتهية: $expired'))),
+          Expanded(child: _NovaQuick(icon: Icons.wifi_tethering_rounded, label: 'الهوتسبوت', onTap: () => _showNovaInfo(context, 'الهوتسبوت', 'الحسابات النشطة: ${h.activeCount}'))),
+          Expanded(child: _NovaQuick(icon: Icons.speed_rounded, label: 'السرعات', onTap: () => _showNovaInfo(context, 'السرعات', 'واجهات الشبكة المكتشفة: ${t.interfaces.length}'))),
+          Expanded(child: _NovaQuick(icon: Icons.cable_rounded, label: 'الواجهات', onTap: () => _showNovaInfo(context, 'الواجهات', 'واجهات الشبكة: ${t.interfaces.length}'))),
+          Expanded(child: _NovaQuick(icon: Icons.star_rounded, label: 'الأدوات', onTap: () => _showNovaInfo(context, 'أدوات نوڨا', 'استخدم أقسام التطبيق لإدارة الراوتر والمشتركين.'))),
+        ]),
+        const SectionTitle('ملخص الشبكة'),
+        GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5, children: [
+          StatTile(icon: Icons.people_alt_outlined, label: 'متصلون الآن', value: '$connected', color: NovaColors.success),
+          StatTile(icon: Icons.cable_outlined, label: 'واجهات الشبكة', value: '${t.interfaces.length}', color: NovaColors.primary),
+        ]),
         const SectionTitle('الخطوط · WAN'),
         SizedBox(height: 128, child: t.interfaces.isEmpty
           ? const EmptyState(icon: Icons.cable_outlined, title: 'لا توجد واجهات', message: 'اسحب للأسفل لتحديث البيانات.')
@@ -131,3 +162,30 @@ class _Gauge extends StatelessWidget {
     const SizedBox(width: 10), Text(label, style: const TextStyle(color: NovaColors.muted, fontWeight: FontWeight.bold)),
   ]);
 }
+class _NovaCircle extends StatelessWidget {
+  final IconData icon; final String label; final VoidCallback onTap;
+  const _NovaCircle({required this.icon, required this.label, required this.onTap});
+  @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(40), child: Stack(clipBehavior: Clip.none, children: [
+    Container(width: 48, height: 48, decoration: BoxDecoration(color: Colors.white.withOpacity(.18), shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(.15))), child: Icon(icon, color: Colors.white, size: 25)),
+    if (label.isNotEmpty) Positioned(top: -2, right: -2, child: Container(width: 18, height: 18, decoration: const BoxDecoration(color: Color(0xFFFF626F), shape: BoxShape.circle), child: Center(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))))),
+  ]));
+}
+class _NovaSegment extends StatelessWidget {
+  final String label; final bool active; final Color? color;
+  const _NovaSegment({required this.label, required this.active, this.color});
+  @override Widget build(BuildContext context) => Container(margin: const EdgeInsets.all(2), padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), decoration: BoxDecoration(color: active ? Colors.white.withOpacity(.20) : Colors.transparent, borderRadius: BorderRadius.circular(24)), child: Text(label, style: TextStyle(color: color ?? Colors.white, fontWeight: FontWeight.w700, fontSize: 12)));
+}
+class _NovaAction extends StatelessWidget {
+  final IconData icon; final String label; final Color color; final Future<void> Function() onTap;
+  const _NovaAction({required this.icon, required this.label, required this.color, required this.onTap});
+  @override Widget build(BuildContext context) => OutlinedButton.icon(onPressed: onTap, icon: Icon(icon, color: color), label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.w700)), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8), side: BorderSide(color: Colors.white.withOpacity(.22)), shape: const StadiumBorder()));
+}
+class _NovaQuick extends StatelessWidget {
+  final IconData icon; final String label; final VoidCallback onTap;
+  const _NovaQuick({required this.icon, required this.label, required this.onTap});
+  @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(24), child: Padding(padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2), child: Column(children: [
+    Container(width: 54, height: 54, decoration: BoxDecoration(color: const Color(0xFF34394F), shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(.12))), child: Icon(icon, color: Colors.white, size: 24)),
+    const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+  ])));
+}
+void _showNovaInfo(BuildContext context, String title, String message) => showModalBottomSheet<void>(context: context, backgroundColor: const Color(0xFF222638), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 14), Text(message, style: const TextStyle(color: Colors.white70, height: 1.7))]))));
