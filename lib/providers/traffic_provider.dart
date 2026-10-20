@@ -86,11 +86,12 @@ class TrafficProvider extends ChangeNotifier {
 
       watched.removeWhere((name) => !interfaces.any((item) => item.name == name));
       if (watched.isEmpty && interfaces.isNotEmpty) {
-        final physical = interfaces.where((item) =>
-            item.type == 'ether' ||
-            item.type == 'ethernet' ||
-            item.type == 'sfp-sfpplus' ||
-            item.type == 'sfp');
+        final physical = interfaces.where((item) {
+          final type = item.type.toLowerCase();
+          return type.contains('ether') || type.contains('sfp') ||
+              item.name.toLowerCase().startsWith('ether') ||
+              item.name.toLowerCase().startsWith('sfp');
+        });
         watched = [
           physical.isNotEmpty ? physical.first.name : interfaces.first.name,
         ];
@@ -115,6 +116,7 @@ class TrafficProvider extends ChangeNotifier {
     watched = [name];
     history.removeWhere((key, _) => key != name);
     notifyListeners();
+    _tick();
   }
 
   void toggleWatch(String name) => selectInterface(name);
@@ -152,6 +154,8 @@ class TrafficProvider extends ChangeNotifier {
     return number * multiplier;
   }
 
+  Future<void> sampleNow() => _tick();
+
   Future<void> _tick() async {
     final client = _client;
     if (_busy || client == null || watched.isEmpty) return;
@@ -178,7 +182,7 @@ class TrafficProvider extends ChangeNotifier {
       notifyListeners();
     } on RosException catch (error) {
       if (events.isEmpty || events.first.text != error.message) {
-        _addEvent('تعذرت قراءة حركة الواجهة: ${error.message}', true);
+        _addEvent('تعذرت قراءة حركة الواجهة: ' + error.message, true);
       }
     } catch (_) {
       // Keep the last valid sample after a transient polling failure.
@@ -197,7 +201,7 @@ class TrafficProvider extends ChangeNotifier {
       final previous = _lastRunning[name];
       if (previous != null && previous != running && watched.contains(name)) {
         _addEvent(
-          running ? 'عاد الخط $name للعمل' : 'انقطع الخط $name',
+          running ? 'عاد الخط ' + name + ' للعمل' : 'انقطع الخط ' + name,
           !running,
         );
       }
