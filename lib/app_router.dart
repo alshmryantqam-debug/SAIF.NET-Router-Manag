@@ -18,6 +18,7 @@ import 'screens/pppoe_screen.dart';
 import 'screens/routers_list_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/tools_screen.dart';
+import 'screens/control_panel_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/terminal_screen.dart';
 import 'screens/voucher_screen.dart';
@@ -130,6 +131,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               child: BusinessGate(
                 allowed: const [BusinessRole.manager],
                 child: ToolsScreen(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/control-panel',
+            name: 'control-panel',
+            pageBuilder: (_, __) => const NoTransitionPage(
+              child: BusinessGate(
+                allowed: const [BusinessRole.manager],
+                child: ControlPanelScreen(),
               ),
             ),
           ),
