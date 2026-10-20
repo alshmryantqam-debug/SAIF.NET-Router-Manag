@@ -5,7 +5,7 @@ import '../screens/dashboard_screen.dart';
 import '../screens/interfaces_screen.dart';
 import '../screens/pppoe_screen.dart';
 import '../screens/hotspot_screen.dart';
-import '../screens/settings_screen.dart';
+import '../screens/tools_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -17,12 +17,14 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  static const List<Widget> _screens = [
-    DashboardScreen(),
-    InterfacesScreen(),
-    PppoeScreen(),
-    HotspotScreen(),
-    SettingsScreen(),
+  late final List<Widget> _screens = [
+    DashboardScreen(onOpenSection: (index) {
+      if (mounted) setState(() => _index = index.clamp(0, 4));
+    }),
+    const InterfacesScreen(),
+    const PppoeScreen(),
+    const HotspotScreen(),
+    const ToolsScreen(),
   ];
 
   static const _destinations = <NavigationDestination>[
