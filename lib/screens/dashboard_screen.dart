@@ -61,7 +61,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(c.routerIdentity.isEmpty ? 'راوتر MikroTik' : c.routerIdentity, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               Text(d.boardName, style: const TextStyle(color: NovaColors.muted)),
             ])),
-            StatusPill(c.isConnected ? 'متصل' : 'مقطوع', c.isConnected ? NovaColors.success : NovaColors.danger),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              StatusPill(c.isConnected ? 'متصل' : 'مقطوع', c.isConnected ? NovaColors.success : NovaColors.danger),
+              if (c.isConnected && c.client != null) ...[
+                const SizedBox(height: 6),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: NovaColors.primary.withOpacity(.14), borderRadius: BorderRadius.circular(8), border: Border.all(color: NovaColors.primary.withOpacity(.45))), child: Text(c.client!.kind, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: NovaColors.primary))),
+              ],
+            ]),
           ]),
           const Divider(height: 24),
           Wrap(spacing: 16, runSpacing: 8, children: [

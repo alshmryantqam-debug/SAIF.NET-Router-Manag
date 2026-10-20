@@ -57,7 +57,12 @@ class ApiClient implements RouterOsClient {
   String get kind => 'API';
 
   static const _singletons = {
-    '/system/resource', '/system/identity', '/system/clock', '/system/routerboard',
+    '/system/resource',
+    '/system/identity',
+    '/system/clock',
+    '/system/routerboard',
+    '/system/health',
+    '/system/license',
   };
 
   Future<void> connect() async {
@@ -67,7 +72,14 @@ class ApiClient implements RouterOsClient {
       throw RosException(RosErrorType.network, 'تعذر الوصول إلى منفذ API ($port). فعّل خدمة api من IP > Services');
     }
     _r = _ByteReader(_sock!);
-    await _run('/login', {'name': user, 'password': pass});
+    try {
+      // Direct username/password login is supported by RouterOS 6.43+.
+      // Legacy challenge-response login for older releases is intentionally unsupported.
+      await _run('/login', {'name': user, 'password': pass});
+    } catch (_) {
+      close();
+      rethrow;
+    }
   }
 
   List<int> _encLen(int l) {

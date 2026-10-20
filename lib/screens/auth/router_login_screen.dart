@@ -61,7 +61,8 @@ class _RouterLoginScreenState extends State<RouterLoginScreen>{
       padding:const EdgeInsets.all(22),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Column(children:[
         const Icon(Icons.router_outlined,size:64,color:AppTheme.primaryColor),const SizedBox(height:16),
         const Text('الاتصال بالراوتر',style:TextStyle(fontSize:27,fontWeight:FontWeight.bold,color:AppTheme.textPrimary)),
-        const SizedBox(height:8),const Text('تشخيص الاتصال عبر RouterOS REST',style:TextStyle(color:AppTheme.textSecondary)),const SizedBox(height:22),
+        const SizedBox(height:8),const Text('تشخيص الاتصال عبر REST و RouterOS API',style:TextStyle(color:AppTheme.textSecondary)),const SizedBox(height:12),
+        Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:AppTheme.dangerColor.withOpacity(.10),borderRadius:BorderRadius.circular(12),border:Border.all(color:AppTheme.dangerColor.withOpacity(.35))),child:const Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(Icons.warning_amber_rounded,color:AppTheme.dangerColor,size:21),SizedBox(width:9),Expanded(child:Text('تنبيه أمني: اتصال API على المنفذ 8728 غير مشفّر. استخدمه داخل الشبكة المحلية فقط أو عبر نفق WireGuard، ولا تعرض المنفذ مباشرة على الإنترنت.',style:TextStyle(color:AppTheme.textPrimary,fontSize:12,height:1.4)))])),const SizedBox(height:22),
         GlassCard(padding:const EdgeInsets.all(20),child:Column(children:[
           _field(_ip,'عنوان IP أو اسم المضيف',Icons.wifi,keyboard:TextInputType.url),
           _field(_port,'المنفذ (اختياري)',Icons.numbers,keyboard:TextInputType.number),

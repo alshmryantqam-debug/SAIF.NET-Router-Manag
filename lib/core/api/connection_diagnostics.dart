@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'api_client.dart';
 import 'router_client.dart';
-import 'routeros_client.dart' show RestClient, RosException, RosErrorType;
+import 'routeros_client.dart' show RestClient, RosException;
 
 class DiagStep {
   final String title;
@@ -11,13 +12,13 @@ class DiagStep {
 
 class DiagResult {
   final List<DiagStep> steps;
-  final RouterOsClient? client; // غير null عند النجاح الكامل
+  final RouterOsClient? client;
   const DiagResult(this.steps, this.client);
   bool get success => client != null;
 }
 
 class ConnectionDiagnostics {
-  /// يجرّب https ثم http تلقائياً، ويرجع خطوات واضحة تُعرض للمستخدم.
+  /// Tries REST HTTPS:443, REST HTTP:80, then binary API:8728.
   static Future<DiagResult> run({
     required String host,
     required String user,
@@ -26,42 +27,70 @@ class ConnectionDiagnostics {
   }) async {
     final steps = <DiagStep>[];
     final candidates = <({bool https, int port})>[
-      (https: true, port: customPort ?? 443),
-      (https: false, port: customPort ?? 80),
+      (https: true, port: 443),
+      (https: false, port: 80),
     ];
 
     for (final c in candidates) {
-      final label = c.https ? 'HTTPS' : 'HTTP';
-
+      final label = c.https ? 'REST عبر HTTPS' : 'REST عبر HTTP';
       try {
-        final s = await Socket.connect(host, c.port, timeout: const Duration(seconds: 5));
-        s.destroy();
-        steps.add(DiagStep('منفذ $label ${c.port}', true, 'المنفذ مفتوح'));
+        final socket = await Socket.connect(host, c.port, timeout: const Duration(seconds: 5));
+        socket.destroy();
+        steps.add(DiagStep('فحص $label · ${c.port}', true, 'المنفذ مفتوح'));
       } catch (_) {
-        steps.add(DiagStep('منفذ $label ${c.port}', false,
-            c.https
-                ? 'مغلق. فعّل www-ssl من IP > Services، وتأكد أن Available From يسمح بعنوانك'
-                : 'مغلق. فعّل خدمة www من IP > Services'));
+        steps.add(DiagStep('فحص $label · ${c.port}', false,
+          c.https
+            ? 'تعذر الوصول. تحقق من www-ssl ضمن IP > Services'
+            : 'تعذر الوصول. تحقق من www ضمن IP > Services'));
         continue;
       }
 
-      final client = RestClient(
-          host: host, user: user, pass: pass, https: c.https, port: c.port);
+      final client = RestClient(host: host, user: user, pass: pass, https: c.https, port: c.port);
       try {
-        final res = await client.get('/system/resource');
-        final ver = (res is Map ? res['version'] : null) ?? '?';
-        steps.add(DiagStep('تسجيل الدخول عبر $label', true, 'RouterOS $ver'));
+        final dynamic resource = await client.get('system/resource');
+        final version = resource is Map ? resource['version']?.toString() : null;
+        steps.add(DiagStep('تسجيل الدخول $label', true,
+          'تم الاتصال${version == null ? '' : ' · RouterOS $version'}'));
         return DiagResult(steps, client);
       } on RosException catch (e) {
-        steps.add(DiagStep('تسجيل الدخول عبر $label', false, e.message));
+        steps.add(DiagStep('تسجيل الدخول $label', false, e.message));
         client.close();
-        if (e.type == RosErrorType.auth || e.type == RosErrorType.forbidden) {
-          return DiagResult(steps, null); // لا فائدة من تجربة بروتوكول آخر
-        }
+      } catch (e) {
+        steps.add(DiagStep('تسجيل الدخول $label', false, 'فشل غير متوقع: $e'));
+        client.close();
       }
     }
+
+    try {
+      final socket = await Socket.connect(host, 8728, timeout: const Duration(seconds: 5));
+      socket.destroy();
+      steps.add(const DiagStep('فحص RouterOS API · 8728', true, 'المنفذ مفتوح'));
+    } catch (_) {
+      steps.add(const DiagStep('فحص RouterOS API · 8728', false,
+        'تعذر الوصول. فعّل خدمة api من IP > Services وتأكد من Available From'));
+      steps.add(const DiagStep('الخلاصة', false,
+        'لم ينجح REST أو API. تحقق من العنوان والصلاحيات وإعدادات الخدمات.'));
+      return DiagResult(steps, null);
+    }
+
+    final api = ApiClient(host: host, user: user, pass: pass, port: 8728);
+    try {
+      await api.connect();
+      final dynamic resource = await api.get('system/resource');
+      final version = resource is Map ? resource['version']?.toString() : null;
+      steps.add(DiagStep('تسجيل الدخول عبر API', true,
+        'تم الاتصال${version == null ? '' : ' · RouterOS $version'}'));
+      return DiagResult(steps, api);
+    } on RosException catch (e) {
+      steps.add(DiagStep('تسجيل الدخول عبر API', false, e.message));
+      api.close();
+    } catch (e) {
+      steps.add(DiagStep('تسجيل الدخول عبر API', false, 'فشل غير متوقع: $e'));
+      api.close();
+    }
+
     steps.add(const DiagStep('الخلاصة', false,
-        'تحقق أن العنوان قابل للوصول من هاتفك (نفس الشبكة أو عبر WireGuard)'));
+      'تعذر الاتصال عبر البروتوكولات الثلاثة. تحقق من بيانات الدخول والخدمات المفعّلة.'));
     return DiagResult(steps, null);
   }
 }
