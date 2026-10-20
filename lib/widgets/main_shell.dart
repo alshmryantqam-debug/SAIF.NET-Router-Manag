@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -44,18 +46,40 @@ class MainShell extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(12, 0, 12, 9),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
-          decoration: BoxDecoration(
-            color: const Color(0xF21A1429),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withOpacity(.22)),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(.38), blurRadius: 24, offset: const Offset(0, 7)),
-              BoxShadow(color: AppColors.primary.withOpacity(.05), blurRadius: 22, spreadRadius: 1),
-            ],
-          ),
-          child: Row(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xB8171226),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withOpacity(.13), width: 1),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(.085),
+                    AppColors.primary.withOpacity(.035),
+                    const Color(0x99100C1C),
+                  ],
+                  stops: const [0, .42, 1],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.34),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(.10),
+                    blurRadius: 24,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: Row(
             children: List.generate(_destinations.length, (i) {
               final d = _destinations[i];
               final selected = i == index;
@@ -64,14 +88,19 @@ class MainShell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                   onTap: () => context.go(d.route),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
+                    duration: const Duration(milliseconds: 260),
                     curve: Curves.easeOutCubic,
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
                     decoration: BoxDecoration(
                       gradient: selected ? AppGradients.primary : null,
                       color: selected ? null : Colors.transparent,
                       borderRadius: BorderRadius.circular(18),
-                      boxShadow: selected ? AppShadows.glow(AppColors.primary, opacity: .16) : null,
+                      border: selected
+                          ? Border.all(color: Colors.white.withOpacity(.20), width: .7)
+                          : null,
+                      boxShadow: selected
+                          ? AppShadows.glow(AppColors.primary, opacity: .20)
+                          : null,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -95,12 +124,14 @@ class MainShell extends StatelessWidget {
               );
             }),
           ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
+  Widget _buildDrawer  Widget _buildDrawer(BuildContext context) {
     return Drawer(
       backgroundColor: AppColors.bgCard,
       child: ListView(
