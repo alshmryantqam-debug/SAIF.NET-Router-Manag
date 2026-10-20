@@ -315,10 +315,10 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
       child: CyberHotspotCard(
         name: user.name,
         profile: user.profile,
-        bytesOut: '0',
+        bytesOut: '',
         uptime: user.limitUptime.isEmpty ? 'N/A' : user.limitUptime,
         isDisabled: user.disabled,
-        onToggle: () => _toggle(user, user.disabled),
+        onToggle: () => _toggle(user, !user.disabled),
       ),
     );
   }
