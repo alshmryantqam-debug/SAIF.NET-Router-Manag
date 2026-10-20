@@ -171,5 +171,9 @@ class ConnectionProvider extends ChangeNotifier {
     try { return await c.runSystemScript(script); }
     catch (e) { _errorMessage = 'فشل تنفيذ السكربت: $e'; notifyListeners(); return false; }
   }
-  Future<String> executeCommand(String command) async => _routerClient?.executeRawCommand(command) ?? 'ERROR: اتصل بالراوتر أولاً.';
+  Future<String> executeCommand(String command) async {
+    final client = _routerClient;
+    if (client == null) return 'ERROR: اتصل بالراوتر أولاً.';
+    return client.executeRawCommand(command);
+  }
 }

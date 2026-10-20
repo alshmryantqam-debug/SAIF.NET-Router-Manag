@@ -147,8 +147,8 @@ class _HotspotScreenState extends State<HotspotScreen> {
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(24),
-                      children: const [
-                        SizedBox(height: 100),
+                      children: [
+                        const SizedBox(height: 100),
                         Icon(Icons.wifi_off, size: 52,
                             color: AppTheme.textSecondary),
                         SizedBox(height: 16),
