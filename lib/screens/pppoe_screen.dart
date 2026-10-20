@@ -324,7 +324,7 @@ class _PppoeScreenState extends State<PppoeScreen> {
     final p = context.watch<SubscribersProvider>();
     final users = p.visible;
     return Scaffold(
-      appBar: AppBar(title: const Text('إدارة مشتركي PPPoE'), actions: [
+      appBar: AppBar(title: const Text('إدارة البرودباند'), actions: [
         IconButton(tooltip: 'تحديث القائمة', onPressed: p.loading ? null : p.load, icon: const Icon(Icons.refresh)),
       ]),
       floatingActionButton: FloatingActionButton.extended(
