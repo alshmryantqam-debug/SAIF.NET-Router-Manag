@@ -6,6 +6,8 @@ import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 
 import '../models/router_config.dart';
+import '../core/api/routeros_client.dart';
+import '../core/api/connection_diagnostics.dart';
 import '../models/pppoe_user.dart';
 import '../models/hotspot_user.dart';
 import '../services/mikrotik_service.dart';
@@ -13,7 +15,8 @@ import '../services/mikrotik_service.dart';
 class ConnectionProvider extends ChangeNotifier {
   final MikrotikService _service = MikrotikService();
 
-  Dio? _dio;
+  Dio? _dio; // retained for compatibility with existing consumers
+  RouterOsClient? _routerClient;
   bool _isLoading = false;
   bool _isConnected = false;
   String _errorMessage = '';
@@ -46,106 +49,39 @@ class ConnectionProvider extends ChangeNotifier {
   /// Wi-Fi or an untrusted network; production deployments should validate or
   /// pin the router certificate.
   Future<bool> connectToRouter({
-    required String ip,
-    required String port,
-    required String username,
-    required String password,
+    required String ip, required String port, required String username, required String password,
   }) async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
-
-    final host = ip.trim();
-    final portNumber = int.tryParse(port.trim());
-    if (host.isEmpty || portNumber == null || portNumber < 1 || portNumber > 65535) {
-      _isLoading = false;
-      _isConnected = false;
-      _errorMessage = 'أدخل عنوان IP ورقم منفذ صحيحاً.';
-      notifyListeners();
-      return false;
+    final host=ip.trim(), parsedPort=int.tryParse(port.trim());
+    if(host.isEmpty||parsedPort==null||parsedPort<1||parsedPort>65535){
+      _errorMessage='أدخل عنوان IP ورقم منفذ صحيحاً.';_isConnected=false;notifyListeners();return false;
     }
+    _isLoading=true;_errorMessage='';notifyListeners();
+    try{
+      final result=await ConnectionDiagnostics.run(host:host,user:username,pass:password,customPort:parsedPort);
+      if(!result.success||result.client==null){_errorMessage=result.steps.isEmpty?'تعذر الاتصال بالراوتر.':result.steps.last.detail;_isConnected=false;return false;}
+      await useClient(client:result.client!,host:host,username:username,password:password,https:result.client!.https,port:result.client!.port);
+      return _isConnected;
+    }catch(e){_isConnected=false;_errorMessage='تعذر الاتصال بالراوتر: $e';return false;}
+    finally{_isLoading=false;notifyListeners();}
+  }
 
-    _dio?.close(force: true);
-
-    try {
-      // RouterOS REST may be exposed as HTTP on port 80 or HTTPS on 443/custom port.
-      // Use HTTP only when the user explicitly selects the conventional HTTP port.
-      final scheme = portNumber == 80 ? 'http' : 'https';
-      final credentials = base64Encode(utf8.encode('$username:$password'));
-      final client = Dio(BaseOptions(
-        baseUrl: '$scheme://$host:$portNumber/rest/',
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        sendTimeout: const Duration(seconds: 10),
-        headers: {
-          'Authorization': 'Basic $credentials',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        responseType: ResponseType.json,
-      ));
-
-      if (scheme == 'https') {
-        client.httpClientAdapter = IOHttpClientAdapter(
-          createHttpClient: () {
-            final httpClient = HttpClient();
-            httpClient.badCertificateCallback =
-                (X509Certificate certificate, String certificateHost, int certificatePort) {
-              // Accept a self-signed certificate only for this router host.
-              return certificateHost.toLowerCase() == host.toLowerCase();
-            };
-            return httpClient;
-          },
-        );
-      }
-      _dio = client;
-
-      final response = await client.get<dynamic>('system/identity');
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('الراوتر لا يستجيب لطلب الهوية.');
-      }
-
-      final dynamic body = response.data;
-      String identity = 'MikroTik Router';
-      if (body is List && body.isNotEmpty && body.first is Map) {
-        identity = (body.first['name'] ?? identity).toString();
-      } else if (body is Map) {
-        identity = (body['name'] ?? identity).toString();
-      } else {
-        throw const FormatException('تنسيق رد هوية الراوتر غير متوقع.');
-      }
-
-      _routerIdentity = identity;
-      // Configure the existing service too, so the rest of the app's current
-      // dashboard and subscriber-management methods use the same router.
-      _service.connect(MikrotikConfig(
-        id: 'active-router',
-        name: identity,
-        ipAddress: '$scheme://$host:$portNumber',
-        username: username,
-        password: password,
-      ));
-
-      _systemResource = await _service.getSystemResource();
-      _isConnected = true;
-      _errorMessage = '';
-      return true;
-    } on DioException catch (error) {
-      _isConnected = false;
-      _errorMessage = _handleDioError(error);
-      _dio?.close(force: true);
-      _dio = null;
-      return false;
-    } catch (error) {
-      _isConnected = false;
-      _errorMessage = 'تعذر الاتصال بالراوتر: $error';
-      _dio?.close(force: true);
-      _dio = null;
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  Future<void> useClient({required RouterOsClient client,required String host,required String username,required String password,required bool https,required int port}) async {
+    _routerClient?.close();_routerClient=client;_isLoading=true;_errorMessage='';_isConnected=false;notifyListeners();
+    try{
+      final scheme=https?'https':'http';
+      _service.connect(MikrotikConfig(id:'active-router',name:host,ipAddress:'$scheme://$host:$port',username:username,password:password));
+      final dynamic resource=await client.get('system/resource');
+      if(resource is Map){_systemResource=Map<String,dynamic>.from(resource);}
+      else if(resource is List&&resource.isNotEmpty&&resource.first is Map){_systemResource=Map<String,dynamic>.from(resource.first as Map);}
+      else{_systemResource={};}
+      final dynamic identity=await client.get('system/identity');
+      if(identity is List&&identity.isNotEmpty&&identity.first is Map){_routerIdentity=(identity.first['name']??host).toString();}
+      else if(identity is Map){_routerIdentity=(identity['name']??host).toString();}
+      else{_routerIdentity=host;}
+      _isConnected=true;
+    }on RosException catch(e){_errorMessage=e.message;_isConnected=false;_routerClient?.close();_routerClient=null;}
+    catch(e){_errorMessage='فشل تحميل بيانات الراوتر: $e';_isConnected=false;_routerClient?.close();_routerClient=null;}
+    finally{_isLoading=false;notifyListeners();}
   }
 
   String _handleDioError(DioException error) {
@@ -167,6 +103,8 @@ class ConnectionProvider extends ChangeNotifier {
   }
 
   void disconnect() {
+    _routerClient?.close();
+    _routerClient = null;
     _dio?.close(force: true);
     _dio = null;
     _isConnected = false;
@@ -177,7 +115,13 @@ class ConnectionProvider extends ChangeNotifier {
 
   Future<void> fetchSystemResource() async {
     try {
-      _systemResource = await _service.getSystemResource();
+      if (_routerClient != null) {
+        final dynamic resource = await _routerClient!.get('system/resource');
+        if (resource is Map) _systemResource = Map<String, dynamic>.from(resource);
+        if (resource is List && resource.isNotEmpty && resource.first is Map) _systemResource = Map<String, dynamic>.from(resource.first as Map);
+      } else {
+        _systemResource = await _service.getSystemResource();
+      }
       _errorMessage = '';
       _isConnected = true;
     } catch (e) {

@@ -59,7 +59,7 @@ class RouterOsClient {
       {Object? data, Map<String, dynamic>? query}) async {
     try {
       final r = await _dio.request(
-        path,
+        path.replaceFirst(RegExp(r'^/+'), ''),
         data: data,
         queryParameters: query,
         options: Options(method: method),
