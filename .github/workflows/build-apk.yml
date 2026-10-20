@@ -1,4 +1,4 @@
-name: Build SAIF.NET Router Manager APK
+name: Build NOVA Universal APK
 
 on:
   workflow_dispatch:
@@ -42,7 +42,7 @@ jobs:
         run: |
           if [ ! -f android/app/src/main/AndroidManifest.xml ]; then
             rm -rf android
-            flutter create --project-name nova_router_manager --platforms=android --org net.saif .
+            flutter create --project-name nova_router_manager --platforms=android --org net.nova .
           fi
 
       - name: Configure Android biometric support and minimum SDK
@@ -56,15 +56,34 @@ jobs:
           permission = '    <uses-permission android:name="android.permission.USE_BIOMETRIC" />'
           if "android.permission.USE_BIOMETRIC" not in text:
               text = text.replace("<application", permission + "\n    <application", 1)
-          text = re.sub(r'android:label="[^"]*"', 'android:label="نوڨا"', text)
+          text = re.sub(r'android:label="[^"]*"', 'android:label="NOVA"', text)
+          text = re.sub(r'android:icon="[^"]*"', 'android:icon="@drawable/nova_launcher_icon"', text, count=1)
+          if 'android:icon="' not in text:
+              text = text.replace("<application", '<application android:icon="@drawable/nova_launcher_icon"', 1)
+          text = re.sub(r'android:roundIcon="[^"]*"', 'android:roundIcon="@drawable/nova_launcher_icon"', text, count=1)
+          if 'android:roundIcon="' not in text:
+              text = text.replace("<application", '<application android:roundIcon="@drawable/nova_launcher_icon"', 1)
           manifest.write_text(text)
+
+          drawable = Path("android/app/src/main/res/drawable")
+          drawable.mkdir(parents=True, exist_ok=True)
+          (drawable / "nova_launcher_icon.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp" android:height="108dp"
+              android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#090B14" android:pathData="M24,0 L84,0 C97.3,0 108,10.7 108,24 L108,84 C108,97.3 97.3,108 84,108 L24,108 C10.7,108 0,97.3 0,84 L0,24 C0,10.7 10.7,0 24,0 Z"/>
+              <path android:fillColor="#00000000" android:strokeColor="#63D7F5" android:strokeWidth="4" android:pathData="M23,54 C23,36 37,22 54,22 C71,22 85,36 85,54 C85,72 71,86 54,86"/>
+              <path android:fillColor="#9875FF" android:pathData="M54,28 L62,46 L80,54 L62,62 L54,80 L46,62 L28,54 L46,46 Z"/>
+              <path android:fillColor="#F5F6FC" android:pathData="M73,28 L80,35 L68,47 L61,40 Z"/>
+          </vector>
+          """)
 
           for gradle in (Path("android/app/build.gradle"), Path("android/app/build.gradle.kts")):
               if not gradle.exists():
                   continue
               text = gradle.read_text()
               if gradle.suffix == ".kts":
-                  text = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "net.saif.nova"', text)
+                  text = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "net.nova.nova_router_manager"', text)
                   text = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = maxOf(24, flutter.minSdkVersion)", text)
                   text = re.sub(r"minSdk\s*=\s*\d+", "minSdk = maxOf(24, 24)", text)
                   if 'create("release")' not in text:
@@ -73,7 +92,7 @@ jobs:
             val props = java.util.Properties()
             val propsFile = rootProject.file("key.properties")
             propsFile.inputStream().use { props.load(it) }
-            storeFile = file(props["storeFile"] as String)
+            storeFile = rootProject.file(props["storeFile"] as String)
             storePassword = props["storePassword"] as String
             keyAlias = props["keyAlias"] as String
             keyPassword = props["keyPassword"] as String
@@ -82,7 +101,7 @@ jobs:
     buildTypes {''', 1)
                   text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
               else:
-                  text = re.sub(r'applicationId\s+"[^"]+"', 'applicationId "net.saif.nova"', text)
+                  text = re.sub(r'applicationId\s+"[^"]+"', 'applicationId "net.nova.nova_router_manager"', text)
                   text = re.sub(r"minSdkVersion\s+flutter\.minSdkVersion", "minSdkVersion 24", text)
                   text = re.sub(r"minSdkVersion\s+\d+", "minSdkVersion 24", text)
                   if "signingConfigs {" not in text:
@@ -91,7 +110,7 @@ jobs:
             def props = new Properties()
             def propsFile = rootProject.file("key.properties")
             propsFile.withInputStream { props.load(it) }
-            storeFile file(props["storeFile"])
+            storeFile rootProject.file(props["storeFile"])
             storePassword props["storePassword"]
             keyAlias props["keyAlias"]
             keyPassword props["keyPassword"]
@@ -176,17 +195,22 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
-      - name: Analyze Dart code (diagnostics only)
-        continue-on-error: true
+      - name: Analyze Dart code
         run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
-      - name: Build split release APKs
-        run: flutter build apk --release --split-per-abi --build-number=${{ github.run_number }}
+      - name: Build one universal release APK
+        run: flutter build apk --release --no-tree-shake-icons --build-number=${{ github.run_number }}
 
-      - name: Upload all APK artifacts
+      - name: Prepare single NOVA download
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/NOVA.apk
+
+      - name: Upload NOVA APK
         uses: actions/upload-artifact@v4
         with:
-          name: SAIF.NET-Router-Manager-APKs
-          path: build/app/outputs/flutter-apk/*.apk
+          name: NOVA-Android-APK
+          path: dist/NOVA.apk
           if-no-files-found: error
           retention-days: 14
