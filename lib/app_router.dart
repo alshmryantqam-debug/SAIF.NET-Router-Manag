@@ -63,7 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/dashboard',
             name: 'dashboard',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: HologramDashboardScreen(),
+              child: BusinessGate(allowed: const [BusinessRole.manager], child: HologramDashboardScreen()),
             ),
           ),
           GoRoute(
