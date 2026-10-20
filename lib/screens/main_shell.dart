@@ -28,7 +28,7 @@ class MainShell extends StatelessWidget {
 
   int _indexOf(String location) {
     final i = _destinations.indexWhere((d) => location.startsWith(d.route));
-    return i < 0 ? 0 : i;
+    return i;
   }
 
   @override
@@ -192,6 +192,7 @@ class MainShell extends StatelessWidget {
           _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'الأدوار والصلاحيات', route: '/roles'),
           _drawerItem(context, icon: Icons.radar_rounded, label: 'رادار صحون البث', route: '/radio-radar'),
           _drawerItem(context, icon: Icons.battery_alert_rounded, label: 'إنذار فولتية البطاريات', route: '/voltage-alarm'),
+          _drawerItem(context, icon: Icons.grid_view_rounded, label: 'مركز الأدوات', route: '/tools'),
           _drawerItem(context, icon: Icons.auto_awesome_rounded, label: 'الأتمتة الذكية', route: '/automation'),
           _drawerItem(context, icon: Icons.mic_rounded, label: 'المساعد الصوتي والتحليل', route: '/advanced-ai'),
           _drawerItem(
