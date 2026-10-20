@@ -131,7 +131,7 @@ class MainShell extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawer  Widget _buildDrawer(BuildContext context) {
+  Widget _buildDrawer(BuildContext context) {
     return Drawer(
       backgroundColor: AppColors.bgCard,
       child: ListView(
