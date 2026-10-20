@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/theme/nova_theme.dart';
 
 class AppTheme {
   static const Color backgroundColor = Color(0xFF0B0F19);
@@ -28,7 +29,10 @@ class AppTheme {
     colors: [Color(0xFF3A4B75), Color(0xFF1F2A47)],
   );
 
-  static ThemeData get darkTheme {
+  static ThemeData get darkTheme => novaTheme();
+
+  /* Legacy theme kept below for reference only.
+  static ThemeData get legacyDarkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: backgroundColor,
@@ -63,4 +67,5 @@ class AppTheme {
       iconTheme: const IconThemeData(color: textSecondary),
     );
   }
+  */
 }
