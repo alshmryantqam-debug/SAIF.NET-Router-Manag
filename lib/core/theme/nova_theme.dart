@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class NovaColors {
-  static const bg = Color(0xFF070B14);
-  static const surface = Color(0xFF0E1626);
-  static const surface2 = Color(0xFF141F36);
-  static const border = Color(0xFF22304F);
-  static const primary = Color(0xFF5B8CFF);
-  static const violet = Color(0xFF8B5CF6);
-  static const success = Color(0xFF22C55E);
-  static const warn = Color(0xFFF59E0B);
-  static const danger = Color(0xFFEF4444);
-  static const text = Color(0xFFE8EEFF);
-  static const muted = Color(0xFF8A97B5);
+  static const bg = Color(0xFF1D1F2D);
+  static const surface = Color(0xFF25293A);
+  static const surface2 = Color(0xFF303448);
+  static const border = Color(0xFF3B4055);
+  static const primary = Color(0xFF6484D7);
+  static const violet = Color(0xFF7589D8);
+  static const success = Color(0xFF55A99B);
+  static const warn = Color(0xFFE2B65C);
+  static const danger = Color(0xFFD96A78);
+  static const text = Color(0xFFF0F1F6);
+  static const muted = Color(0xFFB0B4C4);
   static const gradient = LinearGradient(
-    colors: [primary, violet],
+    colors: [Color(0xFF3B4562), Color(0xFF252A3D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -43,7 +43,7 @@ ThemeData novaTheme() {
       titleTextStyle: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: NovaColors.surface,
+      backgroundColor: const Color(0xFF191B28),
       indicatorColor: NovaColors.primary.withOpacity(0.18),
       height: 68,
       labelTextStyle: WidgetStatePropertyAll(t.labelMedium),

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'core/theme/nova_theme.dart';
 
 class AppTheme {
-  static const Color backgroundColor = Color(0xFF0B0F19);
-  static const Color primaryColor = Color(0xFF6B8CE6);
-  static const Color cardColor = Color(0xFF161B2B);
-  static const Color cardBorderColor = Color(0xFF2C3550);
+  static const Color backgroundColor = Color(0xFF1D1F2D);
+  static const Color primaryColor = Color(0xFF6484D7);
+  static const Color cardColor = Color(0xFF25293A);
+  static const Color cardBorderColor = Color(0xFF3B4055);
   static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Color(0xFFA0A5BB);
-  static const Color successColor = Color(0xFF4CAE7D);
-  static const Color dangerColor = Color(0xFFD65C5C);
-  static const Color warningColor = Color(0xFFE5C158);
+  static const Color textSecondary = Color(0xFFB0B4C4);
+  static const Color successColor = Color(0xFF55A99B);
+  static const Color dangerColor = Color(0xFFD96A78);
+  static const Color warningColor = Color(0xFFE2B65C);
 
   // Backward-compatible aliases used by existing screens and widgets.
   // Keep these mapped to the new blue theme so existing UI keeps compiling.
@@ -26,7 +26,7 @@ class AppTheme {
   static const LinearGradient glassGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF3A4B75), Color(0xFF1F2A47)],
+    colors: [Color(0xFF3B4562), Color(0xFF252A3D)],
   );
 
   static ThemeData get darkTheme => novaTheme();

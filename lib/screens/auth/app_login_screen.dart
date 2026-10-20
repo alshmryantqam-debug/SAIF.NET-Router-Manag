@@ -77,14 +77,14 @@ class _AppLoginScreenState extends State<AppLoginScreen> {
     body:SafeArea(child:Center(child:SingleChildScrollView(
       padding:const EdgeInsets.all(24),child:ConstrainedBox(
         constraints:const BoxConstraints(maxWidth:460),
-        child:GlassCard(useGradient:true,padding:const EdgeInsets.all(24),
+        child:GlassCard(color: Colors.transparent, useGradient:false,padding:const EdgeInsets.all(24),
           child:_checking?const Center(child:CircularProgressIndicator()):Column(
             mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-              const Icon(Icons.shield_moon_rounded,size:76,color:AppTheme.primaryColor),
+              Container(width:164,height:164,decoration:BoxDecoration(color:const Color(0xFF303448),borderRadius:BorderRadius.circular(34),boxShadow:[BoxShadow(color:Colors.black.withOpacity(.16),blurRadius:24,offset:const Offset(0,10))]),child:const Icon(Icons.lock_rounded,size:112,color:Color(0xFF8D91A2))),
               const SizedBox(height:16),
-              const Text('مرحباً بك في SAIF.NET',textAlign:TextAlign.center,style:TextStyle(fontSize:24,fontWeight:FontWeight.bold,color:AppTheme.textPrimary)),
+              const Text('قم بإدخال رمز PIN',textAlign:TextAlign.center,style:TextStyle(fontSize:22,fontWeight:FontWeight.bold,color:AppTheme.textPrimary)),
               const SizedBox(height:8),
-              Text(_creating?'أنشئ رمز وصول خاصاً بك':'تسجيل دخول مدير الشبكة',textAlign:TextAlign.center,style:const TextStyle(color:AppTheme.textSecondary)),
+              if (_creating) const Text('أنشئ رمز الوصول الخاص بك',textAlign:TextAlign.center,style:TextStyle(color:AppTheme.textSecondary)),
               const SizedBox(height:22),
               _pinField(_pin,_creating?'رمز جديد (4–6 أرقام)':'رمز الوصول'),
               if(_creating)...[const SizedBox(height:12),_pinField(_confirm,'تأكيد الرمز')],
@@ -99,5 +99,5 @@ class _AppLoginScreenState extends State<AppLoginScreen> {
     controller:c,obscureText:true,maxLength:6,keyboardType:TextInputType.number,textAlign:TextAlign.center,
     autocorrect:false,enableSuggestions:false,onSubmitted:(_)=>_submit(),
     style:const TextStyle(color:AppTheme.textPrimary),
-    decoration:InputDecoration(counterText:'',labelText:label,prefixIcon:const Icon(Icons.lock_outline),filled:true,fillColor:AppTheme.backgroundColor.withOpacity(.5),border:OutlineInputBorder(borderRadius:BorderRadius.circular(16),borderSide:BorderSide.none)));
+    decoration:InputDecoration(counterText:'',labelText:label,prefixIcon:const Icon(Icons.lock_outline),filled:true,fillColor:const Color(0xFF303448),border:OutlineInputBorder(borderRadius:BorderRadius.circular(16),borderSide:BorderSide.none)));
 }

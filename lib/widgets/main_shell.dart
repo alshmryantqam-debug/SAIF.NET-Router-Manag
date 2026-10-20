@@ -33,7 +33,7 @@ class _MainShellState extends State<MainShell> {
         child: Container(
           height: 70,
           decoration: BoxDecoration(
-            color: const Color(0xFF1A2235).withOpacity(0.95),
+            color: const Color(0xFF191B28).withOpacity(0.95),
             borderRadius: BorderRadius.circular(35),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10))],
@@ -68,7 +68,7 @@ class _MainShellState extends State<MainShell> {
                     height: 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)]),
+                      gradient: const LinearGradient(colors: [Color(0xFF718BDD), Color(0xFF5E7CCB)]),
                       border: Border.all(color: AppTheme.bgDark, width: 4),
                       boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.5), blurRadius: 15)],
                     ),
