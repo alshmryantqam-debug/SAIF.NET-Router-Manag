@@ -70,13 +70,6 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         accent: _amber,
         route: '/voucher',
       ),
-      _ToolEntry(
-        title: 'بوابة المشترك',
-        subtitle: 'واجهة خدمة العملاء',
-        icon: Icons.support_agent_rounded,
-        accent: _green,
-        route: '/customer-portal',
-      ),
     ],
   ),
   _ToolCategory(
