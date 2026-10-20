@@ -64,9 +64,9 @@ jobs:
                   continue
               text = gradle.read_text()
               if gradle.suffix == ".kts":
-                  text = re.sub(r'applicationId\\s*=\\s*"[^"]+"', 'applicationId = "net.saif.nova"', text)
-                  text = re.sub(r"minSdk\\s*=\\s*flutter\\.minSdkVersion", "minSdk = maxOf(24, flutter.minSdkVersion)", text)
-                  text = re.sub(r"minSdk\\s*=\\s*\\d+", "minSdk = maxOf(24, 24)", text)
+                  text = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "net.saif.nova"', text)
+                  text = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = maxOf(24, flutter.minSdkVersion)", text)
+                  text = re.sub(r"minSdk\s*=\s*\d+", "minSdk = maxOf(24, 24)", text)
                   if 'create("release")' not in text:
                       text = text.replace("    buildTypes {", '''    signingConfigs {
         create("release") {
@@ -82,9 +82,9 @@ jobs:
     buildTypes {''', 1)
                   text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
               else:
-                  text = re.sub(r'applicationId\\s+"[^"]+"', 'applicationId "net.saif.nova"', text)
-                  text = re.sub(r"minSdkVersion\\s+flutter\\.minSdkVersion", "minSdkVersion 24", text)
-                  text = re.sub(r"minSdkVersion\\s+\\d+", "minSdkVersion 24", text)
+                  text = re.sub(r'applicationId\s+"[^"]+"', 'applicationId "net.saif.nova"', text)
+                  text = re.sub(r"minSdkVersion\s+flutter\.minSdkVersion", "minSdkVersion 24", text)
+                  text = re.sub(r"minSdkVersion\s+\d+", "minSdkVersion 24", text)
                   if "signingConfigs {" not in text:
                       text = text.replace("    buildTypes {", '''    signingConfigs {
         release {
@@ -98,7 +98,7 @@ jobs:
         }
     }
     buildTypes {''', 1)
-                  text = re.sub(r'signingConfig\\s+signingConfigs\\.debug', 'signingConfig signingConfigs.release', text)
+                  text = re.sub(r'signingConfig\s+signingConfigs\.debug', 'signingConfig signingConfigs.release', text)
               gradle.write_text(text)
 
           activity_files = list(Path("android/app/src/main").rglob("MainActivity.kt")) + list(Path("android/app/src/main").rglob("MainActivity.java"))

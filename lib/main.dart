@@ -23,7 +23,7 @@ class NovaApp extends StatelessWidget {
   const NovaApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'SAIF.NET', debugShowCheckedModeBanner: false, theme: novaTheme(),
+    title: 'نوڨا | إدارة الشبكة', debugShowCheckedModeBanner: false, theme: novaTheme(),
     locale: const Locale('ar'), supportedLocales: const [Locale('ar'), Locale('en')],
     localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
     builder: (_, child) => Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox.shrink()),
