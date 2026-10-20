@@ -10,6 +10,7 @@ class Subscriber {
   final String? activeId; // معرّف الجلسة في /ppp/active
   final String? address;
   final String? uptime;
+  final bool expiryScheduled;
 
   const Subscriber({
     required this.id,
@@ -23,7 +24,15 @@ class Subscriber {
     this.activeId,
     this.address,
     this.uptime,
+    this.expiryScheduled = false,
   });
+
+  Subscriber copyWith({bool? disabled, bool? online, String? activeId, bool clearActiveId = false, bool? expiryScheduled}) => Subscriber(
+    id: id, name: name, profile: profile, disabled: disabled ?? this.disabled,
+    phone: phone, expiry: expiry, price: price, online: online ?? this.online,
+    activeId: clearActiveId ? null : (activeId ?? this.activeId),
+    address: address, uptime: uptime, expiryScheduled: expiryScheduled ?? this.expiryScheduled,
+  );
 
   int? get daysLeft => expiry?.difference(DateTime.now()).inDays;
   bool get expired => expiry != null && expiry!.isBefore(DateTime.now());
@@ -60,6 +69,7 @@ class Subscriber {
       activeId: active?['.id'],
       address: active?['address'],
       uptime: active?['uptime'],
+      expiryScheduled: secret['_expiryScheduled'] == true,
     );
   }
 }

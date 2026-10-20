@@ -292,6 +292,11 @@ class _PppoeScreenState extends State<PppoeScreen> {
             const SizedBox(width: 9),
             Expanded(child: Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary))),
+            if (s.expiryScheduled) const Padding(
+              padding: EdgeInsetsDirectional.only(start: 5),
+              child: Tooltip(message: 'جدولة الانتهاء مفعّلة على الراوتر',
+                child: Icon(Icons.shield_rounded, size: 17, color: AppTheme.successColor)),
+            ),
             Text(s.online ? 'متصل' : 'غير متصل', style: TextStyle(fontSize: 12,
               color: s.online ? AppTheme.successColor : AppTheme.textSecondary)),
             const Icon(Icons.chevron_left, color: AppTheme.textSecondary),

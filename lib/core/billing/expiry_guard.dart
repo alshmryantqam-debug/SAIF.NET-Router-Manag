@@ -45,9 +45,16 @@ class ExpiryGuard {
   static Future<void> cancel(RouterOsClient c, String user) async {
     if (!_safe(user) || user.isEmpty) return;
     try {
-      await c.delete('/system/scheduler/nova-exp-$user');
+      final dynamic response = await c.get('/system/scheduler');
+      final List rows = response is List ? response : response is Map ? [response] : const [];
+      for (final row in rows) {
+        if (row is Map && row['name']?.toString() == 'nova-exp-$user') {
+          final id = row['.id']?.toString();
+          if (id != null && id.isNotEmpty) await c.delete('/system/scheduler/' + Uri.encodeComponent(id));
+        }
+      }
     } catch (_) {
-      // No matching scheduler (or the client cannot delete by this path).
+      // Missing scheduler or insufficient permissions; callers can still continue.
     }
   }
 }

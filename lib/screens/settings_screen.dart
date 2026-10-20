@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/nova_theme.dart';
 import '../providers/connection_provider.dart';
+import '../providers/subscribers_provider.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/nova_widgets.dart';
 import 'auth/app_login_screen.dart';
@@ -12,6 +13,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.watch<ConnectionProvider>();
+    final subscribers = context.watch<SubscribersProvider>();
     return Scaffold(appBar: AppBar(title: const Text('الإعدادات')), body: RefreshIndicator(
       onRefresh: c.fetchSystemResource,
       child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.all(16), children: [
@@ -35,6 +37,23 @@ class SettingsScreen extends StatelessWidget {
         ])),
         const SizedBox(height: 12),
         GlassCard(child: Column(children: [
+          ListTile(
+            leading: const Icon(Icons.shield_outlined, color: NovaColors.primary),
+            title: const Text('مزامنة جدولة الانتهاء'),
+            subtitle: const Text('إعادة إنشاء مواعيد انتهاء الاشتراكات المستقبلية على الراوتر'),
+            enabled: c.isConnected && !subscribers.loading,
+            onTap: () async {
+              try {
+                final count = await context.read<SubscribersProvider>().syncExpirySchedules();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تمت مزامنة جدولة الانتهاء لـ $count مشترك')));
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشلت مزامنة الجدولة: $e')));
+              }
+            },
+          ),
+          const Divider(height: 1),
           ListTile(leading: const Icon(Icons.palette_outlined, color: NovaColors.primary), title: const Text('تغيير رمز التطبيق'), subtitle: const Text('يتطلب تغيير أيقونة التشغيل بناء نسخة جديدة'), onTap: () async { await HapticFeedback.lightImpact(); if (!context.mounted) return; ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تغيير الأيقونة يتطلب تحديث ملفات بناء Android.'))); }),
           const Divider(height: 1),
           ListTile(leading: const Icon(Icons.history, color: NovaColors.primary), title: const Text('سجل الاتصال'), subtitle: const Text('أحداث الخطوط تظهر في لوحة الرئيسية'), onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('افتح الرئيسية ثم قسم آخر الأحداث.')))),

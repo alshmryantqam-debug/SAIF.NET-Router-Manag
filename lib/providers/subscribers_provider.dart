@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/api/router_client.dart';
 import '../core/api/routeros_client.dart' show RosException, RosErrorType;
+import '../core/billing/expiry_guard.dart';
 import '../models/subscriber.dart';
 
 enum SubFilter { all, online, offline, expired, expiringSoon, disabled }
@@ -14,6 +15,8 @@ class SubscribersProvider extends ChangeNotifier {
   String? error;
   String query = '';
   SubFilter filter = SubFilter.all;
+  final Set<String> scheduledNames = <String>{};
+  bool _sweeping = false;
 
   void attach(RouterOsClient? client) {
     if (identical(client, _client)) return;
@@ -54,6 +57,17 @@ class SubscribersProvider extends ChangeNotifier {
       }
 
       final warnings = <String>[];
+      scheduledNames.clear();
+      try {
+        final dynamic schedulerResponse = await client.get('system/scheduler');
+        final List schedulerRows = schedulerResponse is List ? schedulerResponse : schedulerResponse is Map ? [schedulerResponse] : const [];
+        for (final item in schedulerRows) {
+          if (item is Map && item['name'] != null) {
+            final n = item['name'].toString();
+            if (n.startsWith('nova-exp-')) scheduledNames.add(n.substring('nova-exp-'.length));
+          }
+        }
+      } catch (e) { warnings.add('تعذر قراءة جدولة انتهاء الاشتراكات: $e'); }
       final active = <String, Map>{};
       try {
         final dynamic activeResponse = await client.get('ppp/active');
@@ -74,6 +88,7 @@ class SubscribersProvider extends ChangeNotifier {
       all = secrets.whereType<Map>().map((secret) {
         final normalized = Map<String, dynamic>.from(secret);
         final name = normalized['name']?.toString();
+        normalized['_expiryScheduled'] = name != null && scheduledNames.contains(name);
         return Subscriber.fromRos(normalized, name == null ? null : active[name]);
       }).toList()
         ..sort((a, b) => a.name.compareTo(b.name));
@@ -94,6 +109,7 @@ class SubscribersProvider extends ChangeNotifier {
         warnings.add('تعذر جلب بروفايلات PPPoE: $e');
       }
       error = warnings.isEmpty ? null : warnings.join('\n');
+      await sweep();
     } on RosException catch (e) {
       error = 'فشل جلب قائمة PPPoE: ${e.message}';
     } catch (e) {
@@ -137,6 +153,7 @@ class SubscribersProvider extends ChangeNotifier {
       'service': 'pppoe',
       'comment': Subscriber.buildComment(expiry: expiry, phone: phone, price: price),
     });
+    await ExpiryGuard.schedule(client, name.trim(), expiry);
     await load();
   }
 
@@ -144,6 +161,7 @@ class SubscribersProvider extends ChangeNotifier {
     await _requireClient().patch('/ppp/secret/' + Uri.encodeComponent(s.id),
       {'disabled': disabled ? 'true' : 'false'});
     if (disabled && s.activeId != null) await kick(s, reload: false);
+    // Manual disabling intentionally leaves the router expiry scheduler intact.
     await load();
   }
 
@@ -157,10 +175,12 @@ class SubscribersProvider extends ChangeNotifier {
   Future<void> extend(Subscriber s, {int months = 1}) async {
     final base = s.expiry != null && s.expiry!.isAfter(DateTime.now()) ? s.expiry! : DateTime.now();
     final expiry = base.add(Duration(days: 30 * months));
-    await _requireClient().patch('/ppp/secret/' + Uri.encodeComponent(s.id), {
+    final client = _requireClient();
+    await client.patch('/ppp/secret/' + Uri.encodeComponent(s.id), {
       'disabled': 'false',
       'comment': Subscriber.buildComment(expiry: expiry, phone: s.phone, price: s.price),
     });
+    await ExpiryGuard.schedule(client, s.name, expiry);
     await load();
   }
 
@@ -168,6 +188,7 @@ class SubscribersProvider extends ChangeNotifier {
     final client = _requireClient();
     if (s.activeId != null) await client.delete('/ppp/active/' + Uri.encodeComponent(s.activeId!));
     await client.delete('/ppp/secret/' + Uri.encodeComponent(s.id));
+    await ExpiryGuard.cancel(client, s.name);
     await load();
   }
 
@@ -175,6 +196,49 @@ class SubscribersProvider extends ChangeNotifier {
     await _requireClient().patch('/ppp/secret/' + Uri.encodeComponent(s.id), {'profile': profile});
     if (s.activeId != null) await kick(s, reload: false);
     await load();
+  }
+
+  Future<void> sweep() async {
+    final client = _client;
+    if (client == null || _sweeping) return;
+    _sweeping = true;
+    var changed = false;
+    try {
+      for (final s in List<Subscriber>.from(all)) {
+        if (!s.expired || s.disabled) continue;
+        try {
+          await client.patch('/ppp/secret/' + Uri.encodeComponent(s.id), {'disabled': 'true'});
+          if (s.activeId != null) {
+            try { await client.delete('/ppp/active/' + Uri.encodeComponent(s.activeId!)); } catch (_) {}
+          }
+          final i = all.indexWhere((item) => item.id == s.id);
+          if (i >= 0) all[i] = s.copyWith(disabled: true, online: false, clearActiveId: true);
+          changed = true;
+        } catch (e) {
+          error = [if (error != null && error!.isNotEmpty) error!, 'تعذر تعطيل الاشتراك المنتهي ${s.name}: $e'].join('\n');
+        }
+      }
+    } finally {
+      _sweeping = false;
+      if (changed || error != null) notifyListeners();
+    }
+  }
+
+  Future<int> syncExpirySchedules() async {
+    final client = _requireClient();
+    var count = 0;
+    final now = DateTime.now();
+    for (final s in List<Subscriber>.from(all)) {
+      final expiry = s.expiry;
+      if (expiry == null || !expiry.isAfter(now)) continue;
+      await ExpiryGuard.schedule(client, s.name, expiry);
+      scheduledNames.add(s.name);
+      final i = all.indexWhere((item) => item.id == s.id);
+      if (i >= 0) all[i] = s.copyWith(expiryScheduled: true);
+      count++;
+    }
+    notifyListeners();
+    return count;
   }
 
   RouterOsClient _requireClient() {
