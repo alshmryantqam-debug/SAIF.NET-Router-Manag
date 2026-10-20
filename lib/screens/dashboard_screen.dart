@@ -77,7 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
-              _NovaCircle(icon: Icons.notifications_none_rounded, label: c.isConnected ? '✓' : '!', onTap: _refresh),
+              _NovaCircle(icon: Icons.notifications_none_rounded, label: t.events.isEmpty ? '' : (t.events.length > 9 ? '9+' : '${t.events.length}'), onTap: () => _showNovaEvents(context, t.events)),
               const Spacer(),
               Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white.withOpacity(.14), borderRadius: BorderRadius.circular(28)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -182,7 +182,7 @@ class _NovaCircle extends StatelessWidget {
   const _NovaCircle({required this.icon, required this.label, required this.onTap});
   @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(40), child: Stack(clipBehavior: Clip.none, children: [
     Container(width: 48, height: 48, decoration: BoxDecoration(color: Colors.white.withOpacity(.18), shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(.15))), child: Icon(icon, color: Colors.white, size: 25)),
-    if (label.isNotEmpty) Positioned(top: -2, right: -2, child: Container(width: 18, height: 18, decoration: const BoxDecoration(color: Color(0xFFFF626F), shape: BoxShape.circle), child: Center(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))))),
+    if (label.isNotEmpty) Positioned(top: -2, right: -2, child: Container(width: label.length > 1 ? 25 : 18, height: 18, padding: const EdgeInsets.symmetric(horizontal: 2), decoration: const BoxDecoration(color: Color(0xFFFF626F), shape: BoxShape.circle), child: Center(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))))),
   ]));
 }
 class _NovaSegment extends StatelessWidget {
@@ -203,4 +203,33 @@ class _NovaQuick extends StatelessWidget {
     const SizedBox(height: 8), Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
   ])));
 }
+void _showNovaEvents(BuildContext context, List<NetEvent> events) => showModalBottomSheet<void>(
+  context: context,
+  backgroundColor: const Color(0xFF222638),
+  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+  builder: (_) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.all(22),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const Text('تنبيهات الشبكة', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        if (events.isEmpty)
+          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('لا توجد تنبيهات حديثة لانقطاع أو عودة الخطوط.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))
+        else
+          ...events.take(10).map((event) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(event.bad ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: event.bad ? NovaColors.danger : NovaColors.success, size: 20),
+              const SizedBox(width: 9),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(event.text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 3),
+                Text(TimeOfDay.fromDateTime(event.t).format(context), style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              ])),
+            ]),
+          )),
+      ]),
+    ),
+  ),
+);
 void _showNovaInfo(BuildContext context, String title, String message) => showModalBottomSheet<void>(context: context, backgroundColor: const Color(0xFF222638), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 14), Text(message, style: const TextStyle(color: Colors.white70, height: 1.7))]))));
