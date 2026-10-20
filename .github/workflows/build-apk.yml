@@ -56,7 +56,7 @@ jobs:
           permission = '    <uses-permission android:name="android.permission.USE_BIOMETRIC" />'
           if "android.permission.USE_BIOMETRIC" not in text:
               text = text.replace("<application", permission + "\n    <application", 1)
-          text = text.replace('android:label="tikplus_ultra"', 'android:label="نوڨا"')
+          text = re.sub(r'android:label="[^"]*"', 'android:label="نوڨا"', text)
           manifest.write_text(text)
 
           for gradle in (Path("android/app/build.gradle"), Path("android/app/build.gradle.kts")):
@@ -64,11 +64,41 @@ jobs:
                   continue
               text = gradle.read_text()
               if gradle.suffix == ".kts":
+                  text = re.sub(r'applicationId\\s*=\\s*"[^"]+"', 'applicationId = "net.saif.nova"', text)
                   text = re.sub(r"minSdk\\s*=\\s*flutter\\.minSdkVersion", "minSdk = maxOf(24, flutter.minSdkVersion)", text)
                   text = re.sub(r"minSdk\\s*=\\s*\\d+", "minSdk = maxOf(24, 24)", text)
+                  if 'create("release")' not in text:
+                      text = text.replace("    buildTypes {", '''    signingConfigs {
+        create("release") {
+            val props = java.util.Properties()
+            val propsFile = rootProject.file("key.properties")
+            propsFile.inputStream().use { props.load(it) }
+            storeFile = file(props["storeFile"] as String)
+            storePassword = props["storePassword"] as String
+            keyAlias = props["keyAlias"] as String
+            keyPassword = props["keyPassword"] as String
+        }
+    }
+    buildTypes {''', 1)
+                  text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
               else:
+                  text = re.sub(r'applicationId\\s+"[^"]+"', 'applicationId "net.saif.nova"', text)
                   text = re.sub(r"minSdkVersion\\s+flutter\\.minSdkVersion", "minSdkVersion 24", text)
                   text = re.sub(r"minSdkVersion\\s+\\d+", "minSdkVersion 24", text)
+                  if "signingConfigs {" not in text:
+                      text = text.replace("    buildTypes {", '''    signingConfigs {
+        release {
+            def props = new Properties()
+            def propsFile = rootProject.file("key.properties")
+            propsFile.withInputStream { props.load(it) }
+            storeFile file(props["storeFile"])
+            storePassword props["storePassword"]
+            keyAlias props["keyAlias"]
+            keyPassword props["keyPassword"]
+        }
+    }
+    buildTypes {''', 1)
+                  text = re.sub(r'signingConfig\\s+signingConfigs\\.debug', 'signingConfig signingConfigs.release', text)
               gradle.write_text(text)
 
           activity_files = list(Path("android/app/src/main").rglob("MainActivity.kt")) + list(Path("android/app/src/main").rglob("MainActivity.java"))
