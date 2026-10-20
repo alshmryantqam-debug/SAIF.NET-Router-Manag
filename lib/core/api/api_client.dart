@@ -61,8 +61,6 @@ class ApiClient implements RouterOsClient {
     '/system/identity',
     '/system/clock',
     '/system/routerboard',
-    '/system/health',
-    '/system/license',
   };
 
   Future<void> connect() async {
