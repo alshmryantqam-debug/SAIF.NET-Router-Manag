@@ -131,7 +131,72 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
       backgroundColor: Colors.transparent,
       body: ParticleMatrixBg(
         child: Column(
-        children: [
+          children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE040FB).withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFE040FB).withOpacity(0.45),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE040FB).withOpacity(0.10),
+                        blurRadius: 14,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.wifi_tethering_rounded,
+                    color: Color(0xFFE040FB),
+                    size: 23,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'HOTSPOT MATRIX',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.4,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'SUBSCRIBER CONTROL INTERFACE',
+                        style: TextStyle(
+                          color: Color(0xFFCE93D8),
+                          fontSize: 9,
+                          letterSpacing: 1.1,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'تحديث القائمة',
+                  onPressed: _refresh,
+                  icon: const Icon(
+                    Icons.sync_rounded,
+                    color: Color(0xFFE040FB),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: TextField(
@@ -291,35 +356,13 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
   }
 
   Widget _buildTile(HotspotUser user) {
-    return Dismissible(
-      key: ValueKey('user-${user.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFF5252).withOpacity(0.25),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        child: const Icon(
-          Icons.delete_rounded,
-          color: Color(0xFFFF5252),
-          size: 26,
-        ),
-      ),
-      confirmDismiss: (_) async {
-        await _remove(user);
-        return false;
-      },
-      child: CyberHotspotCard(
-        name: user.name,
-        profile: user.profile,
-        bytesOut: '',
-        uptime: user.limitUptime.isEmpty ? 'N/A' : user.limitUptime,
-        isDisabled: user.disabled,
-        onToggle: () => _toggle(user, !user.disabled),
-      ),
+    return CyberHotspotCard(
+      name: user.name,
+      profile: user.profile,
+      limitUptime: user.limitUptime,
+      isDisabled: user.disabled,
+      onToggle: () => _toggle(user, !user.disabled),
+      onDelete: () => _remove(user),
     );
   }
 
