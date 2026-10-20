@@ -56,31 +56,30 @@ jobs:
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           source = manifest.read_text()
           if 'android.permission.INTERNET' not in source:
-              source = source.replace('<application', '    <uses-permission android:name="android.permission.INTERNET" />\\n    <application', 1)
+              source = source.replace('<application', '    <uses-permission android:name="android.permission.INTERNET" />' + chr(10) + '    <application', 1)
           source = re.sub(r'android:label="[^"]*"', 'android:label="نوڨا"', source, count=1)
           manifest.write_text(source)
 
           gradle = Path("android/app/build.gradle.kts")
           if gradle.exists():
               source = gradle.read_text()
-              source = re.sub(r'applicationId\\s*=\\s*"[^"]+"', 'applicationId = "net.saif.nova"', source)
-              source = re.sub(r'minSdk\\s*=\\s*flutter.minSdkVersion', 'minSdk = 24', source)
+              source = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "net.saif.nova"', source)
+              source = re.sub(r'minSdk\s*=\s*flutter.minSdkVersion', 'minSdk = 24', source)
               gradle.write_text(source)
           else:
               gradle = Path("android/app/build.gradle")
               if gradle.exists():
                   source = gradle.read_text()
-                  source = re.sub(r'applicationId\\s+"[^"]+"', 'applicationId "net.saif.nova"', source)
-                  source = re.sub(r'minSdkVersion\\s+flutter.minSdkVersion', 'minSdkVersion 24', source)
+                  source = re.sub(r'applicationId\s+"[^"]+"', 'applicationId "net.saif.nova"', source)
+                  source = re.sub(r'minSdkVersion\s+flutter.minSdkVersion', 'minSdkVersion 24', source)
                   gradle.write_text(source)
           PY
 
       - name: Resolve packages
         run: flutter pub get
 
-      - name: Analyze Dart (report lint issues without blocking APK build)
-        run: flutter analyze --no-pub
-        continue-on-error: true
+      - name: Analyze Dart (fail on code errors, report non-blocking lint)
+        run: flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings
 
       - name: Build debug APK
         run: flutter build apk --debug --build-number=${{ github.run_number }}
