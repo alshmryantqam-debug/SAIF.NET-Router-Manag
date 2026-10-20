@@ -19,7 +19,7 @@ class _MainShellState extends State<MainShell> {
 
   late final List<Widget> _screens = [
     DashboardScreen(onOpenSection: (index) {
-      if (mounted) setState(() => _index = index.clamp(0, 4));
+      if (mounted) setState(() => _index = index.clamp(0, 4).toInt());
     }),
     const InterfacesScreen(),
     const PppoeScreen(),
