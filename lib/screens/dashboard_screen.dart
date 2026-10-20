@@ -9,9 +9,15 @@ import '../providers/traffic_provider.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/live_traffic_chart.dart';
 import '../widgets/nova_widgets.dart';
+import 'interfaces_screen.dart';
+import 'pppoe_screen.dart';
+import 'hotspot_screen.dart';
+import 'queues_screen.dart';
+import 'tools_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final ValueChanged<int>? onOpenSection;
+  const DashboardScreen({super.key, this.onOpenSection});
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -28,6 +34,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
   @override
   void dispose() { context.read<DashboardProvider>().stopPolling(); super.dispose(); }
+  void _openSection(int index, Widget fallback) {
+    final callback = widget.onOpenSection;
+    if (callback != null) {
+      callback(index);
+    } else {
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => fallback));
+    }
+  }
   Future<void> _refresh() async {
     await Future.wait([
       context.read<DashboardProvider>().fetchResources(),
@@ -69,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _NovaSegment(label: 'نوڨا', active: true),
                   _NovaSegment(label: c.isConnected ? 'متصل' : 'غير متصل', active: false, color: c.isConnected ? const Color(0xFF79D8B0) : const Color(0xFFFF858D)),
                 ])),
-              const Spacer(), _NovaCircle(icon: Icons.router_rounded, label: '', onTap: () => _showNovaInfo(context, 'معلومات الراوتر', 'الاسم: ${c.routerIdentity.isEmpty ? 'غير معروف' : c.routerIdentity}\\nRouterOS: ${d.version.isEmpty ? '—' : d.version}')),
+              const Spacer(), _NovaCircle(icon: Icons.router_rounded, label: '', onTap: () => _showNovaInfo(context, 'معلومات الراوتر', 'الاسم: ${c.routerIdentity.isEmpty ? 'غير معروف' : c.routerIdentity}\nRouterOS: ${d.version.isEmpty ? '—' : d.version}')),
             ]),
             const SizedBox(height: 25),
             Text(c.routerIdentity.isEmpty ? 'مركز تحكم نوڨا' : c.routerIdentity, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
@@ -89,17 +103,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(children: [
               Expanded(child: _NovaAction(icon: Icons.refresh_rounded, label: 'تحديث البيانات', color: const Color(0xFF7CD7B1), onTap: _refresh)),
               const SizedBox(width: 12),
-              Expanded(child: _NovaAction(icon: Icons.settings_ethernet_rounded, label: 'واجهات الشبكة', color: const Color(0xFFFF9099), onTap: () => _showNovaInfo(context, 'ملخص الشبكة', 'واجهات الشبكة: ${t.interfaces.length}\\nالمشتركون المتصلون: $connected'))),
+              Expanded(child: _NovaAction(icon: Icons.settings_ethernet_rounded, label: 'واجهات الشبكة', color: const Color(0xFFFF9099), onTap: () async => _openSection(1, const InterfacesScreen()))),
             ]),
           ]),
         ),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: _NovaQuick(icon: Icons.people_alt_rounded, label: 'المشتركون', onTap: () => _showNovaInfo(context, 'المشتركون', 'متصلون الآن: $connected\\nتنتهي خلال 3 أيام: $expiring\\nاشتراكات منتهية: $expired'))),
-          Expanded(child: _NovaQuick(icon: Icons.wifi_tethering_rounded, label: 'الهوتسبوت', onTap: () => _showNovaInfo(context, 'الهوتسبوت', 'الحسابات النشطة: ${h.activeCount}'))),
-          Expanded(child: _NovaQuick(icon: Icons.speed_rounded, label: 'السرعات', onTap: () => _showNovaInfo(context, 'السرعات', 'واجهات الشبكة المكتشفة: ${t.interfaces.length}'))),
-          Expanded(child: _NovaQuick(icon: Icons.cable_rounded, label: 'الواجهات', onTap: () => _showNovaInfo(context, 'الواجهات', 'واجهات الشبكة: ${t.interfaces.length}'))),
-          Expanded(child: _NovaQuick(icon: Icons.star_rounded, label: 'الأدوات', onTap: () => _showNovaInfo(context, 'أدوات نوڨا', 'استخدم أقسام التطبيق لإدارة الراوتر والمشتركين.'))),
+          Expanded(child: _NovaQuick(icon: Icons.people_alt_rounded, label: 'المشتركون', onTap: () => _openSection(2, const PppoeScreen()))),
+          Expanded(child: _NovaQuick(icon: Icons.wifi_tethering_rounded, label: 'الهوتسبوت', onTap: () => _openSection(3, const HotspotScreen()))),
+          Expanded(child: _NovaQuick(icon: Icons.speed_rounded, label: 'السرعات', onTap: () => _openSection(4, const QueuesScreen()))),
+          Expanded(child: _NovaQuick(icon: Icons.cable_rounded, label: 'الواجهات', onTap: () => _openSection(1, const InterfacesScreen()))),
+          Expanded(child: _NovaQuick(icon: Icons.star_rounded, label: 'الأدوات', onTap: () => _openSection(4, const ToolsScreen()))),
         ]),
         const SectionTitle('ملخص الشبكة'),
         GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5, children: [
