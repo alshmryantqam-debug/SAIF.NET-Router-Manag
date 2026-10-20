@@ -1,103 +1,54 @@
 import 'dart:math';
-
-import 'package:flutter/material.dart';
-
+import 'package:flutter/foundation.dart';
+import '../core/api/routeros_client.dart';
 import '../models/hotspot_user.dart';
-import 'connection_provider.dart';
-
-class HotspotProvider with ChangeNotifier {
-  final ConnectionProvider _connectionProvider;
+class HotspotProvider extends ChangeNotifier {
+  RouterOsClient? _client;
   List<HotspotUser> _users = [];
   bool _isLoading = false;
-
-  HotspotProvider(this._connectionProvider);
-
+  String? _error;
   List<HotspotUser> get users => List.unmodifiable(_users);
   bool get isLoading => _isLoading;
-
+  String? get error => _error;
+  void attach(RouterOsClient? client) {
+    if (identical(client, _client)) return;
+    _client = client; _users = []; _error = null;
+    if (client == null) { _isLoading = false; notifyListeners(); return; }
+    fetchUsers();
+  }
   Future<void> fetchUsers() async {
-    final dio = _connectionProvider.dio;
-    if (dio == null) return;
-
-    _isLoading = true;
-    notifyListeners();
-
+    final client = _client;
+    if (client == null) { _error = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    _isLoading = true; _error = null; notifyListeners();
     try {
-      final response = await dio.get('/ip/hotspot/user');
-      if (response.statusCode == 200 && response.data is List) {
-        _users = (response.data as List)
-            .map((e) => HotspotUser.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
-      }
-    } catch (e) {
-      debugPrint('Error fetching Hotspot users: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+      final data = await client.getHotspotUsers();
+      _users = data.whereType<Map>().map((e) => HotspotUser.fromJson(Map<String, dynamic>.from(e))).toList();
+    } on RosException catch (e) { _error = e.message; }
+    catch (e) { _error = 'فشل جلب مستخدمي الهوتسبوت: $e'; }
+    finally { _isLoading = false; notifyListeners(); }
   }
-
   Future<bool> toggleUserStatus(String id, bool currentState) async {
-    final dio = _connectionProvider.dio;
-    if (dio == null) return false;
-
-    try {
-      final encodedId = Uri.encodeComponent(id);
-      await dio.patch('/ip/hotspot/user/$encodedId', data: {
-        'disabled': (!currentState).toString(),
-      });
-      await fetchUsers();
-      return true;
-    } catch (e) {
-      debugPrint('Error changing Hotspot user status: $e');
-      return false;
-    }
+    final client = _client;
+    if (client == null) { _error = 'اتصل بالراوتر أولاً.'; notifyListeners(); return false; }
+    try { await client.toggleHotspotUser(id, !currentState); await fetchUsers(); return _error == null; }
+    on RosException catch (e) { _error = e.message; notifyListeners(); return false; }
+    catch (e) { _error = 'تعذر تغيير حالة البطاقة: $e'; notifyListeners(); return false; }
   }
-
-  // توليد بطاقات دخول عشوائية.
-  Future<bool> generateVouchers(
-    int count,
-    String profile,
-    String serverLength,
-  ) async {
-    final dio = _connectionProvider.dio;
-    if (dio == null || count < 1 || count > 500) return false;
-
-    final length = int.tryParse(serverLength);
-    if (length == null || length < 4 || length > 16) return false;
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      const chars = '1234567890';
-      final rnd = Random.secure();
-
-      for (int i = 0; i < count; i++) {
-        final randomCode = String.fromCharCodes(
-          Iterable.generate(
-            length,
-            (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
-          ),
-        );
-
-        await dio.put('/ip/hotspot/user', data: {
-          'server': 'all',
-          'name': randomCode,
-          'password': randomCode,
-          'profile': profile,
-          'comment': 'Nova-Generated',
-        });
-      }
-
-      await fetchUsers();
-      return true;
-    } catch (e) {
-      debugPrint('Error generating Hotspot vouchers: $e');
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  Future<bool> generateVouchers(int count, String profile, String serverLength) async {
+    final client = _client, length = int.tryParse(serverLength);
+    if (client == null || count < 1 || count > 500 || length == null || length < 4 || length > 16 || profile.trim().isEmpty) {
+      _error = client == null ? 'اتصل بالراوتر أولاً.' : 'تحقق من العدد وطول الكود والبروفايل.'; notifyListeners(); return false;
     }
+    _isLoading = true; _error = null; notifyListeners();
+    try {
+      const chars = '1234567890'; final rnd = Random.secure();
+      for (var i = 0; i < count; i++) {
+        final code = String.fromCharCodes(Iterable.generate(length, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
+        await client.createHotspotUser(name: code, password: code, profile: profile.trim(), server: 'all', comment: 'Nova-Generated');
+      }
+      await fetchUsers(); return _error == null;
+    } on RosException catch (e) { _error = e.message; return false; }
+    catch (e) { _error = 'تعذر توليد البطاقات: $e'; return false; }
+    finally { _isLoading = false; notifyListeners(); }
   }
 }

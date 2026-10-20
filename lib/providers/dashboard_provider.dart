@@ -1,106 +1,53 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
-
-import 'connection_provider.dart';
-
-/// Keeps the RouterOS system-resource values used by the live dashboard.
-///
-/// This provider only reads /system/resource; it does not change router
-/// configuration. It polls every three seconds while polling is started.
+import 'package:flutter/foundation.dart';
+import '../core/api/routeros_client.dart';
 class DashboardProvider with ChangeNotifier {
-  ConnectionProvider _connectionProvider;
-
+  RouterOsClient? _client;
   Timer? _timer;
-  bool _isFetching = false;
-  bool _disposed = false;
-
-  String _cpuLoad = '0';
-  String _uptime = '00:00:00';
-  String _freeMemory = '0';
-  String _totalMemory = '0';
-  String _boardName = 'جاري التحميل...';
-  String _version = '';
-
-  DashboardProvider(this._connectionProvider);
-
-  /// Keep the provider attached to the current ConnectionProvider instance.
-  /// Usually that instance is stable for the app lifetime.
-  void updateConnectionProvider(ConnectionProvider connectionProvider) {
-    if (identical(_connectionProvider, connectionProvider)) return;
-    _connectionProvider = connectionProvider;
-    if (_timer?.isActive ?? false) {
-      fetchResources();
-    }
-  }
-
+  bool _isFetching = false, _disposed = false;
+  String _cpuLoad = '0', _uptime = '00:00:00', _freeMemory = '0', _totalMemory = '0';
+  String _boardName = 'جاري التحميل...', _version = '';
+  String? _error;
   String get cpuLoad => _cpuLoad;
   String get uptime => _uptime;
   String get freeMemory => _freeMemory;
   String get totalMemory => _totalMemory;
   String get boardName => _boardName;
   String get version => _version;
-
-  /// Fetch immediately, then refresh every three seconds.
-  /// Calling this more than once will not create duplicate timers.
+  String? get error => _error;
+  void attach(RouterOsClient? client) {
+    if (identical(client, _client)) return;
+    _client = client; _error = null;
+    if (client == null) {
+      stopPolling(); _cpuLoad = '0'; _uptime = '00:00:00'; _freeMemory = '0'; _totalMemory = '0'; _boardName = 'غير متصل'; _version = '';
+    } else if (_timer?.isActive ?? false) { fetchResources(); }
+    notifyListeners();
+  }
   void startPolling() {
     if (_disposed || (_timer?.isActive ?? false)) return;
-
     fetchResources();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      fetchResources();
-    });
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) => fetchResources());
   }
-
-  void stopPolling() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
+  void stopPolling() { _timer?.cancel(); _timer = null; }
   Future<void> fetchResources() async {
-    if (_disposed || _isFetching) return;
-
-    final client = _connectionProvider.client;
-    if (client == null || !_connectionProvider.isConnected) return;
-
+    final client = _client;
+    if (_disposed || _isFetching || client == null) return;
     _isFetching = true;
     try {
       final dynamic response = await client.get('system/resource');
-      final Map<dynamic, dynamic> data;
-      if (response is List && response.isNotEmpty && response.first is Map) {
-        data = response.first as Map<dynamic, dynamic>;
-      } else if (response is Map) {
-        data = response;
-      } else {
-        return;
-      }
-
-      _cpuLoad = data['cpu-load']?.toString() ?? '0';
-      _uptime = data['uptime']?.toString() ?? '00:00:00';
-
-      // RouterOS reports memory in bytes; display values in MiB.
-      final int freeMemBytes =
-          int.tryParse(data['free-memory']?.toString() ?? '') ?? 0;
-      final int totalMemBytes =
-          int.tryParse(data['total-memory']?.toString() ?? '') ?? 0;
-
-      _freeMemory = (freeMemBytes / 1048576).toStringAsFixed(1);
-      _totalMemory = (totalMemBytes / 1048576).toStringAsFixed(1);
-      _boardName = data['board-name']?.toString() ?? 'Unknown Board';
-      _version = data['version']?.toString() ?? '7.x';
-
-      if (!_disposed) notifyListeners();
-    } catch (error) {
-      _connectionProvider.markConnectionLost('انقطع الاتصال بالراوتر: $error');
-    } finally {
-      _isFetching = false;
-    }
+      final Map data;
+      if (response is List && response.isNotEmpty && response.first is Map) data = response.first as Map;
+      else if (response is Map) data = response;
+      else throw const FormatException('استجابة موارد الراوتر غير متوقعة.');
+      _cpuLoad = data['cpu-load']?.toString() ?? '0'; _uptime = data['uptime']?.toString() ?? '00:00:00';
+      final free = int.tryParse(data['free-memory']?.toString() ?? '') ?? 0;
+      final total = int.tryParse(data['total-memory']?.toString() ?? '') ?? 0;
+      _freeMemory = (free / 1048576).toStringAsFixed(1); _totalMemory = (total / 1048576).toStringAsFixed(1);
+      _boardName = data['board-name']?.toString() ?? 'Unknown Board'; _version = data['version']?.toString() ?? '7.x'; _error = null;
+    } on RosException catch (e) { _error = e.message; }
+    catch (e) { _error = 'فشل قراءة موارد الراوتر: $e'; }
+    finally { _isFetching = false; if (!_disposed) notifyListeners(); }
   }
-
   @override
-  void dispose() {
-    _disposed = true;
-    stopPolling();
-    super.dispose();
-  }
+  void dispose() { _disposed = true; stopPolling(); super.dispose(); }
 }

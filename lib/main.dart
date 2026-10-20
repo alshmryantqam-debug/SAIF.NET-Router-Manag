@@ -23,11 +23,11 @@ void main() {
         },
       ),
       ChangeNotifierProxyProvider<ConnectionProvider, DashboardProvider>(
-        create: (context) => DashboardProvider(context.read<ConnectionProvider>()),
+        create: (_) => DashboardProvider(),
         update: (context, connection, dashboard) {
-          if (dashboard == null) return DashboardProvider(connection);
-          dashboard.updateConnectionProvider(connection);
-          return dashboard;
+          final provider = dashboard ?? DashboardProvider();
+          provider.attach(connection.client);
+          return provider;
         },
       ),
       ChangeNotifierProxyProvider<ConnectionProvider, SubscribersProvider>(
@@ -39,8 +39,12 @@ void main() {
         },
       ),
       ChangeNotifierProxyProvider<ConnectionProvider, HotspotProvider>(
-        create: (context) => HotspotProvider(context.read<ConnectionProvider>()),
-        update: (context, connection, hotspot) => hotspot ?? HotspotProvider(connection),
+        create: (_) => HotspotProvider(),
+        update: (context, connection, hotspot) {
+          final provider = hotspot ?? HotspotProvider();
+          provider.attach(connection.client);
+          return provider;
+        },
       ),
     ],
     child: const NovaApp(),

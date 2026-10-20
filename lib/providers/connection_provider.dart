@@ -1,49 +1,27 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:async';
-
-import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
-
 import '../models/router_config.dart';
 import '../core/api/routeros_client.dart';
 import '../core/api/connection_diagnostics.dart';
 import '../models/pppoe_user.dart';
 import '../models/hotspot_user.dart';
-import '../services/mikrotik_service.dart';
-
 class ConnectionProvider extends ChangeNotifier {
-  final MikrotikService _service = MikrotikService();
-
-  Dio? _dio; // retained for compatibility with existing consumers
   RouterOsClient? _routerClient;
   Timer? _retryTimer;
-  bool _retrying = false;
-  bool _manualDisconnect = false;
-  String? _lastHost;
-  String? _lastUsername;
-  String? _lastPassword;
+  bool _retrying = false, _manualDisconnect = false;
+  String? _lastHost, _lastUsername, _lastPassword;
   int? _lastPort;
-
-  RouterOsClient? get client => _routerClient;
-  bool _isLoading = false;
-  bool _isConnected = false;
-  String _errorMessage = '';
-  String _routerIdentity = '';
-
+  bool _isLoading = false, _isConnected = false;
+  String _errorMessage = '', _routerIdentity = '';
   Map<String, dynamic> _systemResource = {};
   List<PPPoEUser> _pppoeUsers = [];
   List<HotspotUser> _hotspotUsers = [];
-  List<dynamic> _interfaces = [];
-  List<dynamic> _ipAddresses = [];
-  List<dynamic> _queues = [];
-
+  List<dynamic> _interfaces = [], _ipAddresses = [], _queues = [];
+  RouterOsClient? get client => _routerClient;
   bool get isLoading => _isLoading;
   bool get isConnected => _isConnected;
   String get errorMessage => _errorMessage;
   String get routerIdentity => _routerIdentity;
-  Dio? get dio => _dio;
   Map<String, dynamic> get systemResource => _systemResource;
   List<PPPoEUser> get pppoeUsers => _pppoeUsers;
   List<HotspotUser> get hotspotUsers => _hotspotUsers;
@@ -51,304 +29,147 @@ class ConnectionProvider extends ChangeNotifier {
   List<dynamic> get ipAddresses => _ipAddresses;
   List<dynamic> get queues => _queues;
 
-  /// Connects to RouterOS REST over HTTPS and verifies credentials by reading
-  /// /system/identity. Use SSL bypass only on a trusted local management LAN.
-  ///
-  /// IMPORTANT: certificate validation is disabled for this client to support
-  /// self-signed router certificates. Never use this configuration over public
-  /// Wi-Fi or an untrusted network; production deployments should validate or
-  /// pin the router certificate.
-  Future<bool> connectToRouter({
-    required String ip, required String port, required String username, required String password,
-  }) async {
-    final host=ip.trim(), parsedPort=int.tryParse(port.trim());
-    _manualDisconnect = false;
-    _lastHost = host;
-    _lastUsername = username;
-    _lastPassword = password;
-    _lastPort = parsedPort;
-    if(host.isEmpty||parsedPort==null||parsedPort<1||parsedPort>65535){
-      _errorMessage='أدخل عنوان IP ورقم منفذ صحيحاً.';_isConnected=false;notifyListeners();return false;
+  Future<bool> connectToRouter({required String ip, required String port, required String username, required String password}) async {
+    final host = ip.trim(), parsedPort = int.tryParse(port.trim());
+    _manualDisconnect = false; _lastHost = host; _lastUsername = username; _lastPassword = password; _lastPort = parsedPort;
+    if (host.isEmpty || parsedPort == null || parsedPort < 1 || parsedPort > 65535) {
+      _errorMessage = 'أدخل عنوان IP ورقم منفذ صحيحاً.'; _isConnected = false; notifyListeners(); return false;
     }
-    _isLoading=true;_errorMessage='';notifyListeners();
-    try{
-      final result=await ConnectionDiagnostics.run(host:host,user:username,pass:password,customPort:parsedPort);
-      if(!result.success||result.client==null){_errorMessage=result.steps.isEmpty?'تعذر الاتصال بالراوتر.':result.steps.last.detail;_isConnected=false;return false;}
-      await useClient(client:result.client!,host:host,username:username,password:password,https:result.client!.https,port:result.client!.port);
+    _isLoading = true; _errorMessage = ''; notifyListeners();
+    try {
+      final result = await ConnectionDiagnostics.run(host: host, user: username, pass: password, customPort: parsedPort);
+      if (!result.success || result.client == null) {
+        _errorMessage = result.steps.isEmpty ? 'تعذر الاتصال بالراوتر.' : result.steps.last.detail; _isConnected = false; return false;
+      }
+      await useClient(client: result.client!, host: host, username: username, password: password, https: result.client!.https, port: result.client!.port);
       return _isConnected;
-    }catch(e){_isConnected=false;_errorMessage='تعذر الاتصال بالراوتر: $e';return false;}
-    finally{_isLoading=false;notifyListeners();}
+    } catch (e) { _isConnected = false; _errorMessage = 'تعذر الاتصال بالراوتر: $e'; return false; }
+    finally { _isLoading = false; notifyListeners(); }
   }
-
-  Future<void> useClient({required RouterOsClient client,required String host,required String username,required String password,required bool https,required int port}) async {
-    _manualDisconnect = false;
-    _lastHost = host;
-    _lastUsername = username;
-    _lastPassword = password;
-    _lastPort = port;
-    _retryTimer?.cancel();
-    _retryTimer = null;
-    _routerClient?.close();_routerClient=client;_isLoading=true;_errorMessage='';_isConnected=false;notifyListeners();
-    try{
-      final scheme=https?'https':'http';
-      _service.connect(MikrotikConfig(id:'active-router',name:host,ipAddress:'$scheme://$host:$port',username:username,password:password));
-      final dynamic resource=await client.get('system/resource');
-      if(resource is Map){_systemResource=Map<String,dynamic>.from(resource);}
-      else if(resource is List&&resource.isNotEmpty&&resource.first is Map){_systemResource=Map<String,dynamic>.from(resource.first as Map);}
-      else{_systemResource={};}
-      final dynamic identity=await client.get('system/identity');
-      if(identity is List&&identity.isNotEmpty&&identity.first is Map){_routerIdentity=(identity.first['name']??host).toString();}
-      else if(identity is Map){_routerIdentity=(identity['name']??host).toString();}
-      else{_routerIdentity=host;}
-      _isConnected=true;
-      _retryTimer?.cancel();
-      _retryTimer = null;
-    }on RosException catch(e){_errorMessage=e.message;_isConnected=false;_routerClient?.close();_routerClient=null;_scheduleReconnect();}
-    catch(e){_errorMessage='فشل تحميل بيانات الراوتر: $e';_isConnected=false;_routerClient?.close();_routerClient=null;_scheduleReconnect();}
-    finally{_isLoading=false;notifyListeners();}
+  Future<void> useClient({required RouterOsClient client, required String host, required String username, required String password, required bool https, required int port}) async {
+    _manualDisconnect = false; _lastHost = host; _lastUsername = username; _lastPassword = password; _lastPort = port;
+    _retryTimer?.cancel(); _retryTimer = null;
+    if (!identical(_routerClient, client)) _routerClient?.close();
+    _routerClient = client; _isLoading = true; _errorMessage = ''; _isConnected = false; notifyListeners();
+    try {
+      final dynamic resource = await client.get('system/resource');
+      if (resource is Map) _systemResource = Map<String, dynamic>.from(resource);
+      else if (resource is List && resource.isNotEmpty && resource.first is Map) _systemResource = Map<String, dynamic>.from(resource.first as Map);
+      else throw const FormatException('استجابة موارد الراوتر غير متوقعة.');
+      final dynamic identity = await client.get('system/identity');
+      if (identity is List && identity.isNotEmpty && identity.first is Map) _routerIdentity = (identity.first['name'] ?? host).toString();
+      else if (identity is Map) _routerIdentity = (identity['name'] ?? host).toString();
+      else _routerIdentity = host;
+      _isConnected = true; _errorMessage = '';
+    } on RosException catch (e) {
+      _errorMessage = e.message; _isConnected = false; _routerClient?.close(); _routerClient = null; _scheduleReconnect();
+    } catch (e) {
+      _errorMessage = 'فشل تحميل بيانات الراوتر: $e'; _isConnected = false; _routerClient?.close(); _routerClient = null; _scheduleReconnect();
+    } finally { _isLoading = false; notifyListeners(); }
   }
-
-
+  Future<void> connect(MikrotikConfig config) async {
+    final raw = config.ipAddress.trim();
+    final uri = Uri.parse(raw.contains('://') ? raw : 'https://$raw');
+    final port = uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80);
+    final client = RouterOsClient(host: uri.host, user: config.username, pass: config.password, https: uri.scheme == 'https', port: port);
+    await useClient(client: client, host: uri.host, username: config.username, password: config.password, https: uri.scheme == 'https', port: port);
+  }
   void markConnectionLost([String? message]) {
     if (_manualDisconnect) return;
-    _isConnected = false;
-    if (message != null) _errorMessage = message;
-    _routerClient?.close();
-    _routerClient = null;
-    _scheduleReconnect();
-    notifyListeners();
+    _isConnected = false; if (message != null) _errorMessage = message;
+    _routerClient?.close(); _routerClient = null; _scheduleReconnect(); notifyListeners();
   }
-
   void _scheduleReconnect() {
-    if (_manualDisconnect || _retryTimer != null ||
-        _lastHost == null || _lastUsername == null ||
-        _lastPassword == null || _lastPort == null) {
-      return;
-    }
-    _retryTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _tryReconnect();
-    });
+    if (_manualDisconnect || _retryTimer != null || _lastHost == null || _lastUsername == null || _lastPassword == null || _lastPort == null) return;
+    _retryTimer = Timer.periodic(const Duration(seconds: 5), (_) => _tryReconnect());
   }
-
   Future<void> _tryReconnect() async {
-    if (_retrying || _manualDisconnect || _isConnected ||
-        _lastHost == null || _lastUsername == null ||
-        _lastPassword == null || _lastPort == null) {
-      return;
-    }
+    if (_retrying || _manualDisconnect || _isConnected || _lastHost == null || _lastUsername == null || _lastPassword == null || _lastPort == null) return;
     _retrying = true;
     try {
-      final result = await ConnectionDiagnostics.run(
-        host: _lastHost!,
-        user: _lastUsername!,
-        pass: _lastPassword!,
-        customPort: _lastPort!,
-      );
+      final result = await ConnectionDiagnostics.run(host: _lastHost!, user: _lastUsername!, pass: _lastPassword!, customPort: _lastPort!);
       if (result.success && result.client != null && !_manualDisconnect) {
-        final client = result.client!;
-        await useClient(
-          client: client,
-          host: _lastHost!,
-          username: _lastUsername!,
-          password: _lastPassword!,
-          https: client.https,
-          port: client.port,
-        );
+        final c = result.client!;
+        await useClient(client: c, host: _lastHost!, username: _lastUsername!, password: _lastPassword!, https: c.https, port: c.port);
       }
-    } catch (_) {
-      // Keep the disconnected banner visible and retry at the next interval.
-    } finally {
-      _retrying = false;
-    }
+    } catch (_) { /* Retry on the next interval. */ }
+    finally { _retrying = false; }
   }
-
-  String _handleDioError(DioException error) {
-    if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.receiveTimeout) {
-      return 'انتهت مهلة الاتصال؛ تحقق من عنوان IP والمنفذ.';
-    }
-    final status = error.response?.statusCode;
-    if (status == 401 || status == 403) {
-      return 'رفض الراوتر تسجيل الدخول؛ تحقق من اسم المستخدم وكلمة المرور وصلاحيات REST.';
-    }
-    if (status != null) {
-      return 'فشل الاتصال (HTTP $status). تحقق من تفعيل www-ssl وخدمة REST في RouterOS.';
-    }
-    if (error.type == DioExceptionType.badCertificate) {
-      return 'شهادة HTTPS غير مقبولة. تحقق من شبكة الإدارة وشهادة الراوتر.';
-    }
-    return 'تعذر الوصول إلى الراوتر. تحقق من IP والمنفذ وتفعيل www-ssl.';
-  }
-
   void disconnect() {
-    _manualDisconnect = true;
-    _retryTimer?.cancel();
-    _retryTimer = null;
-    _lastPassword = null;
-    _lastHost = null;
-    _lastUsername = null;
-    _lastPort = null;
-    _routerClient?.close();
-    _routerClient = null;
-    _dio?.close(force: true);
-    _dio = null;
-    _isConnected = false;
-    _isLoading = false;
-    _routerIdentity = '';
+    _manualDisconnect = true; _retryTimer?.cancel(); _retryTimer = null;
+    _lastPassword = null; _lastHost = null; _lastUsername = null; _lastPort = null;
+    _routerClient?.close(); _routerClient = null; _isConnected = false; _isLoading = false; _routerIdentity = '';
+    _systemResource = {}; _pppoeUsers = []; _hotspotUsers = []; _interfaces = []; _ipAddresses = []; _queues = [];
     notifyListeners();
   }
-
   Future<void> fetchSystemResource() async {
+    final c = _routerClient;
+    if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
     try {
-      if (_routerClient != null) {
-        final dynamic resource = await _routerClient!.get('system/resource');
-        if (resource is Map) _systemResource = Map<String, dynamic>.from(resource);
-        if (resource is List && resource.isNotEmpty && resource.first is Map) _systemResource = Map<String, dynamic>.from(resource.first as Map);
-      } else {
-        _systemResource = await _service.getSystemResource();
-      }
-      _errorMessage = '';
-      _isConnected = true;
-    } catch (e) {
-      markConnectionLost('فشل جلب موارد الراوتر: $e');
-    } finally {
-      notifyListeners();
-    }
+      final dynamic r = await c.get('system/resource');
+      if (r is Map) _systemResource = Map<String, dynamic>.from(r);
+      else if (r is List && r.isNotEmpty && r.first is Map) _systemResource = Map<String, dynamic>.from(r.first as Map);
+      else throw const FormatException('استجابة موارد الراوتر غير متوقعة.');
+      _errorMessage = ''; _isConnected = true;
+    } catch (e) { _errorMessage = 'فشل جلب موارد الراوتر: $e'; _isConnected = false; }
+    notifyListeners();
   }
-
-  Future<void> refreshDashboard() async {
-    _errorMessage = '';
-    try {
-      await fetchPPPoEUsers();
-      _systemResource = await _service.getSystemResource();
-      _isConnected = true;
-    } catch (e) {
-      _errorMessage = 'فشل تحديث لوحة التحكم: $e';
-    } finally {
-      notifyListeners();
-    }
-  }
-
+  Future<void> refreshDashboard() async { await fetchPPPoEUsers(); await fetchSystemResource(); }
   Future<void> fetchInterfaces() async {
-    try {
-      _interfaces = await _service.getInterfaces();
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = 'فشل جلب المنافذ: $e';
-      notifyListeners();
-    }
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { _interfaces = await c.getInterfaces(); _errorMessage = ''; } catch (e) { _errorMessage = 'فشل جلب المنافذ: $e'; }
+    notifyListeners();
   }
-
   Future<void> fetchInterfacesAndIps() async {
-    _errorMessage = '';
-    try {
-      final results = await Future.wait([
-        _service.getInterfaces(),
-        _service.getIpAddresses(),
-      ]);
-      _interfaces = results[0];
-      _ipAddresses = results[1];
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = 'فشل جلب المنافذ وعناوين IP: $e';
-      notifyListeners();
-    }
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { final r = await Future.wait([c.getInterfaces(), c.getIpAddresses()]); _interfaces = r[0]; _ipAddresses = r[1]; _errorMessage = ''; }
+    catch (e) { _errorMessage = 'فشل جلب المنافذ وعناوين IP: $e'; }
+    notifyListeners();
   }
-
   Future<void> fetchQueues() async {
-    try {
-      _queues = await _service.getQueues();
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = 'فشل جلب الطوابير: $e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> connect(MikrotikConfig config) async {
-    _isLoading = true;
-    _errorMessage = '';
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { _queues = await c.getQueues(); _errorMessage = ''; } catch (e) { _errorMessage = 'فشل جلب الطوابير: $e'; }
     notifyListeners();
-
-    try {
-      _service.connect(config);
-      _systemResource = await _service.getSystemResource();
-      _isConnected = true;
-      await fetchPPPoEUsers();
-      await fetchHotspotUsers();
-    } catch (e) {
-      _isConnected = false;
-      _errorMessage = 'فشل الاتصال بالراوتر: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
   }
-
   Future<void> fetchPPPoEUsers() async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
-    try {
-      final data = await _service.getPPPoESecrets();
-      _pppoeUsers = data.map((json) => PPPoEUser.fromJson(json)).toList();
-    } catch (e) {
-      _errorMessage = 'فشل جلب مشتركي PPPoE: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    _isLoading = true; _errorMessage = ''; notifyListeners();
+    try { _pppoeUsers = (await c.getPPPoESecrets()).map((e) => PPPoEUser.fromJson(Map<String, dynamic>.from(e as Map))).toList(); }
+    catch (e) { _errorMessage = 'فشل جلب مشتركي PPPoE: $e'; }
+    finally { _isLoading = false; notifyListeners(); }
   }
-
   Future<void> togglePPPoEUser(String id, bool disabled) async {
-    final success = await _service.togglePPPoESecret(id, disabled);
-    if (success) await fetchPPPoEUsers();
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { await c.togglePPPoESecret(id, disabled); await fetchPPPoEUsers(); }
+    catch (e) { _errorMessage = 'تعذر تغيير حالة المشترك: $e'; notifyListeners(); }
   }
-
   Future<void> deletePPPoEUser(String id) async {
-    final success = await _service.removePPPoESecret(id);
-    if (success) await fetchPPPoEUsers();
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { await c.removePPPoESecret(id); await fetchPPPoEUsers(); }
+    catch (e) { _errorMessage = 'تعذر حذف المشترك: $e'; notifyListeners(); }
   }
-
   Future<void> fetchHotspotUsers() async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
-    try {
-      final data = await _service.getHotspotUsers();
-      _hotspotUsers = data.map((json) => HotspotUser.fromJson(json)).toList();
-    } catch (e) {
-      _errorMessage = 'فشل جلب مستخدمي الهوتسبوت: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    _isLoading = true; _errorMessage = ''; notifyListeners();
+    try { _hotspotUsers = (await c.getHotspotUsers()).map((e) => HotspotUser.fromJson(Map<String, dynamic>.from(e as Map))).toList(); }
+    catch (e) { _errorMessage = 'فشل جلب مستخدمي الهوتسبوت: $e'; }
+    finally { _isLoading = false; notifyListeners(); }
   }
-
   Future<void> deleteHotspotUser(String id) async {
-    final success = await _service.removeHotspotUser(id);
-    if (success) await fetchHotspotUsers();
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
+    try { await c.removeHotspotUser(id); await fetchHotspotUsers(); }
+    catch (e) { _errorMessage = 'تعذر حذف بطاقة الهوتسبوت: $e'; notifyListeners(); }
   }
-
-  Future<void> addPPPoEUser(
-      String username, String password, String profile) async {
+  Future<void> addPPPoEUser(String username, String password, String profile) async {
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return; }
     _errorMessage = '';
-    final success =
-        await _service.createPPPoEUser(username, password, profile);
-    if (success) {
-      await fetchPPPoEUsers();
-    } else {
-      _errorMessage =
-          'فشل إضافة مشترك PPPoE. تحقق من صلاحيات الراوتر والباقة.';
-      notifyListeners();
-    }
+    try { await c.createPPPoEUser(username, password, profile); await fetchPPPoEUsers(); }
+    catch (e) { _errorMessage = 'فشل إضافة مشترك PPPoE: $e'; notifyListeners(); }
   }
-
   Future<bool> executeLoadBalancingScript(String script) async {
-    return await _service.runSystemScript(script);
+    final c = _routerClient; if (c == null) { _errorMessage = 'اتصل بالراوتر أولاً.'; notifyListeners(); return false; }
+    try { return await c.runSystemScript(script); }
+    catch (e) { _errorMessage = 'فشل تنفيذ السكربت: $e'; notifyListeners(); return false; }
   }
-
-  Future<String> executeCommand(String command) async {
-    return await _service.executeRawCommand(command);
-  }
+  Future<String> executeCommand(String command) async => _routerClient?.executeRawCommand(command) ?? 'ERROR: اتصل بالراوتر أولاً.';
 }

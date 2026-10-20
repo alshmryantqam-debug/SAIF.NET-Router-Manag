@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
-import '../providers/connection_provider.dart';
+import '../providers/subscribers_provider.dart';
 
 class AddPppoeScreen extends StatefulWidget {
   const AddPppoeScreen({super.key});
@@ -28,45 +28,20 @@ class _AddPppoeScreenState extends State<AddPppoeScreen> {
     final username = _userController.text.trim();
     final password = _passController.text;
     final profile = _profileController.text.trim();
-
     if (username.isEmpty || password.isEmpty || profile.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة اسم المستخدم وكلمة المرور والباقة')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تعبئة اسم المستخدم وكلمة المرور والباقة')));
       return;
     }
-
     setState(() => _saving = true);
     try {
-      final provider = context.read<ConnectionProvider>();
-      await provider.addPPPoEUser(username, password, profile);
+      await context.read<SubscribersProvider>().add(name: username, password: password, profile: profile);
       if (!mounted) return;
-
-      if (provider.errorMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.errorMessage),
-            backgroundColor: AppTheme.dangerRed,
-          ),
-        );
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تمت إضافة المشترك. تحقق من ظهوره في قائمة PPPoE.'),
-          backgroundColor: AppTheme.successGreen,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة المشترك بنجاح'), backgroundColor: AppTheme.successGreen));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر إضافة المشترك: $e'), backgroundColor: AppTheme.dangerRed),
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر إضافة المشترك: $e'), backgroundColor: AppTheme.dangerRed));
+    } finally { if (mounted) setState(() => _saving = false); }
   }
 
   @override

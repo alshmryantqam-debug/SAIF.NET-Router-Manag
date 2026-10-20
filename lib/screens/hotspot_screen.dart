@@ -154,7 +154,7 @@ class _HotspotScreenState extends State<HotspotScreen> {
                         SizedBox(height: 16),
                         Center(
                           child: Text(
-                            'لا توجد بطاقات لعرضها، اسحب للأسفل للتحديث',
+                            '${provider.error ?? 'لا توجد بطاقات لعرضها، اسحب للأسفل للتحديث'}',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppTheme.textSecondary),
                           ),
