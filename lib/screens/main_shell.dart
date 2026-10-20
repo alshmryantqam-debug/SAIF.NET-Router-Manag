@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme.dart';
+import '../widgets/premium_background.dart';
 
 class _Dest {
   const _Dest(this.route, this.icon, this.label);
@@ -39,9 +40,11 @@ class MainShell extends StatelessWidget {
       backgroundColor: AppColors.bgDeep,
       extendBody: true,
       drawer: _buildDrawer(context),
-      body: SafeArea(
-        bottom: false,
-        child: child,
+      body: PremiumBackground(
+        child: SafeArea(
+          bottom: false,
+          child: child,
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
