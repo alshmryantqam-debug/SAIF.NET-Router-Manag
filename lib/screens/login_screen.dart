@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 14),
                     const Text(
-                      'SAIF.NET',
+                      'NOVA',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 27,
