@@ -261,7 +261,10 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               const SizedBox(height: 3),
-              Text(type, style: const TextStyle(fontSize: 12, color: NovaColors.muted)),
+              Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 7, runSpacing: 4, children: [
+                Text(type, style: const TextStyle(fontSize: 12, color: NovaColors.muted)),
+                if (_wanNames.contains(name)) StatusPill(_wanFromRouter ? 'WAN' : 'مرشّح WAN', _wanFromRouter ? NovaColors.primary : NovaColors.warn),
+              ]),
             ])),
             StatusPill(stateLabel, stateColor),
             PopupMenuButton<String>(
