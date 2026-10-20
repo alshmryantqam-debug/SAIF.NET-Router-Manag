@@ -1005,7 +1005,7 @@ class _StorageCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: progress,
+                value: progress ?? 0.0,
                 minHeight: 5,
                 backgroundColor: NovaColors.border,
                 valueColor: const AlwaysStoppedAnimation<Color>(NovaColors.cyan),
