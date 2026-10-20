@@ -7,7 +7,7 @@ import 'screens/add_hotspot_user_screen.dart';
 import 'screens/automation_screens.dart';
 import 'screens/advanced_ai_screens.dart';
 import 'screens/add_pppoe_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/hologram_dashboard_screen.dart';
 import 'screens/business_screens.dart';
 import 'services/business_service.dart';
 import 'screens/firewall_screen.dart';
@@ -63,7 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/dashboard',
             name: 'dashboard',
             pageBuilder: (_, __) => const NoTransitionPage(
-              child: BusinessGate(allowed: const [BusinessRole.manager], child: DashboardScreen()),
+              child: HologramDashboardScreen(),
             ),
           ),
           GoRoute(
