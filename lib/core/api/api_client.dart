@@ -164,8 +164,18 @@ class ApiClient implements RouterOsClient {
       ? {for (final e in d.entries) e.key.toString(): e.value.toString()}
       : <String, String>{};
 
-  String _id(String path) => path.substring(path.lastIndexOf('/') + 1);
-  String _parent(String path) => path.substring(0, path.lastIndexOf('/'));
+  String _normalizePath(String path) =>
+      '/${path.replaceFirst(RegExp(r'^/+'), '')}';
+
+  String _id(String path) {
+    final normalized = _normalizePath(path);
+    return Uri.decodeComponent(normalized.substring(normalized.lastIndexOf('/') + 1));
+  }
+
+  String _parent(String path) {
+    final normalized = _normalizePath(path);
+    return normalized.substring(0, normalized.lastIndexOf('/'));
+  }
 
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) => _sync(() async {
@@ -188,13 +198,14 @@ class ApiClient implements RouterOsClient {
 
   @override
   Future<dynamic> patch(String path, Object data) => _sync(() async {
-    await _run('/${_parent(path)}/set', {'numbers': _id(path), ..._attrs(data)});
+    // The binary RouterOS API expects .id; "numbers" is a CLI convenience.
+    await _run('${_parent(path)}/set', {'.id': _id(path), ..._attrs(data)});
     return <String, dynamic>{};
   });
 
   @override
   Future<dynamic> delete(String path) => _sync(() async {
-    await _run('/${_parent(path)}/remove', {'numbers': _id(path)});
+    await _run('${_parent(path)}/remove', {'.id': _id(path)});
     return <String, dynamic>{};
   });
 
