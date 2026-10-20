@@ -47,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final total = double.tryParse(d.totalMemory) ?? 0;
     final free = double.tryParse(d.freeMemory) ?? 0;
     final ram = total > 0 ? ((total - free) / total).clamp(0, 1).toDouble() : 0.0;
-    final connected = s.onlineCount + h.users.where((u) => !u.disabled).length;
+    final connected = s.onlineCount + h.activeCount;
     final expiring = s.all.where((u) => !u.expired && u.daysLeft != null && u.daysLeft! >= 0 && u.daysLeft! <= 3).length;
     final expired = s.all.where((u) => u.expired).length;
     return Scaffold(appBar: AppBar(title: const Text('SAIF.NET · لوحة الشبكة')), body: RefreshIndicator(

@@ -16,7 +16,7 @@ class ToolsScreen extends StatelessWidget {
       _Tool('الطوابير', 'إدارة حدود السرعة', Icons.speed_outlined, const QueuesScreen()),
       _Tool('محسّن الألعاب', 'توجيه الألعاب وتقليل التأخير', Icons.sports_esports_outlined),
       _Tool('النسخ الاحتياطي', 'حفظ واستعادة الإعدادات', Icons.backup_outlined),
-      _Tool('سجل الاتصال', 'مراجعة حالة واجهات الشبكة', Icons.receipt_long_outlined, const InterfacesScreen()),
+      _Tool('سجل الاتصال', 'سجل الأحداث والاتصالات', Icons.receipt_long_outlined),
       _Tool('الفوترة', 'الاشتراكات والإيرادات', Icons.payments_outlined),
     ];
     return Scaffold(appBar: AppBar(title: const Text('الأدوات')), body: RefreshIndicator(

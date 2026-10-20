@@ -6,13 +6,15 @@ class HotspotProvider extends ChangeNotifier {
   RouterOsClient? _client;
   List<HotspotUser> _users = [];
   bool _isLoading = false;
+  int _activeCount = 0;
   String? _error;
   List<HotspotUser> get users => List.unmodifiable(_users);
   bool get isLoading => _isLoading;
+  int get activeCount => _activeCount;
   String? get error => _error;
   void attach(RouterOsClient? client) {
     if (identical(client, _client)) return;
-    _client = client; _users = []; _error = null;
+    _client = client; _users = []; _activeCount = 0; _error = null;
     if (client == null) { _isLoading = false; notifyListeners(); return; }
     fetchUsers();
   }
@@ -23,6 +25,14 @@ class HotspotProvider extends ChangeNotifier {
     try {
       final data = await client.getHotspotUsers();
       _users = data.whereType<Map>().map((e) => HotspotUser.fromJson(Map<String, dynamic>.from(e))).toList();
+      try {
+        final dynamic active = await client.get('ip/hotspot/active');
+        if (active is List) _activeCount = active.length;
+        else if (active is Map) _activeCount = active.isEmpty ? 0 : 1;
+        else _activeCount = 0;
+      } catch (_) {
+        // The active-session endpoint may be restricted; keep the user list available.
+      }
     } on RosException catch (e) { _error = e.message; }
     catch (e) { _error = 'فشل جلب مستخدمي الهوتسبوت: $e'; }
     finally { _isLoading = false; notifyListeners(); }
