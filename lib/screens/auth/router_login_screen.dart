@@ -5,7 +5,7 @@ import '../../core/api/connection_diagnostics.dart';
 import '../../providers/connection_provider.dart';
 import '../../theme.dart';
 import '../../widgets/glass_card.dart';
-import '../dashboard_screen.dart';
+import '../app_shell.dart';
 
 class RouterLoginScreen extends StatefulWidget {
   const RouterLoginScreen({super.key});
@@ -44,7 +44,7 @@ class _RouterLoginScreenState extends State<RouterLoginScreen>{
       await _storage.write(key:'router_username',value:user);
       if(_remember){await _storage.write(key:'router_password',value:pass);}else{await _storage.delete(key:'router_password');}
       if(!mounted)return;
-      if(provider.isConnected){Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const DashboardScreen()));}
+      if(provider.isConnected){Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const AppShell()));}
       else{setState(()=>_steps=[..._steps,DiagStep('تحميل بيانات الراوتر',false,provider.errorMessage)]);}
     }catch(e){if(mounted)setState(()=>_steps=[..._steps,DiagStep('الاتصال',false,'تعذر إكمال الاتصال: $e')]);}
     finally{if(mounted)setState(()=>_loading=false);}
