@@ -100,10 +100,10 @@ class _QueuesScreenState extends State<QueuesScreen> {
                 const Text('الحد الأقصى للسرعة', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Row(children: [
-                  Expanded(child: TextFormField(controller: upload, decoration: const InputDecoration(labelText: 'رفع', suffixText: 'bps', hintText: '5M'),
+                  Expanded(child: TextFormField(controller: upload, decoration: const InputDecoration(labelText: 'حد الرفع', hintText: 'مثال: 5M'),
                     validator: (v) => _validLimit(v) ? null : 'مثال: 512k أو 5M')),
                   const SizedBox(width: 12),
-                  Expanded(child: TextFormField(controller: download, decoration: const InputDecoration(labelText: 'تنزيل', suffixText: 'bps', hintText: '20M'),
+                  Expanded(child: TextFormField(controller: download, decoration: const InputDecoration(labelText: 'حد التنزيل', hintText: 'مثال: 20M'),
                     validator: (v) => _validLimit(v) ? null : 'مثال: 512k أو 20M')),
                 ]),
                 const SizedBox(height: 10),
