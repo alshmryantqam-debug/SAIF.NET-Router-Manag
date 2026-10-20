@@ -48,6 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context.read<SubscribersProvider>().load(),
       context.read<HotspotProvider>().fetchUsers(),
       context.read<ConnectionProvider>().fetchInterfaces(),
+      context.read<TrafficProvider>().refreshInterfaces(),
     ]);
   }
   @override
