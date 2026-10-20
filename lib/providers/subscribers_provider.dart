@@ -38,26 +38,65 @@ class SubscribersProvider extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
+
     try {
-      final results = await Future.wait([
-        client.get('/ppp/secret'),
-        client.get('/ppp/active'),
-        client.get('/ppp/profile'),
-      ]);
-      final active = <String, Map>{};
-      for (final item in results[1] as List) {
-        if (item is Map && item['name'] != null) active[item['name'].toString()] = item;
+      // PPP secrets are the primary data source. Optional endpoints must not
+      // prevent the subscriber list from appearing if one of them is denied.
+      final dynamic secretsResponse = await client.get('ppp/secret');
+      final List secrets;
+      if (secretsResponse is List) {
+        secrets = secretsResponse;
+      } else if (secretsResponse is Map) {
+        secrets = [secretsResponse];
+      } else {
+        throw const FormatException('استجابة قائمة PPPoE غير متوقعة من الراوتر.');
       }
-      all = (results[0] as List).whereType<Map>().map((secret) =>
-        Subscriber.fromRos(Map<String, dynamic>.from(secret), active[secret['name']?.toString()]))
-        .toList()..sort((a, b) => a.name.compareTo(b.name));
-      profiles = (results[2] as List).whereType<Map>()
-        .map((profile) => profile['name']?.toString() ?? '')
-        .where((name) => name.isNotEmpty).toList();
+
+      final warnings = <String>[];
+      final active = <String, Map>{};
+      try {
+        final dynamic activeResponse = await client.get('ppp/active');
+        final List activeRows = activeResponse is List
+            ? activeResponse
+            : activeResponse is Map
+                ? [activeResponse]
+                : const [];
+        for (final item in activeRows) {
+          if (item is Map && item['name'] != null) {
+            active[item['name'].toString()] = item;
+          }
+        }
+      } catch (e) {
+        warnings.add('تعذر جلب حالة الاتصال الحالية: $e');
+      }
+
+      all = secrets.whereType<Map>().map((secret) {
+        final normalized = Map<String, dynamic>.from(secret);
+        final name = normalized['name']?.toString();
+        return Subscriber.fromRos(normalized, name == null ? null : active[name]);
+      }).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+
+      try {
+        final dynamic profileResponse = await client.get('ppp/profile');
+        final List profileRows = profileResponse is List
+            ? profileResponse
+            : profileResponse is Map
+                ? [profileResponse]
+                : const [];
+        profiles = profileRows.whereType<Map>()
+            .map((profile) => profile['name']?.toString() ?? '')
+            .where((name) => name.isNotEmpty)
+            .toList();
+      } catch (e) {
+        profiles = [];
+        warnings.add('تعذر جلب بروفايلات PPPoE: $e');
+      }
+      error = warnings.isEmpty ? null : warnings.join('\n');
     } on RosException catch (e) {
-      error = e.message;
-    } catch (_) {
-      error = 'تعذر قراءة المشتركين من الراوتر. تحقق من الاتصال وصلاحيات REST.';
+      error = 'فشل جلب قائمة PPPoE: ${e.message}';
+    } catch (e) {
+      error = 'فشل قراءة قائمة PPPoE: $e';
     } finally {
       loading = false;
       notifyListeners();
