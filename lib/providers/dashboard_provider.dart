@@ -61,19 +61,20 @@ class DashboardProvider with ChangeNotifier {
   Future<void> fetchResources() async {
     if (_disposed || _isFetching) return;
 
-    final Dio? dio = _connectionProvider.dio;
-    if (dio == null) return;
+    final client = _connectionProvider.client;
+    if (client == null || !_connectionProvider.isConnected) return;
 
     _isFetching = true;
     try {
-      final response = await dio.get<dynamic>('/system/resource');
-      if (response.statusCode != 200 || response.data is! List) return;
-
-      final List<dynamic> resources = response.data as List<dynamic>;
-      if (resources.isEmpty || resources.first is! Map) return;
-
-      final Map<dynamic, dynamic> data =
-          resources.first as Map<dynamic, dynamic>;
+      final dynamic response = await client.get('system/resource');
+      final Map<dynamic, dynamic> data;
+      if (response is List && response.isNotEmpty && response.first is Map) {
+        data = response.first as Map<dynamic, dynamic>;
+      } else if (response is Map) {
+        data = response;
+      } else {
+        return;
+      }
 
       _cpuLoad = data['cpu-load']?.toString() ?? '0';
       _uptime = data['uptime']?.toString() ?? '00:00:00';
@@ -90,10 +91,8 @@ class DashboardProvider with ChangeNotifier {
       _version = data['version']?.toString() ?? '7.x';
 
       if (!_disposed) notifyListeners();
-    } on DioException {
-      // A transient polling failure should not interrupt the dashboard.
-    } catch (_) {
-      // Ignore malformed/transient responses; the next poll can retry.
+    } catch (error) {
+      _connectionProvider.markConnectionLost('انقطع الاتصال بالراوتر: $error');
     } finally {
       _isFetching = false;
     }

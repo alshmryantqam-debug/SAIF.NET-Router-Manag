@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../providers/connection_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../providers/traffic_provider.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/live_traffic_chart.dart';
 import 'hotspot_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
@@ -36,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final connProvider = context.watch<ConnectionProvider>();
     final dashProvider = context.watch<DashboardProvider>();
+    final trafficProvider = context.watch<TrafficProvider>();
 
     final double totalRam = double.tryParse(dashProvider.totalMemory) ?? 0;
     final double freeRam = double.tryParse(dashProvider.freeMemory) ?? 0;
@@ -55,15 +58,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('إدارة شبكة SAIF.NET'),
-            Text(
-              connProvider.routerIdentity.isEmpty
-                  ? 'الراوتر'
-                  : connProvider.routerIdentity,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.normal,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: connProvider.isConnected
+                        ? AppTheme.successColor
+                        : AppTheme.dangerColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    connProvider.routerIdentity.isEmpty
+                        ? 'الراوتر'
+                        : connProvider.routerIdentity,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -78,6 +100,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (!connProvider.isConnected)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.dangerColor.withOpacity(0.14),
+                    border: Border.all(color: AppTheme.dangerColor.withOpacity(0.65)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.wifi_off, color: AppTheme.dangerColor),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('الاتصال مقطوع، جارٍ إعادة المحاولة', style: TextStyle(color: AppTheme.dangerColor, fontWeight: FontWeight.bold))),
+                    ],
+                  ),
+                ),
+              if (connProvider.isConnected) ...[
               GlassCard(
                 useGradient: true,
                 child: Column(
@@ -240,6 +281,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('حركة الخطوط', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                  TextButton.icon(
+                    onPressed: () => _showInterfacePicker(context, trafficProvider),
+                    icon: const Icon(Icons.tune),
+                    label: const Text('تحرير'),
+                  ),
+                ],
+              ),
+              if (trafficProvider.watched.isEmpty)
+                const GlassCard(child: Text('لا توجد واجهات مراقبة. اضغط تحرير لاختيار الواجهات.', style: TextStyle(color: AppTheme.textSecondary)))
+              else
+                ...trafficProvider.watched.map((name) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: LiveTrafficChart(name: name, data: trafficProvider.history[name] ?? const []),
+                )),
+              const SizedBox(height: 16),
+              const Text('آخر الأحداث', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+              const SizedBox(height: 10),
+              GlassCard(
+                child: trafficProvider.events.isEmpty
+                    ? const Text('لا توجد أحداث اتصال حديثة', style: TextStyle(color: AppTheme.textSecondary))
+                    : Column(
+                        children: trafficProvider.events.take(20).map((event) {
+                          final color = event.bad ? AppTheme.dangerColor : AppTheme.successColor;
+                          final time = TimeOfDay.fromDateTime(event.t).format(context);
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(event.bad ? Icons.error_outline : Icons.check_circle_outline, color: color, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(event.text, style: TextStyle(color: color))),
+                                const SizedBox(width: 8),
+                                Text(time, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -338,6 +425,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (!connProvider.isConnected)
                 const Text('حالة الاتصال: غير متصل',
                     style: TextStyle(color: AppTheme.dangerColor)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showInterfacePicker(BuildContext context, TrafficProvider provider) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.cardColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('اختيار الواجهات للمراقبة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              if (provider.interfaces.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('قائمة الواجهات غير متاحة حالياً'),
+                )
+              else
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: provider.interfaces.map((interface) => SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(interface.name),
+                      subtitle: Text('${interface.type} • ${interface.running ? 'متصل' : 'متوقف'}'),
+                      value: provider.watched.contains(interface.name),
+                      onChanged: (_) => provider.toggleWatch(interface.name),
+                    )).toList(),
+                  ),
+                ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  child: const Text('تم'),
+                ),
+              ),
             ],
           ),
         ),

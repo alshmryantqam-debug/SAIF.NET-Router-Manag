@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -17,6 +18,15 @@ class ConnectionProvider extends ChangeNotifier {
 
   Dio? _dio; // retained for compatibility with existing consumers
   RouterOsClient? _routerClient;
+  Timer? _retryTimer;
+  bool _retrying = false;
+  bool _manualDisconnect = false;
+  String? _lastHost;
+  String? _lastUsername;
+  String? _lastPassword;
+  int? _lastPort;
+
+  RouterOsClient? get client => _routerClient;
   bool _isLoading = false;
   bool _isConnected = false;
   String _errorMessage = '';
@@ -52,6 +62,11 @@ class ConnectionProvider extends ChangeNotifier {
     required String ip, required String port, required String username, required String password,
   }) async {
     final host=ip.trim(), parsedPort=int.tryParse(port.trim());
+    _manualDisconnect = false;
+    _lastHost = host;
+    _lastUsername = username;
+    _lastPassword = password;
+    _lastPort = parsedPort;
     if(host.isEmpty||parsedPort==null||parsedPort<1||parsedPort>65535){
       _errorMessage='أدخل عنوان IP ورقم منفذ صحيحاً.';_isConnected=false;notifyListeners();return false;
     }
@@ -66,6 +81,13 @@ class ConnectionProvider extends ChangeNotifier {
   }
 
   Future<void> useClient({required RouterOsClient client,required String host,required String username,required String password,required bool https,required int port}) async {
+    _manualDisconnect = false;
+    _lastHost = host;
+    _lastUsername = username;
+    _lastPassword = password;
+    _lastPort = port;
+    _retryTimer?.cancel();
+    _retryTimer = null;
     _routerClient?.close();_routerClient=client;_isLoading=true;_errorMessage='';_isConnected=false;notifyListeners();
     try{
       final scheme=https?'https':'http';
@@ -79,9 +101,65 @@ class ConnectionProvider extends ChangeNotifier {
       else if(identity is Map){_routerIdentity=(identity['name']??host).toString();}
       else{_routerIdentity=host;}
       _isConnected=true;
-    }on RosException catch(e){_errorMessage=e.message;_isConnected=false;_routerClient?.close();_routerClient=null;}
-    catch(e){_errorMessage='فشل تحميل بيانات الراوتر: $e';_isConnected=false;_routerClient?.close();_routerClient=null;}
+      _retryTimer?.cancel();
+      _retryTimer = null;
+    }on RosException catch(e){_errorMessage=e.message;_isConnected=false;_routerClient?.close();_routerClient=null;_scheduleReconnect();}
+    catch(e){_errorMessage='فشل تحميل بيانات الراوتر: $e';_isConnected=false;_routerClient?.close();_routerClient=null;_scheduleReconnect();}
     finally{_isLoading=false;notifyListeners();}
+  }
+
+
+  void markConnectionLost([String? message]) {
+    if (_manualDisconnect) return;
+    _isConnected = false;
+    if (message != null) _errorMessage = message;
+    _routerClient?.close();
+    _routerClient = null;
+    _scheduleReconnect();
+    notifyListeners();
+  }
+
+  void _scheduleReconnect() {
+    if (_manualDisconnect || _retryTimer != null ||
+        _lastHost == null || _lastUsername == null ||
+        _lastPassword == null || _lastPort == null) {
+      return;
+    }
+    _retryTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _tryReconnect();
+    });
+  }
+
+  Future<void> _tryReconnect() async {
+    if (_retrying || _manualDisconnect || _isConnected ||
+        _lastHost == null || _lastUsername == null ||
+        _lastPassword == null || _lastPort == null) {
+      return;
+    }
+    _retrying = true;
+    try {
+      final result = await ConnectionDiagnostics.run(
+        host: _lastHost!,
+        user: _lastUsername!,
+        pass: _lastPassword!,
+        customPort: _lastPort!,
+      );
+      if (result.success && result.client != null && !_manualDisconnect) {
+        final client = result.client!;
+        await useClient(
+          client: client,
+          host: _lastHost!,
+          username: _lastUsername!,
+          password: _lastPassword!,
+          https: client.https,
+          port: client.port,
+        );
+      }
+    } catch (_) {
+      // Keep the disconnected banner visible and retry at the next interval.
+    } finally {
+      _retrying = false;
+    }
   }
 
   String _handleDioError(DioException error) {
@@ -103,6 +181,13 @@ class ConnectionProvider extends ChangeNotifier {
   }
 
   void disconnect() {
+    _manualDisconnect = true;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _lastPassword = null;
+    _lastHost = null;
+    _lastUsername = null;
+    _lastPort = null;
     _routerClient?.close();
     _routerClient = null;
     _dio?.close(force: true);
@@ -125,8 +210,7 @@ class ConnectionProvider extends ChangeNotifier {
       _errorMessage = '';
       _isConnected = true;
     } catch (e) {
-      _isConnected = false;
-      _errorMessage = 'فشل جلب موارد الراوتر: $e';
+      markConnectionLost('فشل جلب موارد الراوتر: $e');
     } finally {
       notifyListeners();
     }

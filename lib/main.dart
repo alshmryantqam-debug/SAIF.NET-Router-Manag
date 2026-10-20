@@ -6,6 +6,7 @@ import 'providers/connection_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
+import 'providers/traffic_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
 
@@ -15,6 +16,14 @@ void main() {
       providers: [
         ChangeNotifierProvider<ConnectionProvider>(
           create: (_) => ConnectionProvider(),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, TrafficProvider>(
+          create: (_) => TrafficProvider(),
+          update: (context, connection, traffic) {
+            final provider = traffic ?? TrafficProvider();
+            provider.attach(connection.client);
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, DashboardProvider>(
           create: (context) =>
