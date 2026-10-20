@@ -217,11 +217,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _message('اتصل بالراوتر واختر واجهة أولاً.', error: true);
       return;
     }
-    final before = traffic.history[selectedName]?.length ?? 0;
-    await traffic.sampleNow();
+    final received = await traffic.sampleNow();
     if (!mounted) return;
-    final after = traffic.history[selectedName]?.length ?? 0;
-    if (after > before) {
+    if (received) {
       _message('تم تحديث قياس حركة الواجهة اللحظي. هذا ليس اختباراً لأقصى سرعة الإنترنت.');
     } else {
       _message('لم تصل قراءة جديدة من الواجهة. تحقق من صلاحيات API والاتصال.', error: true);
@@ -263,8 +261,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               _DiagnosisLine(
                 title: 'استهلاك المعالج',
-                detail: dashboard.cpuLoad + '%',
-                ok: (double.tryParse(dashboard.cpuLoad) ?? 0) < 85,
+                detail: connection.isConnected ? dashboard.cpuLoad + '%' : '—',
+                ok: connection.isConnected &&
+                    (double.tryParse(dashboard.cpuLoad) ?? 0) < 85,
+                neutral: !connection.isConnected,
               ),
               _DiagnosisLine(
                 title: 'حرارة الجهاز',
@@ -451,30 +451,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final storageRatio = dashboard.storageUsedRatio;
     final physicalPorts = traffic.interfaces.where(_isPhysical).toList();
     final activeCount = broadband.onlineCount + hotspot.activeCount;
+    final notificationsCount = traffic.events.length +
+        (connection.isConnected ? 0 : 1) +
+        (dashboard.error == null ? 0 : 1);
 
     final features = <_FeatureItem>[
       _FeatureItem(
         title: 'البرودباند',
         icon: Icons.router_rounded,
         color: NovaColors.primary,
-        count: broadband.all.length.toString(),
-        detail: broadband.onlineCount.toString() + ' متصل',
+        count: broadband.error == null ? broadband.all.length.toString() : '—',
+        detail: broadband.error == null
+            ? broadband.onlineCount.toString() + ' متصل'
+            : 'تعذر التحميل',
         onTap: () => _openSection(2, const PppoeScreen()),
       ),
       _FeatureItem(
         title: 'الأكتف',
         icon: Icons.bolt_rounded,
         color: NovaColors.success,
-        count: activeCount.toString(),
-        detail: 'جلسة نشطة',
+        count: broadband.error == null && hotspot.error == null
+            ? activeCount.toString()
+            : '—',
+        detail: 'جلسات نشطة',
         onTap: () => _openSection(2, const PppoeScreen()),
       ),
       _FeatureItem(
         title: 'هوتسبوت',
         icon: Icons.wifi_tethering_rounded,
         color: NovaColors.cyan,
-        count: hotspot.users.length.toString(),
-        detail: hotspot.activeCount.toString() + ' جلسة نشطة',
+        count: hotspot.error == null ? hotspot.users.length.toString() : '—',
+        detail: hotspot.error == null
+            ? hotspot.activeCount.toString() + ' جلسة نشطة'
+            : 'تعذر التحميل',
         onTap: () => _openSection(3, const HotspotScreen()),
       ),
       _FeatureItem(
@@ -509,7 +518,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: 'الإشعارات',
         icon: Icons.notifications_active_outlined,
         color: const Color(0xFFFF8795),
-        count: traffic.events.length.toString(),
+        count: notificationsCount.toString(),
         detail: 'تنبيه مسجل',
         onTap: () => _showNotifications(traffic, dashboard, connection),
       ),
@@ -564,9 +573,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _VitalCard(
                       icon: Icons.memory_rounded,
                       title: 'المعالج',
-                      value: cpu.toStringAsFixed(0) + '%',
-                      color: cpu >= 85 ? NovaColors.danger : NovaColors.primary,
-                      progress: cpu / 100,
+                      value: connection.isConnected ? cpu.toStringAsFixed(0) + '%' : '—',
+                      color: !connection.isConnected
+                          ? NovaColors.muted
+                          : cpu >= 85
+                              ? NovaColors.danger
+                              : NovaColors.primary,
+                      progress: connection.isConnected ? cpu / 100 : null,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -601,7 +614,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           height: 65,
                           icon: Icons.schedule_rounded,
                           label: 'مدة التشغيل',
-                          value: dashboard.uptime,
+                          value: connection.isConnected ? dashboard.uptime : '—',
                           color: NovaColors.cyan,
                         ),
                         const SizedBox(height: 8),
@@ -1535,7 +1548,11 @@ class _PortsCard extends StatelessWidget {
                 children: ports.map((port) {
                   final isSelected = port.name == selectedName;
                   final isUp = port.running;
-                  final tint = isUp ? NovaColors.success : NovaColors.muted;
+                  final tint = port.disabled
+                      ? NovaColors.warn
+                      : isUp
+                          ? NovaColors.success
+                          : NovaColors.muted;
                   return InkWell(
                     onTap: () => onSelect(port.name),
                     borderRadius: BorderRadius.circular(12),
@@ -1563,8 +1580,10 @@ class _PortsCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
                           const SizedBox(height: 3),
-                          Text(isUp ? 'متصل' : 'فارغ',
-                              style: TextStyle(fontSize: 9, color: tint)),
+                          Text(
+                            port.disabled ? 'معطل' : isUp ? 'متصل' : 'فارغ',
+                            style: TextStyle(fontSize: 9, color: tint),
+                          ),
                         ],
                       ),
                     ),
@@ -1580,7 +1599,11 @@ class _PortsCard extends StatelessWidget {
                 SizedBox(width: 13),
                 Icon(Icons.circle, color: NovaColors.muted, size: 8),
                 SizedBox(width: 5),
-                Text('فارغ أو غير نشط', style: TextStyle(color: NovaColors.muted, fontSize: 10)),
+                Text('فارغ', style: TextStyle(color: NovaColors.muted, fontSize: 10)),
+                SizedBox(width: 13),
+                Icon(Icons.circle, color: NovaColors.warn, size: 8),
+                SizedBox(width: 5),
+                Text('معطل', style: TextStyle(color: NovaColors.muted, fontSize: 10)),
               ],
             ),
           ],
@@ -1619,17 +1642,20 @@ class _CloudFooter extends StatelessWidget {
                   child: const Icon(Icons.cloud_outlined, color: NovaColors.primary, size: 23),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('اتصل بالكلاود',
+                      const Text('اتصل بالكلاود',
                           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                      SizedBox(height: 3),
-                      Text('للدخول إلى شبكتك من أي مكان في العالم',
-                          style: TextStyle(color: NovaColors.muted, fontSize: 10),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 3),
+                      Text(
+                        'للدخول إلى شبكتك من أي مكان في العالم\nالكلاود غير مهيأ · ' +
+                            (connected ? 'الراوتر متصل محلياً' : 'الراوتر غير متصل'),
+                        style: const TextStyle(color: NovaColors.muted, fontSize: 10, height: 1.4),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -1638,8 +1664,8 @@ class _CloudFooter extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Icon(
-                      connected ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-                      color: connected ? NovaColors.success : NovaColors.warn,
+                      Icons.cloud_off_rounded,
+                      color: NovaColors.warn,
                       size: 17,
                     ),
                     const SizedBox(height: 4),

@@ -23,7 +23,14 @@ class RosInterface {
   final String name;
   final bool running;
   final String type;
-  const RosInterface(this.name, this.running, this.type);
+  final bool disabled;
+
+  const RosInterface(
+    this.name,
+    this.running,
+    this.type, {
+    this.disabled = false,
+  });
 }
 
 class TrafficProvider extends ChangeNotifier {
@@ -80,6 +87,7 @@ class TrafficProvider extends ChangeNotifier {
                 (row['name'] ?? '').toString(),
                 _isTrue(row['running']),
                 (row['type'] ?? '').toString(),
+                disabled: _isTrue(row['disabled']),
               ))
           .where((item) => item.name.isNotEmpty)
           .toList();
@@ -154,18 +162,19 @@ class TrafficProvider extends ChangeNotifier {
     return number * multiplier;
   }
 
-  Future<void> sampleNow() => _tick();
+  Future<bool> sampleNow() => _tick();
 
-  Future<void> _tick() async {
+  Future<bool> _tick() async {
     final client = _client;
-    if (_busy || client == null || watched.isEmpty) return;
+    if (_busy || client == null || watched.isEmpty) return false;
     _busy = true;
+    var receivedSample = false;
     try {
       final dynamic response = await client.post('/interface/monitor-traffic', {
         'interface': watched.first,
         'once': '',
       });
-      if (!identical(client, _client)) return;
+      if (!identical(client, _client)) return false;
       final rows = _rows(response);
       final now = DateTime.now();
       for (final row in rows) {
@@ -177,15 +186,19 @@ class TrafficProvider extends ChangeNotifier {
           _parseRate(row['tx-bits-per-second']),
         ));
         if (samples.length > maxPoints) samples.removeAt(0);
+        receivedSample = true;
       }
       await _checkLinks(client);
       notifyListeners();
+      return receivedSample;
     } on RosException catch (error) {
       if (events.isEmpty || events.first.text != error.message) {
         _addEvent('تعذرت قراءة حركة الواجهة: ' + error.message, true);
       }
+      return false;
     } catch (_) {
       // Keep the last valid sample after a transient polling failure.
+      return false;
     } finally {
       _busy = false;
     }
