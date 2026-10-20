@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../core/api/routeros_client.dart';
+import '../core/api/router_client.dart';
 import '../models/subscriber.dart';
 
 enum SubFilter { all, online, offline, expired, expiringSoon, disabled }

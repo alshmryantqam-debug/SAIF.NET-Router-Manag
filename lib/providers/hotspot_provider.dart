@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import '../core/api/routeros_client.dart';
+import '../core/api/router_client.dart';
 import '../models/hotspot_user.dart';
 class HotspotProvider extends ChangeNotifier {
   RouterOsClient? _client;

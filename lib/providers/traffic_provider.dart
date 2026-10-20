@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../core/api/routeros_client.dart';
+import '../core/api/router_client.dart';
 
 class TrafficSample {
   final DateTime t;
