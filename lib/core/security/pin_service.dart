@@ -67,7 +67,7 @@ class PinService {
     try {
       if (!await _biometrics.canCheckBiometrics) return false;
       return await _biometrics.authenticate(
-        localizedReason: 'تأكيد الهوية للدخول إلى SAIF.NET',
+        localizedReason: 'تأكيد الهوية للدخول إلى NOVA',
         biometricOnly: true,
       );
     } on LocalAuthException {
