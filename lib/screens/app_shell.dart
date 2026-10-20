@@ -41,7 +41,7 @@ class _AppShellState extends State<AppShell> {
     NavigationDestination(
       icon: Icon(Icons.people_outline_rounded),
       selectedIcon: Icon(Icons.people_alt_rounded),
-      label: 'PPPoE',
+      label: 'برودباند',
     ),
     NavigationDestination(
       icon: Icon(Icons.wifi_tethering_outlined),
