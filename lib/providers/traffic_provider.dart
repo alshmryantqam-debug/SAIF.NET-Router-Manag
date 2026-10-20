@@ -47,25 +47,56 @@ class TrafficProvider extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    try {
-      final r = await _client!.get('/interface') as List;
-      interfaces = r
-          .map((e) => RosInterface(
-              e['name'], e['running'] == 'true', (e['type'] ?? '').toString()))
-          .toList();
-      // افتراضياً: الواجهات الفيزيائية والمراقَبة الأولى
-      watched = interfaces
-          .where((i) => i.type == 'ether' || i.type == 'sfp-sfpplus')
-          .take(4)
-          .map((i) => i.name)
-          .toList();
-      for (final i in interfaces) {
-        _lastRunning[i.name] = i.running;
-      }
-      notifyListeners();
+    await refreshInterfaces();
+    if (_client != null && _timer == null) {
       _timer = Timer.periodic(const Duration(seconds: 2), (_) => _tick());
+    }
+  }
+
+  /// Refreshes interface state without discarding selected live-traffic watches.
+  Future<void> refreshInterfaces() async {
+    final client = _client;
+    if (client == null) {
+      interfaces = [];
+      watched = [];
+      notifyListeners();
+      return;
+    }
+    try {
+      final dynamic response = await client.get('/interface');
+      if (!identical(client, _client)) return;
+      final List rows = response is List
+          ? response
+          : response is Map
+              ? [response]
+              : const [];
+      interfaces = rows.whereType<Map>().map((row) => RosInterface(
+        (row['name'] ?? '').toString(),
+        row['running'] == true || row['running'] == 'true',
+        (row['type'] ?? '').toString(),
+      )).where((i) => i.name.isNotEmpty).toList();
+      if (watched.isEmpty) {
+        // Start by watching the first physical ports, then let the operator
+        // choose which uplinks are important for their network.
+        watched = interfaces
+            .where((i) => i.type == 'ether' || i.type == 'sfp-sfpplus')
+            .take(4)
+            .map((i) => i.name)
+            .toList();
+      } else {
+        watched.removeWhere((name) => !interfaces.any((i) => i.name == name));
+      }
+      _lastRunning
+        ..clear()
+        ..addEntries(interfaces.map((i) => MapEntry(i.name, i.running)));
+      notifyListeners();
     } on RosException catch (e) {
       events.insert(0, NetEvent(DateTime.now(), e.message, true));
+      if (events.length > 100) events.removeLast();
+      notifyListeners();
+    } catch (e) {
+      events.insert(0, NetEvent(DateTime.now(), 'تعذر تحديث واجهات الراوتر: $e', true));
+      if (events.length > 100) events.removeLast();
       notifyListeners();
     }
   }
