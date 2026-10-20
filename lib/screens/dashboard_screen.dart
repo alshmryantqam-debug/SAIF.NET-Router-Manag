@@ -111,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(children: [
           Expanded(child: _NovaQuick(icon: Icons.people_alt_rounded, label: 'المشتركون', onTap: () => _openSection(2, const PppoeScreen()))),
           Expanded(child: _NovaQuick(icon: Icons.wifi_tethering_rounded, label: 'الهوتسبوت', onTap: () => _openSection(3, const HotspotScreen()))),
-          Expanded(child: _NovaQuick(icon: Icons.speed_rounded, label: 'السرعات', onTap: () => _openSection(4, const QueuesScreen()))),
+          Expanded(child: _NovaQuick(icon: Icons.speed_rounded, label: 'السرعات', onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const QueuesScreen())))),
           Expanded(child: _NovaQuick(icon: Icons.cable_rounded, label: 'الواجهات', onTap: () => _openSection(1, const InterfacesScreen()))),
           Expanded(child: _NovaQuick(icon: Icons.star_rounded, label: 'الأدوات', onTap: () => _openSection(4, const ToolsScreen()))),
         ]),
