@@ -483,7 +483,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ? null
               : IconButton(
                   tooltip: 'مسح البحث',
-                  onPressed: _searchController.clear,
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  },
                   icon: const Icon(
                     Icons.close_rounded,
                     color: Colors.white70,
