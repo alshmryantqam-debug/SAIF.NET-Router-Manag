@@ -22,7 +22,7 @@ class MainShell extends StatelessWidget {
     _Dest('/dashboard', Icons.dashboard_rounded, 'القيادة'),
     _Dest('/hotspot', Icons.wifi_rounded, 'Hotspot'),
     _Dest('/pppoe', Icons.cable_rounded, 'PPPoE'),
-    _Dest('/voucher', Icons.confirmation_number_rounded, 'الكروت'),
+    _Dest('/control-panel', Icons.apps_rounded, 'المزيد'),
     _Dest('/settings', Icons.settings_rounded, 'الإعدادات'),
   ];
 
