@@ -68,9 +68,12 @@ class ConnectionProvider extends ChangeNotifier {
     _dio?.close(force: true);
 
     try {
+      // RouterOS REST may be exposed as HTTP on port 80 or HTTPS on 443/custom port.
+      // Use HTTP only when the user explicitly selects the conventional HTTP port.
+      final scheme = portNumber == 80 ? 'http' : 'https';
       final credentials = base64Encode(utf8.encode('$username:$password'));
       final client = Dio(BaseOptions(
-        baseUrl: 'https://$host:$portNumber/rest',
+        baseUrl: '$scheme://$host:$portNumber/rest/',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         sendTimeout: const Duration(seconds: 10),
@@ -82,18 +85,22 @@ class ConnectionProvider extends ChangeNotifier {
         responseType: ResponseType.json,
       ));
 
-      client.httpClientAdapter = IOHttpClientAdapter(
-        createHttpClient: () {
-          final httpClient = HttpClient();
-          httpClient.badCertificateCallback =
-              (X509Certificate certificate, String certificateHost, int certificatePort) =>
-                  certificateHost == host && certificatePort == portNumber;
-          return httpClient;
-        },
-      );
+      if (scheme == 'https') {
+        client.httpClientAdapter = IOHttpClientAdapter(
+          createHttpClient: () {
+            final httpClient = HttpClient();
+            httpClient.badCertificateCallback =
+                (X509Certificate certificate, String certificateHost, int certificatePort) {
+              // Accept a self-signed certificate only for this router host.
+              return certificateHost.toLowerCase() == host.toLowerCase();
+            };
+            return httpClient;
+          },
+        );
+      }
       _dio = client;
 
-      final response = await client.get<dynamic>('/system/identity');
+      final response = await client.get<dynamic>('system/identity');
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception('الراوتر لا يستجيب لطلب الهوية.');
       }
@@ -114,7 +121,7 @@ class ConnectionProvider extends ChangeNotifier {
       _service.connect(MikrotikConfig(
         id: 'active-router',
         name: identity,
-        ipAddress: '$host:$portNumber',
+        ipAddress: '$scheme://$host:$portNumber',
         username: username,
         password: password,
       ));
