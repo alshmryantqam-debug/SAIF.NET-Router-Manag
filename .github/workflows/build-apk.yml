@@ -62,11 +62,11 @@ jobs:
                   continue
               text = gradle.read_text()
               if gradle.suffix == ".kts":
-                  text = re.sub(r"minSdk\s*=\s*flutter\\.minSdkVersion", "minSdk = maxOf(23, flutter.minSdkVersion)", text)
-                  text = re.sub(r"minSdk\s*=\s*\\d+", "minSdk = maxOf(23, 23)", text)
+                  text = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = maxOf(23, flutter.minSdkVersion)", text)
+                  text = re.sub(r"minSdk\s*=\s*\d+", "minSdk = maxOf(23, 23)", text)
               else:
-                  text = re.sub(r"minSdkVersion\s+flutter\\.minSdkVersion", "minSdkVersion 23", text)
-                  text = re.sub(r"minSdkVersion\s+\\d+", "minSdkVersion 23", text)
+                  text = re.sub(r"minSdkVersion\s+flutter\.minSdkVersion", "minSdkVersion 23", text)
+                  text = re.sub(r"minSdkVersion\s+\d+", "minSdkVersion 23", text)
               gradle.write_text(text)
 
           activity_files = list(Path("android/app/src/main").rglob("MainActivity.kt")) + list(Path("android/app/src/main").rglob("MainActivity.java"))
