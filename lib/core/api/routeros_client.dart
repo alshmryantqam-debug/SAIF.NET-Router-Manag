@@ -30,7 +30,7 @@ class RouterOsClient {
     int? port,
   }) : port = port ?? (https ? 443 : 80) {
     _dio = Dio(BaseOptions(
-      baseUrl: '${https ? 'https' : 'http'}://$host:${this.port}/rest',
+      baseUrl: '${https ? 'https' : 'http'}://$host:${this.port}/rest/',
       connectTimeout: const Duration(seconds: 6),
       receiveTimeout: const Duration(seconds: 12),
       sendTimeout: const Duration(seconds: 12),
