@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Icon(e.bad ? Icons.error_outline : Icons.check_circle_outline, color: e.bad ? NovaColors.danger : NovaColors.success, size: 19),
               const SizedBox(width: 8), Expanded(child: Text(e.text, style: TextStyle(color: e.bad ? NovaColors.danger : NovaColors.success, fontSize: 13))),
               Text(TimeOfDay.fromDateTime(e.t).format(context), style: const TextStyle(fontSize: 11, color: NovaColors.muted)),
-            ])).toList())),
+            ]))).toList())),
         const SectionTitle('موارد الراوتر'),
         GlassCard(child: Row(children: [
           Expanded(child: _Gauge('CPU', cpu / 100, '${cpu.toStringAsFixed(0)}%')),

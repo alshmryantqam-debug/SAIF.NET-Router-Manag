@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../core/api/router_client.dart';
+import '../core/api/routeros_client.dart' show RosException, RosErrorType;
 
 class TrafficSample {
   final DateTime t;
