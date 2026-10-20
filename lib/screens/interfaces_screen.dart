@@ -19,6 +19,8 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
   final TextEditingController _search = TextEditingController();
   String _filter = 'all';
   bool _loading = false;
+  bool _wanFromRouter = false;
+  Set<String> _wanNames = <String>{};
   final Set<String> _pending = <String>{};
 
   @override
@@ -42,7 +44,39 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
       connection.fetchInterfaces(),
       traffic.refreshInterfaces(),
     ]);
-    if (mounted) setState(() => _loading = false);
+    final client = connection.client;
+    var explicitWan = <String>{};
+    if (client != null) {
+      try {
+        final dynamic response = await client.get('interface/list/member');
+        final List members = response is List
+            ? response
+            : response is Map
+                ? [response]
+                : const [];
+        explicitWan = members.whereType<Map>()
+            .where((row) => (row['list'] ?? '').toString().toLowerCase() == 'wan')
+            .map((row) => (row['interface'] ?? '').toString())
+            .where((name) => name.isNotEmpty)
+            .toSet();
+      } catch (_) {
+        // Some RouterOS accounts may lack access to interface-list membership.
+      }
+    }
+    final candidates = connection.interfaces.whereType<Map>()
+        .where((row) {
+          final type = (row['type'] ?? '').toString().toLowerCase();
+          return type == 'ether' || type == 'sfp-sfpplus';
+        })
+        .map((row) => (row['name'] ?? '').toString())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    if (!mounted) return;
+    setState(() {
+      _wanFromRouter = explicitWan.isNotEmpty;
+      _wanNames = explicitWan.isNotEmpty ? explicitWan : candidates;
+      _loading = false;
+    });
   }
 
   bool _flag(dynamic value) => value == true || value?.toString() == 'true';
@@ -59,6 +93,7 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
         case 'up': return running && !disabled;
         case 'down': return !running || disabled;
         case 'watched': return context.read<TrafficProvider>().watched.contains(name);
+        case 'wan': return _wanNames.contains(name);
         default: return true;
       }
     }).toList();
@@ -319,8 +354,8 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
                 const SizedBox(height: 18),
                 Row(children: [
                   Expanded(child: _metric('إجمالي الواجهات', '${connection.interfaces.length}', Icons.cable_rounded)),
+                  Expanded(child: _metric(_wanFromRouter ? 'خطوط WAN' : 'مرشحات WAN', '${_wanNames.length}', Icons.language_rounded)),
                   Expanded(child: _metric('روابط تعمل', '$running', Icons.check_circle_outline_rounded)),
-                  Expanded(child: _metric('مراقَبة حياً', '$watched', Icons.monitor_heart_outlined)),
                 ]),
               ]),
             ),
@@ -333,6 +368,7 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
             const SizedBox(height: 10),
             SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, children: [
               _filterChip('all', 'الكل (${connection.interfaces.length})'),
+              _filterChip('wan', 'خطوط WAN (${_wanNames.length})'),
               _filterChip('up', 'تعمل ($running)'),
               _filterChip('down', 'متوقفة'),
               _filterChip('watched', 'المراقبة الحية ($watched)'),
@@ -349,6 +385,8 @@ class _InterfacesScreenState extends State<InterfacesScreen> {
             else
               ...items.map((item) => _interfaceCard(item, traffic, connection)),
             const SizedBox(height: 8),
+            Text(_wanFromRouter ? 'اكتُشفت خطوط WAN من قائمة الواجهات في MikroTik.' : 'لم تُعرّف قائمة WAN داخل MikroTik؛ لذلك تظهر منافذ Ethernet وSFP كمرشّحات فقط، وليست تصنيفاً مؤكداً لخطوط الإنترنت.', style: const TextStyle(color: NovaColors.muted, fontSize: 12, height: 1.5)),
+            const SizedBox(height: 6),
             const Text('تنبيه: تعطيل منفذ قد يقطع الإنترنت أو يفصل جلسة الإدارة إذا كان مسار الاتصال يمر عبره.', style: TextStyle(fontSize: 12, color: NovaColors.warn, height: 1.5)),
           ],
         ),
