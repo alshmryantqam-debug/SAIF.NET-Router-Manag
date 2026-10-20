@@ -222,14 +222,18 @@ class ApiClient implements RouterOsClient {
   Future<void> removeHotspotUser(String id) async { await delete('ip/hotspot/user/${Uri.encodeComponent(id)}'); }
 
   @override
-  Future<void> runSystemScript(String source) async {
+  Future<bool> runSystemScript(String source) async {
     final scriptName = 'saif_terminal_${DateTime.now().millisecondsSinceEpoch}';
     await put('system/script', {'name': scriptName, 'source': source, 'policy': 'read,write,policy,test'});
-    await post('system/script/run', {'number': scriptName});
-    final scripts = await get('system/script', query: {'name': scriptName});
-    if (scripts is List && scripts.isNotEmpty && scripts.first is Map) {
-      final id = scripts.first['.id']?.toString();
-      if (id != null) { try { await delete('system/script/${Uri.encodeComponent(id)}'); } catch (_) {} }
+    try {
+      await post('system/script/run', {'number': scriptName});
+      return true;
+    } finally {
+      final scripts = await get('system/script', query: {'name': scriptName});
+      if (scripts is List && scripts.isNotEmpty && scripts.first is Map) {
+        final id = scripts.first['.id']?.toString();
+        if (id != null) { try { await delete('system/script/${Uri.encodeComponent(id)}'); } catch (_) {} }
+      }
     }
   }
 
