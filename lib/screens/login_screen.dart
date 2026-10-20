@@ -148,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
 
       await Future<void>.delayed(const Duration(milliseconds: 400));
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.goNamed('dashboard');
     } else {
       final err = ref.read(connectionProvider).error ?? 'فشل الاتصال';
       setState(() {
