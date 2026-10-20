@@ -50,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final connected = s.onlineCount + h.activeCount;
     final expiring = s.all.where((u) => !u.expired && u.daysLeft != null && u.daysLeft! >= 0 && u.daysLeft! <= 3).length;
     final expired = s.all.where((u) => u.expired).length;
-    return Scaffold(appBar: AppBar(title: const Text('SAIF.NET · لوحة الشبكة')), body: RefreshIndicator(
+    return Scaffold(appBar: AppBar(title: const Text('نوڨا · مركز التحكم')), body: RefreshIndicator(
       onRefresh: _refresh, color: NovaColors.primary,
       child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
         GlassCard(useGradient: true, useBlur: true, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -91,9 +91,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             })),
         const SectionTitle('ملخص المشتركين'),
         GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.25, children: [
-          StatTile(icon: Icons.people_alt_outlined, label: 'متصلون الآن', value: '§connected', color: NovaColors.success, hint: 'PPPoE + حسابات هوتسبوت مفعّلة'),
-          StatTile(icon: Icons.event_available_outlined, label: 'تنتهي خلال 3 أيام', value: '§expiring', color: NovaColors.warn),
-          StatTile(icon: Icons.event_busy_outlined, label: 'اشتراكات منتهية', value: '§expired', color: NovaColors.danger),
+          StatTile(icon: Icons.people_alt_outlined, label: 'متصلون الآن', value: '$connected', color: NovaColors.success, hint: 'PPPoE + حسابات هوتسبوت مفعّلة'),
+          StatTile(icon: Icons.event_available_outlined, label: 'تنتهي خلال 3 أيام', value: '$expiring', color: NovaColors.warn),
+          StatTile(icon: Icons.event_busy_outlined, label: 'اشتراكات منتهية', value: '$expired', color: NovaColors.danger),
           StatTile(icon: Icons.payments_outlined, label: 'الإيراد المتوقع', value: '${s.expectedRevenue}', color: NovaColors.violet, hint: 'حسب أسعار PPPoE المسجلة'),
         ]),
         const SectionTitle('حركة الخطوط الحالية'),
