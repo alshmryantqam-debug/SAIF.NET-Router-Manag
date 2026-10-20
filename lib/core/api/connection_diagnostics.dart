@@ -27,17 +27,16 @@ class ConnectionDiagnostics {
   }) async {
     final steps = <DiagStep>[];
 
-    // The binary API is not HTTP REST. Route port 8728 directly to its client.
+    // The binary API is not HTTP REST.
     if (customPort == 8728) {
-      return _tryBinary(host, user, pass, customPort, steps);
+      return _tryBinary(host, user, pass, 8728, steps);
     }
 
     final candidates = <({bool https, int port})>[];
-    if (customPort != null) {
-      candidates.add((https: true, port: customPort));
-      if (customPort != 443) {
-        candidates.add((https: false, port: customPort));
-      }
+    final port = customPort;
+    if (port != null) {
+      candidates.add((https: true, port: port));
+      if (port != 443) candidates.add((https: false, port: port));
     } else {
       candidates
         ..add((https: true, port: 443))
@@ -83,22 +82,18 @@ class ConnectionDiagnostics {
           'تم الاتصال${version.isEmpty ? '' : ' · RouterOS $version'}',
         ));
         return DiagResult(steps, client);
-      } on RosException catch (e) {
-        steps.add(DiagStep('تسجيل الدخول $label', false, e.message));
+      } on RosException catch (error) {
+        steps.add(DiagStep('تسجيل الدخول $label', false, error.message));
         client.close();
-      } catch (e) {
-        steps.add(DiagStep('تسجيل الدخول $label', false, 'فشل غير متوقع: $e'));
+      } catch (error) {
+        steps.add(DiagStep('تسجيل الدخول $label', false, 'فشل غير متوقع: $error'));
         client.close();
       }
     }
 
-    // A custom non-standard port can be REST or the binary API. Test that
-    // same port after REST fails; otherwise RouterOS API defaults to 8728.
-    final apiPort = customPort != null &&
-            customPort != 80 &&
-            customPort != 443
-        ? customPort
-        : 8728;
+    // If REST failed, try the Binary API. Use the custom port if supplied;
+    // otherwise the RouterOS Binary API default is 8728.
+    final apiPort = port != null && port != 80 && port != 443 ? port : 8728;
     return _tryBinary(host, user, pass, apiPort, steps);
   }
 
@@ -149,11 +144,11 @@ class ConnectionDiagnostics {
         'تم الاتصال${version.isEmpty ? '' : ' · RouterOS $version'}',
       ));
       return DiagResult(steps, api);
-    } on RosException catch (e) {
-      steps.add(DiagStep('تسجيل الدخول عبر API', false, e.message));
+    } on RosException catch (error) {
+      steps.add(DiagStep('تسجيل الدخول عبر API', false, error.message));
       api.close();
-    } catch (e) {
-      steps.add(DiagStep('تسجيل الدخول عبر API', false, 'فشل غير متوقع: $e'));
+    } catch (error) {
+      steps.add(DiagStep('تسجيل الدخول عبر API', false, 'فشل غير متوقع: $error'));
       api.close();
     }
     steps.add(const DiagStep(
