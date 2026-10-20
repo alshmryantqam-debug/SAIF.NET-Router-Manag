@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../models/hotspot_user.dart';
 import '../providers/connection_provider.dart';
 import '../theme.dart';
+import '../widgets/cyber_hotspot_card.dart';
+import '../widgets/particle_matrix_bg.dart';
 
 class HotspotScreen extends ConsumerStatefulWidget {
   const HotspotScreen({super.key});
@@ -127,7 +129,8 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Column(
+      body: ParticleMatrixBg(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
@@ -207,6 +210,7 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
             ),
           ),
         ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -287,22 +291,20 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
   }
 
   Widget _buildTile(HotspotUser user) {
-    final disabled = user.disabled;
-
     return Dismissible(
       key: ValueKey('user-${user.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: AppColors.danger.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: const Color(0xFFFF5252).withOpacity(0.25),
+          borderRadius: BorderRadius.circular(16),
         ),
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
         child: const Icon(
           Icons.delete_rounded,
-          color: AppColors.danger,
+          color: Color(0xFFFF5252),
           size: 26,
         ),
       ),
@@ -310,113 +312,13 @@ class _HotspotScreenState extends ConsumerState<HotspotScreen> {
         await _remove(user);
         return false;
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: disabled
-                ? AppColors.danger.withOpacity(0.35)
-                : AppColors.border,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: disabled
-                      ? AppColors.danger.withOpacity(0.14)
-                      : AppColors.primary.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  disabled
-                      ? Icons.person_off_rounded
-                      : Icons.wifi_rounded,
-                  color: disabled ? AppColors.danger : AppColors.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.bgSurface,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            user.profile,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        if (user.password.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '• ${user.password}',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (user.comment.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        user.comment,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Transform.scale(
-                scale: 0.85,
-                child: Switch(
-                  value: !disabled,
-                  onChanged: (v) => _toggle(user, v),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: CyberHotspotCard(
+        name: user.name,
+        profile: user.profile,
+        bytesOut: '0',
+        uptime: user.limitUptime.isEmpty ? 'N/A' : user.limitUptime,
+        isDisabled: user.disabled,
+        onToggle: () => _toggle(user, user.disabled),
       ),
     );
   }
