@@ -212,7 +212,14 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
+  final TextEditingController _searchController = TextEditingController();
   String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -455,6 +462,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         border: Border.all(color: _cyan.withOpacity(0.2)),
       ),
       child: TextField(
+        controller: _searchController,
         onChanged: (value) => setState(() => _query = value),
         style: const TextStyle(color: Colors.white, fontSize: 13),
         cursorColor: _cyan,
@@ -475,7 +483,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ? null
               : IconButton(
                   tooltip: 'مسح البحث',
-                  onPressed: () => setState(() => _query = ''),
+                  onPressed: _searchController.clear,
                   icon: const Icon(
                     Icons.close_rounded,
                     color: Colors.white70,
