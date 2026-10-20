@@ -35,8 +35,7 @@ class RouterosRestApi {
           final target = _routerUri;
           return target != null &&
               target.scheme == 'https' &&
-              host.toLowerCase() == target.host.toLowerCase() &&
-              port == target.port;
+              host.toLowerCase() == target.host.toLowerCase();
         };
         return client;
       },
@@ -53,18 +52,19 @@ class RouterosRestApi {
           : 'https://$configuredAddress',
     );
 
-    if (parsed.scheme != 'https' || parsed.host.isEmpty) {
-      throw ArgumentError('Router address must be a valid HTTPS host.');
+    if ((parsed.scheme != 'https' && parsed.scheme != 'http') ||
+        parsed.host.isEmpty) {
+      throw ArgumentError('Router address must be a valid HTTP(S) host.');
     }
 
-    // Keep an explicitly supplied port (e.g. 192.168.88.1:8443); default to
-    // the standard HTTPS port when none is provided.
-    final port = parsed.hasPort ? parsed.port : 443;
+    // HTTP is accepted only when explicitly configured by the caller (normally
+    // port 80). HTTPS remains the default and is recommended for management.
+    final port = parsed.hasPort ? parsed.port : (parsed.scheme == 'http' ? 80 : 443);
     _routerUri = Uri(
-      scheme: 'https',
+      scheme: parsed.scheme,
       host: parsed.host,
       port: port,
-      path: '/rest',
+      path: '/rest/',
     );
     _dio.options.baseUrl = _routerUri.toString();
     _dio.options.headers = {
@@ -76,24 +76,29 @@ class RouterosRestApi {
   }
 
   Future<Map<String, dynamic>> getSystemResource() async {
-    final response = await _dio.get('/system/resource');
-    return Map<String, dynamic>.from(response.data as Map);
+    final response = await _dio.get('system/resource');
+    final data = response.data;
+    if (data is List && data.isNotEmpty && data.first is Map) {
+      return Map<String, dynamic>.from(data.first as Map);
+    }
+    if (data is Map) return Map<String, dynamic>.from(data);
+    throw const FormatException('Unexpected RouterOS system resource response.');
   }
 
   Future<List<dynamic>> getPPPoESecrets() async {
-    final response = await _dio.get('/ppp/secret');
+    final response = await _dio.get('ppp/secret');
     return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getActivePPPoE() async {
-    final response = await _dio.get('/ppp/active');
+    final response = await _dio.get('ppp/active');
     return List<dynamic>.from(response.data as List);
   }
 
   Future<bool> createPPPoEUser(
       String username, String password, String profile) async {
     try {
-      await _dio.put('/ppp/secret', data: {
+      await _dio.put('ppp/secret', data: {
         'name': username,
         'password': password,
         'profile': profile,
@@ -107,7 +112,7 @@ class RouterosRestApi {
 
   Future<bool> removePPPoESecret(String id) async {
     try {
-      await _dio.delete('/ppp/secret/$id');
+      await _dio.delete('ppp/secret/$id');
       return true;
     } catch (_) {
       return false;
@@ -116,7 +121,7 @@ class RouterosRestApi {
 
   Future<bool> togglePPPoESecret(String id, bool disabled) async {
     try {
-      await _dio.patch('/ppp/secret/$id', data: {
+      await _dio.patch('ppp/secret/$id', data: {
         'disabled': disabled ? 'true' : 'false',
       });
       return true;
@@ -126,14 +131,14 @@ class RouterosRestApi {
   }
 
   Future<List<dynamic>> getHotspotUsers() async {
-    final response = await _dio.get('/ip/hotspot/user');
+    final response = await _dio.get('ip/hotspot/user');
     return List<dynamic>.from(response.data as List);
   }
 
   Future<bool> createHotspotUser(
       String name, String password, String profile) async {
     try {
-      await _dio.put('/ip/hotspot/user', data: {
+      await _dio.put('ip/hotspot/user', data: {
         'name': name,
         'password': password,
         'profile': profile,
@@ -146,7 +151,7 @@ class RouterosRestApi {
 
   Future<bool> removeHotspotUser(String id) async {
     try {
-      await _dio.delete('/ip/hotspot/user/$id');
+      await _dio.delete('ip/hotspot/user/$id');
       return true;
     } catch (_) {
       return false;
@@ -154,17 +159,17 @@ class RouterosRestApi {
   }
 
   Future<List<dynamic>> getInterfaces() async {
-    final response = await _dio.get('/interface');
+    final response = await _dio.get('interface');
     return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getQueues() async {
-    final response = await _dio.get('/queue/simple');
+    final response = await _dio.get('queue/simple');
     return List<dynamic>.from(response.data as List);
   }
 
   Future<List<dynamic>> getIpAddresses() async {
-    final response = await _dio.get('/ip/address');
+    final response = await _dio.get('ip/address');
     return List<dynamic>.from(response.data as List);
   }
 
@@ -173,7 +178,7 @@ class RouterosRestApi {
         'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
     String? scriptId;
     try {
-      final created = await _dio.put('/system/script', data: {
+      final created = await _dio.put('system/script', data: {
         'name': scriptName,
         'source': source,
         'policy': 'read,write,policy,test',
@@ -182,7 +187,7 @@ class RouterosRestApi {
         scriptId = created.data['.id']?.toString();
       }
       if (scriptId == null || scriptId.isEmpty) {
-        final scripts = await _dio.get('/system/script',
+        final scripts = await _dio.get('system/script',
             queryParameters: {'name': scriptName});
         if (scripts.data is List && (scripts.data as List).isNotEmpty) {
           scriptId = (scripts.data as List).first['.id']?.toString();
@@ -190,12 +195,12 @@ class RouterosRestApi {
       }
       final target =
           (scriptId != null && scriptId.isNotEmpty) ? scriptId : scriptName;
-      await _dio.post('/system/script/run', data: {'number': target});
+      await _dio.post('system/script/run', data: {'number': target});
       return 'SUCCESS: RouterOS accepted the script for execution. REST does not provide a general interactive CLI output stream.';
     } finally {
       if (scriptId != null && scriptId.isNotEmpty) {
         try {
-          await _dio.delete('/system/script/$scriptId');
+          await _dio.delete('system/script/$scriptId');
         } catch (_) {
           // Best-effort cleanup.
         }
