@@ -45,7 +45,7 @@ class DashboardProvider with ChangeNotifier {
     final total = _totalStorageBytes;
     final free = _freeStorageBytes;
     if (total == null || free == null || total <= 0 || free < 0) return null;
-    return (total - free).clamp(0, total);
+    return (total - free).clamp(0, total).toInt();
   }
 
   double? get storageUsedRatio {
