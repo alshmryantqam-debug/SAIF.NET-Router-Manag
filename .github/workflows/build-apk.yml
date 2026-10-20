@@ -144,21 +144,33 @@ jobs:
           path.write_text(content)
           PY
 
-      - name: Configure release signing from GitHub Secrets
+      - name: Configure release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          test -n "$KEYSTORE_BASE64" || (echo "Missing GitHub Secret KEYSTORE_BASE64" && exit 1)
+          set -euo pipefail
           mkdir -p android/app
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/nova.jks
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/nova.jks
+            STORE_PASSWORD="$KEYSTORE_PASSWORD"
+            SIGNING_ALIAS="$KEY_ALIAS"
+            SIGNING_PASSWORD="$KEY_PASSWORD"
+            echo "Using persistent release signing key from GitHub Secrets."
+          else
+            echo "::warning::Release signing secrets are incomplete. Creating a temporary signing key for this build only. Add all four secrets to preserve app-update compatibility."
+            STORE_PASSWORD="$(openssl rand -hex 24)"
+            SIGNING_ALIAS="nova"
+            SIGNING_PASSWORD="$STORE_PASSWORD"
+            keytool -genkeypair -v -keystore android/app/nova.jks -storetype JKS -storepass "$STORE_PASSWORD" -keypass "$SIGNING_PASSWORD" -alias "$SIGNING_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=SAIF.NET Nova, OU=Mobile, O=SAIF.NET, L=Unknown, ST=Unknown, C=SY"
+          fi
           cat > android/key.properties <<EOF
           storeFile=app/nova.jks
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          keyPassword=$KEY_PASSWORD
+          storePassword=$STORE_PASSWORD
+          keyAlias=$SIGNING_ALIAS
+          keyPassword=$SIGNING_PASSWORD
           EOF
 
       - name: Resolve dependencies
