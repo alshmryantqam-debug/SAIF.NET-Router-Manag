@@ -8,6 +8,8 @@ import '../models/router_config.dart';
 import '../providers/connection_provider.dart';
 import '../services/mikrotik_service.dart';
 import '../theme.dart';
+import '../widgets/cyber_fusion_slider.dart';
+import '../widgets/particle_matrix_bg.dart';
 
 class NetworkEngineeringScreen extends ConsumerStatefulWidget {
   const NetworkEngineeringScreen({super.key});
@@ -30,6 +32,7 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
   final _remoteName = TextEditingController(text: 'NanoStation / Sector');
   final _threshold = TextEditingController(text: '-78');
   int _wanCount = 2;
+  final List<double> _wanWeights = <double>[5, 5, 5, 5];
   bool _discovering = false;
   List<InterfaceInfo> _interfaces = [];
   String _plan = '';
@@ -82,8 +85,33 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
     });
   }
 
+  void _setWanWeight(int index, double value) {
+    setState(() {
+      _wanWeights[index] = value;
+      _plan = '';
+      _error = null;
+    });
+  }
+
+  void _removeWan(int index) {
+    if (_wanCount <= 2) {
+      setState(() => _error = 'يلزم وجود خطّي WAN على الأقل لتكوين PCC.');
+      return;
+    }
+    setState(() {
+      _wanNames.removeAt(index).dispose();
+      _gateways.removeAt(index).dispose();
+      _wanWeights.removeAt(index);
+      _wanWeights.add(5);
+      _wanCount -= 1;
+      _plan = '';
+      _error = null;
+    });
+  }
+
   void _buildPlan() {
     final names = _wanNames.take(_wanCount).map((c) => c.text.trim()).toList();
+    final totalWeight = _wanWeights.take(_wanCount).fold<double>(0, (sum, value) => sum + value);
     if (names.any((n) => n.isEmpty) || names.toSet().length != names.length) {
       setState(() => _error = 'أدخل اسمًا مختلفًا لكل خط WAN.');
       return;
@@ -105,6 +133,7 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
       ..writeln('# RouterOS: ${ref.read(connectionProvider).activeProfile?.version.label ?? 'تحقق من الإصدار'}')
       ..writeln('# WAN count: $_wanCount')
       ..writeln('# WAN interfaces: ${names.join(', ')}')
+      ..writeln('# WAN weights are relative planning ratios, not measured throughput guarantees.')
       ..writeln('# LAN interface: $lan')
       ..writeln('# SAFETY: this is a draft, NOT applied to the router.')
       ..writeln('# Do not paste blindly into a live PCC/Queue/Hotspot router.')
@@ -118,7 +147,9 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
       ..writeln('# Proposed link inventory:');
     for (var i = 0; i < names.length; i++) {
       final gw = _gateways[i].text.trim();
-      out.writeln('# WAN${i + 1}: interface=${names[i]} gateway=${gw.isEmpty ? '[ENTER_GATEWAY]' : gw}');
+      final weight = _wanWeights[i];
+      final share = totalWeight == 0 ? 0 : (weight / totalWeight) * 100;
+      out.writeln('# WAN${i + 1}: interface=${names[i]} gateway=${gw.isEmpty ? '[ENTER_GATEWAY]' : gw} weight=${weight.toInt()} relative-share=${share.toStringAsFixed(1)}%');
     }
     out.writeln('# Gateway-specific PCC/failover commands intentionally withheld until gateways and current routes are verified.');
     setState(() { _plan = out.toString(); _error = null; });
@@ -157,10 +188,25 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
   @override
   Widget build(BuildContext context) {
     final connected = ref.watch(connectionProvider).isConnected;
+    final totalWanWeight = _wanWeights.take(_wanCount).fold<double>(0, (sum, value) => sum + value);
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
-      appBar: AppBar(title: const Text('مهندس الشبكة الذكي')),
-      body: ListView(
+      backgroundColor: const Color(0xFF070B14),
+      appBar: AppBar(
+        title: const Text(
+          'FUSION REACTOR',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+          ),
+        ),
+        backgroundColor: const Color(0xFF070B14).withOpacity(0.92),
+        foregroundColor: const Color(0xFF00E5FF),
+        elevation: 0,
+      ),
+      body: ParticleMatrixBg(
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
         children: [
           Container(
@@ -173,9 +219,20 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
             child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(Icons.hub_rounded, color: AppColors.primary, size: 32),
               SizedBox(height: 12),
-              Text('تحكم هندسي، لا تخمين', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w900)),
+              Text(
+                'FUSION CORE // PCC',
+                style: TextStyle(
+                  color: Color(0xFF00E5FF),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                ),
+              ),
               SizedBox(height: 7),
-              Text('خطط دمج الخطوط، فحص البنية، والوصول إلى أجهزة البث من مكان واحد. أي تغيير شبكي يجب أن يمر بمراجعة ونسخة احتياطية.', style: TextStyle(color: AppColors.textSecondary, height: 1.55)),
+              Text(
+                'مفاعل دمج الخطوط: اضبط وزن كل مصدر WAN، وراجع نسبة التوزيع المقترحة قبل أي تنفيذ.',
+                style: TextStyle(color: AppColors.textSecondary, height: 1.55),
+              ),
             ]),
           ),
           if (_error != null) ...[
@@ -201,19 +258,107 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
             if (_interfaces.isNotEmpty)
               Text('تم العثور على ${_interfaces.length} واجهة. الواجهات العاملة: ${_interfaces.where((e) => e.running && !e.disabled).map((e) => e.name).take(8).join(', ')}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
             const SizedBox(height: 10),
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00E5FF).withOpacity(0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.24)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.bolt_rounded, color: Color(0xFF00E5FF), size: 22),
+                  const SizedBox(width: 9),
+                  const Expanded(
+                    child: Text(
+                      'ENERGY DISTRIBUTION',
+                      style: TextStyle(
+                        color: Color(0xFF00E5FF),
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'TOTAL ${totalWanWeight.toInt()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             for (var i = 0; i < _wanCount; i++) ...[
               Row(children: [
-                Container(width: 32, height: 32, alignment: Alignment.center, decoration: BoxDecoration(color: AppColors.primary.withOpacity(.12), borderRadius: BorderRadius.circular(10)), child: Text('W${i + 1}', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 10))),
+                Container(width: 32, height: 32, alignment: Alignment.center, decoration: BoxDecoration(color: const Color(0xFF00E5FF).withOpacity(.10), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF00E5FF).withOpacity(.25))), child: Text('W${i + 1}', style: const TextStyle(color: Color(0xFF00E5FF), fontWeight: FontWeight.w900, fontSize: 10))),
                 const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _wanNames[i], decoration: InputDecoration(labelText: 'واجهة WAN ${i + 1}', hintText: 'مثل ether${i + 1}'))),
+                Expanded(
+                  child: TextField(
+                    controller: _wanNames[i],
+                    onChanged: (_) => setState(() => _plan = ''),
+                    decoration: InputDecoration(
+                      labelText: 'واجهة مصدر الطاقة WAN ${i + 1}',
+                      hintText: 'مثل ether${i + 1}',
+                    ),
+                  ),
+                ),
               ]),
               const SizedBox(height: 8),
-              TextField(controller: _gateways[i], keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'بوابة WAN ${i + 1} (Gateway)', hintText: 'مثال: 192.168.1.1')),
-              const SizedBox(height: 12),
+              TextField(
+                controller: _gateways[i],
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() => _plan = ''),
+                decoration: InputDecoration(
+                  labelText: 'بوابة WAN ${i + 1} (Gateway)',
+                  hintText: 'مثال: 192.168.1.1',
+                ),
+              ),
+              const SizedBox(height: 10),
+              CyberFusionSlider(
+                interfaceName: _wanNames[i].text.trim().isEmpty
+                    ? 'WAN ${i + 1}'
+                    : _wanNames[i].text.trim(),
+                weight: _wanWeights[i],
+                onChanged: (value) => _setWanWeight(i, value),
+                onRemove: () => _removeWan(i),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 0, bottom: 14),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'نسبة الوزن النسبية: ${totalWanWeight == 0 ? 0 : (_wanWeights[i] / totalWanWeight * 100).toStringAsFixed(1)}% • تقدير مبدئي وليس قياس سرعة فعلي',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
             ],
             TextField(controller: _lan, decoration: const InputDecoration(labelText: 'واجهة LAN / Bridge')),
-            const SizedBox(height: 14),
-            SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: _buildPlan, icon: const Icon(Icons.fact_check_rounded), label: const Text('إنشاء خطة الدمج للمراجعة'))),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E5FF),
+                  foregroundColor: const Color(0xFF070B14),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onPressed: _buildPlan,
+                icon: const Icon(Icons.bolt_rounded),
+                label: const Text(
+                  'INITIALIZE FUSION PLAN',
+                  style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.4),
+                ),
+              ),
+            ),
             if (_plan.isNotEmpty) ...[
               const SizedBox(height: 12),
               _message(Icons.shield_outlined, 'هذه خطة تحضير وليست سكربت تطبيق تلقائي. لم يتم تغيير أي إعداد في الراوتر. يلزم فحص PCC الحالي وبوابات الخطوط لتفادي قطع المشتركين.', AppColors.warning),
