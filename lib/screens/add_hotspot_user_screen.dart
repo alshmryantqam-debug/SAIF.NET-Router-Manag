@@ -29,6 +29,8 @@ class _AddHotspotUserScreenState
   final _uptimeCtrl = TextEditingController();
   final _bytesCtrl = TextEditingController();
 
+  static const Color _accentColor = Color(0xFFE040FB);
+
   bool _busy = false;
   bool _obscure = true;
   String? _error;
@@ -89,28 +91,51 @@ class _AddHotspotUserScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
-          'HOTSPOT ACCESS NODE',
+          'NEW NODE INJECTION',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'monospace',
             fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
-            shadows: [Shadow(color: Color(0xFF00E5FF), blurRadius: 10)],
+            letterSpacing: 2,
+            shadows: [Shadow(color: _accentColor, blurRadius: 10)],
           ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: _accentColor),
       ),
       body: ParticleMatrixBg(
         child: SafeArea(
           child: Form(
             key: _formKey,
             child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+          physics: const BouncingScrollPhysics(),
           children: [
+            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _accentColor.withOpacity(0.5), width: 2),
+                  boxShadow: [
+                    BoxShadow(color: _accentColor.withOpacity(0.2), blurRadius: 30, spreadRadius: -5),
+                  ],
+                ),
+                child: const Icon(Icons.person_add_alt_1_rounded, color: _accentColor, size: 60),
+              ),
+            ),
+            const SizedBox(height: 36),
+            const Text(
+              'NODE CREDENTIALS',
+              style: TextStyle(color: _accentColor, fontFamily: 'monospace', fontWeight: FontWeight.bold, letterSpacing: 2),
+            ),
+            const SizedBox(height: 16),
             _card(
               children: [
                 Row(
@@ -118,8 +143,9 @@ class _AddHotspotUserScreenState
                     Expanded(
                       child: CyberTextField(
                         controller: _nameCtrl,
-                        label: 'اسم المستخدم',
-                        icon: Icons.person_outline_rounded,
+                        label: 'USERNAME / MAC',
+                        icon: Icons.badge_outlined,
+                        accentColor: _accentColor,
                         enabled: !_busy,
                         validator: (v) {
                           if ((v ?? '').trim().isEmpty) {
@@ -150,8 +176,9 @@ class _AddHotspotUserScreenState
                     Expanded(
                       child: CyberTextField(
                         controller: _passCtrl,
-                        label: 'كلمة المرور',
-                        icon: Icons.lock_outline_rounded,
+                        label: 'SECURITY KEY',
+                        icon: Icons.password_rounded,
+                        accentColor: _accentColor,
                         isPassword: _obscure,
                         enabled: !_busy,
                         validator: (v) {
@@ -192,15 +219,17 @@ class _AddHotspotUserScreenState
               children: [
                 CyberTextField(
                   controller: _profileCtrl,
-                  label: 'البروفايل',
-                  icon: Icons.category_outlined,
+                  label: 'SYSTEM PROFILE',
+                  icon: Icons.tune_rounded,
+                  accentColor: _accentColor,
                   enabled: !_busy,
                 ),
                 const SizedBox(height: 12),
                 CyberTextField(
                   controller: _commentCtrl,
-                  label: 'تعليق (اختياري)',
+                  label: 'COMMENT / NOTE (OPTIONAL)',
                   icon: Icons.comment_outlined,
+                  accentColor: _accentColor,
                   enabled: !_busy,
                 ),
               ],
@@ -210,8 +239,9 @@ class _AddHotspotUserScreenState
               children: [
                 CyberTextField(
                   controller: _uptimeCtrl,
-                  label: 'مدة الصلاحية (اختياري)',
+                  label: 'SESSION LIMIT (OPTIONAL)',
                   icon: Icons.timer_outlined,
+                  accentColor: _accentColor,
                   hint: 'مثال: 1d أو 12h أو 30m',
                   helper: 'اتركه فارغاً لصلاحية غير محدودة',
                   enabled: !_busy,
@@ -219,8 +249,9 @@ class _AddHotspotUserScreenState
                 const SizedBox(height: 12),
                 CyberTextField(
                   controller: _bytesCtrl,
-                  label: 'حد التحميل بالبايت (اختياري)',
+                  label: 'DATA CAP IN BYTES (OPTIONAL)',
                   icon: Icons.data_usage_outlined,
+                  accentColor: _accentColor,
                   hint: 'مثال: 1073741824 = 1GB',
                   keyboardType: TextInputType.number,
                   enabled: !_busy,
@@ -260,11 +291,37 @@ class _AddHotspotUserScreenState
               ),
             ],
             const SizedBox(height: 20),
-            PrimaryButton(
-              label: _busy ? 'جاري الحفظ...' : 'حفظ المستخدم',
-              icon: Icons.check_rounded,
-              loading: _busy,
-              onPressed: _save,
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accentColor.withOpacity(0.15),
+                  disabledBackgroundColor: _accentColor.withOpacity(0.06),
+                  side: const BorderSide(color: _accentColor, width: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  elevation: 0,
+                ),
+                onPressed: _busy ? null : _save,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_busy)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: _accentColor),
+                      )
+                    else
+                      const Icon(Icons.terminal_rounded, color: _accentColor),
+                    const SizedBox(width: 10),
+                    Text(
+                      _busy ? 'EXECUTING...' : 'EXECUTE INJECTION',
+                      style: const TextStyle(color: _accentColor, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: 'monospace', letterSpacing: 1.4),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -280,10 +337,10 @@ class _AddHotspotUserScreenState
       decoration: BoxDecoration(
         color: const Color(0x99070B14),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: const Color(0x3300E5FF)),
+        border: Border.all(color: _accentColor.withOpacity(0.25)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1100E5FF),
+            color: Color(0x11E040FB),
             blurRadius: 18,
             spreadRadius: 1,
           ),
