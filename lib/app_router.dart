@@ -15,6 +15,7 @@ import 'screens/hotspot_screen.dart';
 import 'screens/interfaces_screen.dart';
 import 'screens/auth/router_login_screen.dart';
 import 'screens/load_balancing_wizard_screen.dart';
+import 'screens/live_traffic_screen.dart';
 import 'screens/pppoe_screen.dart';
 import 'screens/routers_list_screen.dart';
 import 'screens/settings_screen.dart';
@@ -154,6 +155,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const BusinessGate(
           allowed: [BusinessRole.manager],
           child: LoadBalancingWizardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/live-traffic',
+        name: 'live-traffic',
+        builder: (_, __) => const BusinessGate(
+          allowed: [BusinessRole.manager, BusinessRole.technician],
+          child: LiveTrafficScreen(),
         ),
       ),
       GoRoute(
