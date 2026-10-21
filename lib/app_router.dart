@@ -17,6 +17,7 @@ import 'screens/auth/router_login_screen.dart';
 import 'screens/load_balancing_wizard_screen.dart';
 import 'screens/live_traffic_screen.dart';
 import 'screens/pppoe_screen.dart';
+import 'screens/pppoe_neural_matrix_screen.dart';
 import 'screens/routers_list_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/tools_screen.dart';
@@ -99,6 +100,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'add',
                 name: 'pppoe.add',
                 builder: (_, __) => const AddPppoeScreen(),
+              ),
+              GoRoute(
+                path: 'neural-matrix',
+                name: 'pppoe.neural-matrix',
+                builder: (_, __) => const BusinessGate(
+                  allowed: [BusinessRole.manager],
+                  child: PppoeNeuralMatrixScreen(),
+                ),
               ),
             ],
           ),
