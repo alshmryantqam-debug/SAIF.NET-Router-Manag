@@ -172,7 +172,7 @@ class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
   double get _graphMax {
     final peak = <double>[..._rxHistory, ..._txHistory]
         .fold<double>(0, (previous, value) => math.max(previous, value));
-    return math.max(10, peak * 1.2);
+    return math.max(10.0, peak * 1.2).toDouble();
   }
 
   @override
