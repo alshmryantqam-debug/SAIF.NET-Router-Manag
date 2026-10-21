@@ -1,9 +1,14 @@
-/// Backwards-compatible entry point for the app's existing dashboard.
-///
-/// The existing dashboard contains the subscriber and network-management
-/// shortcuts; keeping it as the single implementation prevents feature loss.
-export 'dashboard_screen.dart' show DashboardScreen;
+import 'package:flutter/material.dart';
 
 import 'dashboard_screen.dart';
 
-typedef MainDashboardScreen = DashboardScreen;
+/// Main production dashboard entry point.
+///
+/// DashboardScreen remains the source of truth for the existing navigation and
+/// subscriber tools; its telemetry is powered by LiveDashboardProvider.
+class MainDashboardScreen extends StatelessWidget {
+  const MainDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const DashboardScreen();
+}
