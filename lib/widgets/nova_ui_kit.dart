@@ -112,7 +112,7 @@ class CyberButtonClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    final c = cut.clamp(0.0, size.shortestSide / 3);
+    final c = cut.clamp(0.0, size.shortestSide / 3).toDouble();
     return Path()
       ..moveTo(0, c)
       ..lineTo(c, 0)
@@ -148,7 +148,7 @@ class _CyberButtonFramePainter extends CustomPainter {
       ..color = color
       ..strokeWidth = 3.2
       ..strokeCap = StrokeCap.square;
-    canvas.drawLine(const Offset(0, 15), const Offset(0, size.height - 15), marker);
+    canvas.drawLine(const Offset(0, 15), Offset(0, size.height - 15), marker);
     canvas.drawLine(
       Offset(size.width - 20, 1),
       Offset(size.width - 7, 1),
@@ -290,7 +290,7 @@ class NovaWeightRail extends StatelessWidget {
   double _valueAt(double dx, double width) {
     final normalized = (dx / width).clamp(0.0, 1.0);
     final raw = min + normalized * (max - min);
-    return raw.roundToDouble().clamp(min.toDouble(), max.toDouble());
+    return raw.roundToDouble().clamp(min.toDouble(), max.toDouble()).toDouble();
   }
 
   @override
