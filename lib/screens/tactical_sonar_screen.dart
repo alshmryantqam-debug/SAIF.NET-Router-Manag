@@ -26,6 +26,16 @@ class _TacticalSonarScreenState extends State<TacticalSonarScreen> {
   bool _isTimeout = false;
   String? _validationMessage;
 
+  @override
+  void initState() {
+    super.initState();
+    _ipController.addListener(_onTargetChanged);
+  }
+
+  void _onTargetChanged() {
+    if (mounted) setState(() {});
+  }
+
   bool _isValidTarget(String value) {
     final target = value.trim();
     if (target.isEmpty) return false;
@@ -67,6 +77,7 @@ class _TacticalSonarScreenState extends State<TacticalSonarScreen> {
 
   @override
   void dispose() {
+    _ipController.removeListener(_onTargetChanged);
     _ipController.dispose();
     super.dispose();
   }
