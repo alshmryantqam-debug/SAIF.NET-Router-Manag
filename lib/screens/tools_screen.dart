@@ -201,6 +201,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/orbital-uplink',
       ),
       _ToolEntry(
+        title: 'وضع التحكم المطلق',
+        subtitle: 'بروتوكولات الطوارئ — وضع العرض الآمن',
+        icon: Icons.bolt_rounded,
+        accent: _pink,
+        route: '/god-mode',
+      ),
+      _ToolEntry(
         title: 'خزنة البيانات الكميّة',
         subtitle: 'واجهة النسخ الاحتياطي وسجل العمليات',
         icon: Icons.enhanced_encryption_rounded,
