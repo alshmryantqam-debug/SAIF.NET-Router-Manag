@@ -319,6 +319,43 @@ class RouterosRestApi {
     return List<dynamic>.from(response.data as List);
   }
 
+  /// Reads configured queue-tree entries; no rules are created implicitly.
+  Future<List<dynamic>> getQueueTrees() async {
+    final response = await _dio.get<dynamic>('queue/tree');
+    if (response.data is! List) {
+      throw const FormatException('Unexpected RouterOS queue-tree response.');
+    }
+    return List<dynamic>.from(response.data as List);
+  }
+
+  /// Updates only an existing queue-tree item by its RouterOS internal ID.
+  /// maxLimit must be a positive rate such as "5M"; priority is 1..8.
+  Future<void> updateQueueTree({
+    required String id,
+    String? maxLimit,
+    int? priority,
+  }) async {
+    if (id.trim().isEmpty ||
+        (maxLimit == null && priority == null) ||
+        (priority != null && (priority < 1 || priority > 8)) ||
+        (maxLimit != null &&
+            !RegExp(r'^\\d+(?:\\.\\d+)?[kKmMgG]?$').hasMatch(maxLimit))) {
+      throw const RouterOsApiException('إعدادات شجرة الطوابير غير صالحة.');
+    }
+    final data = <String, dynamic>{};
+    if (maxLimit != null) data['max-limit'] = maxLimit;
+    if (priority != null) data['priority'] = priority.toString();
+    try {
+      final response = await _dio.patch<dynamic>(
+        'queue/tree/${Uri.encodeComponent(id)}',
+        data: data,
+      );
+      _throwIfRouterOsError(response.data);
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
+    }
+  }
+
   Future<List<dynamic>> getQueues() async {
     final response = await _dio.get('queue/simple');
     return List<dynamic>.from(response.data as List);
