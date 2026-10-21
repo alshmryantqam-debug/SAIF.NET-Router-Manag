@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ ! -f android/app/src/main/AndroidManifest.xml ]; then
-            flutter create --project-name nova_router_manager --platforms=android --org net.nova .
+            flutter create --project-name nova --platforms=android --org net.nova .
           fi
 
       - name: Apply NOVA identity and Android compatibility
@@ -68,7 +68,7 @@ jobs:
                       1,
                   )
 
-          source = re.sub(r'android:label="[^"]*"', 'android:label="NOVA"', source, count=1)
+          source = re.sub(r'android:label="[^"]*"', 'android:label="نوڨا"', source, count=1)
           source = re.sub(r'android:icon="[^"]*"', 'android:icon="@drawable/nova_launcher_icon"', source, count=1)
           source = re.sub(r'android:roundIcon="[^"]*"', 'android:roundIcon="@drawable/nova_launcher_icon"', source, count=1)
           if 'android:icon="' not in source:
@@ -139,6 +139,52 @@ jobs:
           (drawable / "nova_launcher_icon.xml").write_text(icon, encoding="utf-8")
           PY
 
+      - name: Configure stable NOVA release signing
+        shell: bash
+        env:
+          NOVA_KEYSTORE_BASE64: ${{ secrets.NOVA_KEYSTORE_BASE64 }}
+          NOVA_KEYSTORE_PASSWORD: ${{ secrets.NOVA_KEYSTORE_PASSWORD }}
+          NOVA_KEY_ALIAS: ${{ secrets.NOVA_KEY_ALIAS }}
+          NOVA_KEY_PASSWORD: ${{ secrets.NOVA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$NOVA_KEYSTORE_BASE64" || { echo "Missing GitHub secret NOVA_KEYSTORE_BASE64"; exit 1; }
+          test -n "$NOVA_KEYSTORE_PASSWORD" || { echo "Missing GitHub secret NOVA_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$NOVA_KEY_ALIAS" || { echo "Missing GitHub secret NOVA_KEY_ALIAS"; exit 1; }
+          test -n "$NOVA_KEY_PASSWORD" || { echo "Missing GitHub secret NOVA_KEY_PASSWORD"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/nova-signing"
+          printf '%s' "$NOVA_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nova-signing/nova.jks"
+          test -s "$RUNNER_TEMP/nova-signing/nova.jks"
+          echo "NOVA_KEYSTORE_PATH=$RUNNER_TEMP/nova-signing/nova.jks" >> "$GITHUB_ENV"
+
+      - name: Configure Android package ID and release signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          gradle = Path("android/app/build.gradle.kts")
+          if not gradle.exists():
+              raise SystemExit("Expected generated build.gradle.kts")
+          source = gradle.read_text(encoding="utf-8")
+          source = re.sub(r'namespace\s*=\s*"[^"]+"', 'namespace = "net.nova.nova"', source, count=1)
+          source = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "net.nova.nova"', source, count=1)
+          source = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 24', source, count=1)
+          if 'create("release")' not in source:
+              source = source.replace('    buildTypes {', '''    signingConfigs {
+          create("release") {
+              storeFile = file(System.getenv("NOVA_KEYSTORE_PATH"))
+              storePassword = System.getenv("NOVA_KEYSTORE_PASSWORD")
+              keyAlias = System.getenv("NOVA_KEY_ALIAS")
+              keyPassword = System.getenv("NOVA_KEY_PASSWORD")
+          }
+      }
+
+      buildTypes {''', 1)
+          source = re.sub(r'release\s*\{', 'release {\n            signingConfig = signingConfigs.getByName("release")', source, count=1)
+          gradle.write_text(source, encoding="utf-8")
+          PY
       - name: Resolve dependencies
         run: flutter pub get
 
@@ -156,13 +202,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/NOVA.apk
-          test -s dist/NOVA.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/nova.apk
+          test -s dist/nova.apk
 
       - name: Upload NOVA APK
         uses: actions/upload-artifact@v4
         with:
-          name: NOVA-Android-APK
-          path: dist/NOVA.apk
+          name: nova.apk
+          path: dist/nova.apk
           if-no-files-found: error
           retention-days: 14
