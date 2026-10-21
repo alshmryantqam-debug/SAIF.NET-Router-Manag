@@ -8,6 +8,7 @@ import '../widgets/glass_card.dart';
 import 'hotspot_screen.dart';
 import 'cyber_defense_screen.dart';
 import 'quantum_domination_screen.dart';
+import 'btest_command_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
@@ -322,6 +323,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   label: const Text(
                     'درع الحماية السيبراني',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF27C9FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(color: Color(0xFF00D9FF), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BtestCommandScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.speed_rounded, color: Color(0xFF00D9FF)),
+                  label: const Text(
+                    'مفاعل قياس سعة الاتصال',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00D9FF)),
                   ),
                 ),
               ),
