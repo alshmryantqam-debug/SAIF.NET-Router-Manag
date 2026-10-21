@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/connection_provider.dart';
-import '../providers/dashboard_provider.dart';
+import '../providers/live_dashboard_provider.dart';
+import '../widgets/live_gauge_chart.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 import 'hotspot_screen.dart';
@@ -28,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<DashboardProvider>().startPolling();
+      context.read<LiveDashboardProvider>().startPolling();
     });
   }
 
@@ -41,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final connProvider = context.watch<ConnectionProvider>();
-    final dashProvider = context.watch<DashboardProvider>();
+    final dashProvider = context.watch<LiveDashboardProvider>();
 
     final double totalRam = double.tryParse(dashProvider.totalMemory) ?? 0;
     final double freeRam = double.tryParse(dashProvider.freeMemory) ?? 0;
@@ -49,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final double ramUsagePercent = totalRam > 0
         ? (usedRam / totalRam).clamp(0.0, 1.0).toDouble()
         : 0.0;
-    final double cpuPercent = ((double.tryParse(dashProvider.cpuLoad) ?? 0) / 100)
+    final double cpuPercent = ((dashProvider.cpuLoad) / 100)
         .clamp(0.0, 1.0)
         .toDouble();
     final double cpuValue =
@@ -142,6 +143,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
+              if (dashProvider.hasError)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4D67).withOpacity(.10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFF4D67).withOpacity(.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cloud_off_rounded, color: Color(0xFFFF4D67)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          dashProvider.errorMessage,
+                          style: const TextStyle(color: Color(0xFFFF8091), fontSize: 12),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'إعادة المحاولة',
+                        onPressed: dashProvider.fetchResources,
+                        icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFF4D67)),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 24),
               const Text(
                 'مراقبة الموارد (مباشر)',
@@ -156,74 +185,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: GlassCard(
-                      child: Column(
-                        children: [
-                          const Text('المعالج (CPU)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: AppTheme.textSecondary)),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 90,
-                            width: 90,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox.expand(
-                                  child: CircularProgressIndicator(
-                                    value: cpuPercent,
-                                    strokeWidth: 8,
-                                    backgroundColor: AppTheme.backgroundColor,
-                                    color: _getColorForUsage(cpuValue),
-                                  ),
-                                ),
-                                Text('${cpuValue.toStringAsFixed(0)}%',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textPrimary,
-                                    )),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: LiveGaugeChart(
+                      title: 'المعالج (CPU)',
+                      percentage: cpuPercent,
+                      activeColor: const Color(0xFF00E5FF),
+                      isOffline: dashProvider.hasError,
+                      size: 94,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: GlassCard(
-                      child: Column(
-                        children: [
-                          const Text('الذاكرة (RAM)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: AppTheme.textSecondary)),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 90,
-                            width: 90,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox.expand(
-                                  child: CircularProgressIndicator(
-                                    value: ramUsagePercent,
-                                    strokeWidth: 8,
-                                    backgroundColor: AppTheme.backgroundColor,
-                                    color: _getColorForUsage(ramUsagePercent * 100),
-                                  ),
-                                ),
-                                Text('${(ramUsagePercent * 100).toStringAsFixed(0)}%',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textPrimary,
-                                    )),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: LiveGaugeChart(
+                      title: 'الذاكرة (RAM)',
+                      percentage: ramUsagePercent,
+                      activeColor: const Color(0xFFE5C158),
+                      isOffline: dashProvider.hasError,
+                      size: 94,
                     ),
                   ),
                 ],
