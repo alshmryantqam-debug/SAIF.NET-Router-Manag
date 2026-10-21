@@ -44,7 +44,7 @@ class LiveGaugeChart extends StatelessWidget {
             width: size,
             height: size,
             child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(end: value),
+              tween: Tween<double>(begin: 0, end: value),
               duration: const Duration(milliseconds: 650),
               curve: Curves.easeOutCubic,
               builder: (context, animatedValue, _) => CustomPaint(
