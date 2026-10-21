@@ -7,6 +7,7 @@ import 'interfaces_screen.dart';
 import 'cyber_shield_screen.dart';
 import 'hotspot_operations_screen.dart';
 import 'wan_ttl_screen.dart';
+import 'terminal_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'queues_screen.dart';
 import 'settings_screen.dart';
@@ -25,7 +26,7 @@ class ToolsScreen extends StatelessWidget {
       _Tool('الإعدادات', 'اتصال الراوتر وأمان التطبيق', Icons.settings_outlined, const SettingsScreen()),
       _Tool('محسّن الألعاب', 'توجيه الألعاب وتقليل التأخير', Icons.sports_esports_outlined),
       _Tool('النسخ الاحتياطي', 'حفظ واستعادة الإعدادات', Icons.backup_outlined),
-      _Tool('سجل الاتصال', 'سجل الأحداث والاتصالات', Icons.receipt_long_outlined),
+      _Tool('غرفة العمليات', 'سجل الراوتر وأوامر آمنة', Icons.receipt_long_outlined, const TerminalScreen()),
       _Tool('الفوترة', 'الاشتراكات والإيرادات', Icons.payments_outlined),
     ];
     return Scaffold(appBar: AppBar(title: const Text('الأدوات')), body: RefreshIndicator(
