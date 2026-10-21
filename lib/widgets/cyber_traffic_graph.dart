@@ -86,9 +86,9 @@ class _GraphPainter extends CustomPainter {
     final stepX = values.length > 1 ? size.width / (values.length - 1) : size.width;
     final points = <Offset>[];
     for (var i = 0; i < values.length; i++) {
-      final value = values[i].isFinite ? values[i].clamp(0.0, maxValue) : 0.0;
+      final value = values[i].isFinite ? values[i].clamp(0.0, maxValue).toDouble() : 0.0;
       final y = size.height - (value / maxValue) * (size.height - 8) - 4;
-      points.add(Offset(i * stepX, y.clamp(0.0, size.height)));
+      points.add(Offset(i * stepX, y.clamp(0.0, size.height).toDouble()));
     }
     if (points.length == 1) points.insert(0, Offset(0, points.first.dy));
 
