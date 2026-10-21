@@ -314,6 +314,29 @@ class RouterosRestApi {
     }
   }
 
+  /// Attempts a short Torch snapshot through RouterOS REST. Torch is a
+  /// continuously-running CLI tool on some RouterOS builds; unsupported REST
+  /// command execution is reported to the UI rather than replaced with mock data.
+  Future<List<dynamic>> getTorchPackets(String interfaceName) async {
+    final name = interfaceName.trim();
+    if (name.isEmpty) {
+      throw const RouterOsApiException('اختر واجهة صحيحة.');
+    }
+    try {
+      final response = await _dio.post<dynamic>(
+        'tool/torch',
+        data: {'interface': name, 'duration': '1s'},
+        options: Options(receiveTimeout: const Duration(seconds: 8)),
+      );
+      _throwIfRouterOsError(response.data);
+      if (response.data is List) return List<dynamic>.from(response.data as List);
+      if (response.data is Map) return [Map<String, dynamic>.from(response.data as Map)];
+      throw const RouterOsApiException('صيغة بيانات Torch غير مدعومة من الراوتر.');
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
+    }
+  }
+
   Future<List<dynamic>> getInterfaces() async {
     final response = await _dio.get('interface');
     return List<dynamic>.from(response.data as List);
