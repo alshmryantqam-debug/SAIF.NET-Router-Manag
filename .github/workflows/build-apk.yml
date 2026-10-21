@@ -227,16 +227,16 @@ jobs:
           gradle = Path("android/app/build.gradle.kts")
           source = gradle.read_text(encoding="utf-8")
           source, count = re.subn(
-              r'(release\\s*\\{[^}]*?)signingConfig\\s*=\\s*signingConfigs\\.getByName\\("debug"\\)',
-              r'\\1signingConfig = null',
+              r'(release\s*\{[^}]*?)signingConfig\s*=\s*signingConfigs\.getByName\("debug"\)',
+              r'\1signingConfig = null',
               source,
               count=1,
               flags=re.S,
           )
           if count == 0:
               source, count = re.subn(
-                  r'(release\\s*\\{[^}]*?)signingConfig\\s*=\\s*signingConfigs\\.getByName\\("release"\\)',
-                  r'\\1signingConfig = null',
+                  r'(release\s*\{[^}]*?)signingConfig\s*=\s*signingConfigs\.getByName\("release"\)',
+                  r'\1signingConfig = null',
                   source,
                   count=1,
                   flags=re.S,
