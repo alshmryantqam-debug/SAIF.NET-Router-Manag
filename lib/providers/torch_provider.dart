@@ -30,7 +30,7 @@ class TorchPacket {
       if (value == null) return 0;
       final text = value.toString().trim().toLowerCase();
       // RouterOS rates may be numeric bps or formatted strings such as 1.5Mbps.
-      final match = RegExp(r'^([0-9]+(?:\\.[0-9]+)?)\\s*([kmgt]?)').firstMatch(text);
+      final match = RegExp(r'^([0-9]+(?:\.[0-9]+)?)\s*([kmgt]?)').firstMatch(text);
       if (match == null) return 0;
       final amount = double.tryParse(match.group(1) ?? '') ?? 0;
       final unit = match.group(2) ?? '';
