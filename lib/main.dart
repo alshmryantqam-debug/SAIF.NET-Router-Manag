@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/connection_provider.dart';
+import 'providers/btest_provider.dart';
 import 'providers/cyber_defense_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/hotspot_provider.dart';
@@ -51,6 +52,11 @@ void main() {
           create: (context) => QuantumDominationProvider(context.read<ConnectionProvider>()),
           update: (context, connectionProvider, quantumProvider) =>
               quantumProvider ?? QuantumDominationProvider(connectionProvider),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, BtestProvider>(
+          create: (context) => BtestProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, btestProvider) =>
+              btestProvider ?? BtestProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, SessionsProvider>(
           create: (context) =>
