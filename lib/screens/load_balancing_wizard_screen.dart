@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/pcc_configuration.dart';
+import '../models/router_config.dart';
 import '../providers/connection_provider.dart';
 import '../providers/load_balancing_provider.dart';
 import '../services/mikrotik_service.dart';
