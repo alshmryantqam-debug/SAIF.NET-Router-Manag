@@ -216,6 +216,36 @@ jobs:
           source = re.sub(r'release\s*\{', 'release {\n            signingConfig = signingConfigs.getByName("release")', source, count=1)
           gradle.write_text(source, encoding="utf-8")
           PY
+      - name: Disable APK signing for test builds
+        if: steps.signing.outputs.signed != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          gradle = Path("android/app/build.gradle.kts")
+          source = gradle.read_text(encoding="utf-8")
+          source, count = re.subn(
+              r'(release\\s*\\{[^}]*?)signingConfig\\s*=\\s*signingConfigs\\.getByName\\("debug"\\)',
+              r'\\1signingConfig = null',
+              source,
+              count=1,
+              flags=re.S,
+          )
+          if count == 0:
+              source, count = re.subn(
+                  r'(release\\s*\\{[^}]*?)signingConfig\\s*=\\s*signingConfigs\\.getByName\\("release"\\)',
+                  r'\\1signingConfig = null',
+                  source,
+                  count=1,
+                  flags=re.S,
+              )
+          if count == 0:
+              raise SystemExit("Could not disable release signing for test APK.")
+          gradle.write_text(source, encoding="utf-8")
+          PY
+
       - name: Build one universal APK
         shell: bash
         env:
