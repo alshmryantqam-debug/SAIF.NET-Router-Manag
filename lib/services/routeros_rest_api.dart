@@ -272,6 +272,34 @@ class RouterosRestApi {
     }
   }
 
+
+  /// Update an existing PPP secret without touching unrelated settings.
+  Future<void> updatePppSecret(String id, Map<String, dynamic> fields) async {
+    if (id.trim().isEmpty) throw const RouterOsApiException('معرّف الحساب غير صالح.');
+    try {
+      final response = await _dio.patch<dynamic>('ppp/secret/${Uri.encodeComponent(id)}', data: fields);
+      _throwIfRouterOsError(response.data);
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
+    }
+  }
+
+  Future<void> updateHotspotUser(String id, Map<String, dynamic> fields) async {
+    if (id.trim().isEmpty) throw const RouterOsApiException('معرّف حساب نقطة الاتصال غير صالح.');
+    try {
+      final response = await _dio.patch<dynamic>('ip/hotspot/user/${Uri.encodeComponent(id)}', data: fields);
+      _throwIfRouterOsError(response.data);
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
+    }
+  }
+
+  Future<List<dynamic>> getProfiles({required bool pppoe}) async {
+    final response = await _dio.get<dynamic>(pppoe ? 'ppp/profile' : 'ip/hotspot/user/profile');
+    if (response.data is! List) throw const FormatException('تنسيق قائمة الباقات غير متوقع.');
+    return List<dynamic>.from(response.data as List);
+  }
+
   /// Read DHCP server configuration and RouterOS logs for evidence-based review.
   Future<List<dynamic>> getDhcpServers() async {
     final response = await _dio.get<dynamic>('ip/dhcp-server');
