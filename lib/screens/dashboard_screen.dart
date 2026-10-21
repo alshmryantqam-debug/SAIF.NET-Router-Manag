@@ -11,6 +11,7 @@ import 'quantum_domination_screen.dart';
 import 'btest_command_screen.dart';
 import 'torch_analyzer_screen.dart';
 import 'surgical_operations_screen.dart';
+import 'autonomous_ai_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
@@ -429,6 +430,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(color: Color(0xFF00E5FF), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AutonomousAiScreen()),
+                  ),
+                  icon: const Icon(Icons.psychology_alt_rounded, color: Color(0xFF00E5FF)),
+                  label: const Text(
+                    'أوراكل | التشخيص الذاتي للشبكة',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00E5FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 height: 60,
