@@ -35,7 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    context.read<DashboardProvider>().stopPolling();
+    context.read<LiveDashboardProvider>().stopPolling();
     super.dispose();
   }
 
@@ -53,8 +53,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final double cpuPercent = ((dashProvider.cpuLoad) / 100)
         .clamp(0.0, 1.0)
         .toDouble();
-    final double cpuValue =
-        dashProvider.cpuLoad.clamp(0.0, 100.0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
