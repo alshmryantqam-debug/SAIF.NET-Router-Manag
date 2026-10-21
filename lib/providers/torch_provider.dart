@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'connection_provider.dart';
+import '../models/mikrotik_torch_model.dart';
 
 /// A row returned by the router's Torch command. These are real router rows,
 /// never locally fabricated packet data.
@@ -24,26 +25,34 @@ class TorchPacket {
   });
 
   factory TorchPacket.fromRouter(Map<String, dynamic> row, String interfaceName) {
+    final normalized = MikrotikTorch.fromMap(row);
     double rate(dynamic value) {
       if (value == null) return 0;
-      final text = value.toString().trim();
-      final match = RegExp(r'^([0-9]+(?:\\.[0-9]+)?)\\s*([kKmMgG]?)').firstMatch(text);
+      final text = value.toString().trim().toLowerCase();
+      // RouterOS rates may be numeric bps or formatted strings such as 1.5Mbps.
+      final match = RegExp(r'^([0-9]+(?:\\.[0-9]+)?)\\s*([kmgt]?)').firstMatch(text);
       if (match == null) return 0;
       final amount = double.tryParse(match.group(1) ?? '') ?? 0;
-      switch ((match.group(2) ?? '').toLowerCase()) {
-        case 'g': return amount * 1000;
-        case 'm': return amount;
-        case 'k': return amount / 1000;
-        default: return amount / 1000000;
+      final unit = match.group(2) ?? '';
+      if (text.contains('bps')) {
+        switch (unit) {
+          case 'g': return amount * 1000;
+          case 'm': return amount;
+          case 'k': return amount / 1000;
+          default: return amount / 1000000;
+        }
       }
+      // Bare RouterOS numeric tx/rx values are bits per second.
+      return amount / 1000000;
     }
+
     return TorchPacket(
-      srcIp: (row['src-address'] ?? row['src-address4'] ?? row['src'] ?? '—').toString(),
-      dstIp: (row['dst-address'] ?? row['dst-address4'] ?? row['dst'] ?? '—').toString(),
-      protocol: (row['protocol'] ?? 'غير معروف').toString().toUpperCase(),
-      port: (row['dst-port'] ?? row['port'] ?? '—').toString(),
-      txSpeed: rate(row['tx-rate'] ?? row['tx']),
-      rxSpeed: rate(row['rx-rate'] ?? row['rx']),
+      srcIp: normalized.srcAddress,
+      dstIp: normalized.dstAddress,
+      protocol: normalized.protocol.toUpperCase(),
+      port: normalized.port,
+      txSpeed: rate(normalized.txSpeed),
+      rxSpeed: rate(normalized.rxSpeed),
       interfaceName: interfaceName,
     );
   }
