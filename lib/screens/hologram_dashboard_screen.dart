@@ -7,9 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/connection_provider.dart';
 import '../widgets/particle_matrix_bg.dart';
 
-const _cyan = Color(0xFF00E5FF);
-const _pink = Color(0xFFFF4081);
-const _panel = Color(0x99101829);
+const _cyan = Color(0xFF9C8AFF);
+const _pink = Color(0xFFFF78B7);
+const _panel = Color(0xD910172B);
 
 class HologramDashboardScreen extends ConsumerStatefulWidget {
   const HologramDashboardScreen({super.key});
@@ -49,7 +49,7 @@ class _HologramDashboardScreenState
     final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070B14),
+      backgroundColor: const Color(0xFF070914),
       body: ParticleMatrixBg(
         child: SafeArea(
           child: CustomScrollView(
@@ -95,7 +95,7 @@ class _HologramDashboardScreenState
                                 ),
                                 SizedBox(height: 3),
                                 Text(
-                                  'HOLOGRAPHIC COMMAND CENTER',
+                                  'مركز القيادة الهولوغرافي',
                                   style: TextStyle(
                                     color: _cyan,
                                     fontSize: 9,
@@ -111,7 +111,7 @@ class _HologramDashboardScreenState
                       ),
                       const SizedBox(height: 27),
                       const Text(
-                        'NETWORK OVERVIEW',
+                        'نظرة عامة على الشبكة',
                         style: TextStyle(
                           color: Colors.white60,
                           fontSize: 11,
@@ -121,7 +121,7 @@ class _HologramDashboardScreenState
                       ),
                       const SizedBox(height: 7),
                       const Text(
-                        'Live system telemetry',
+                        'مراقبة النظام لحظياً',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -131,8 +131,8 @@ class _HologramDashboardScreenState
                       const SizedBox(height: 5),
                       Text(
                         connection.isConnected
-                            ? 'Connected router • refreshing every 5 seconds'
-                            : 'Connect to a MikroTik router to view live telemetry',
+                            ? 'الراوتر متصل • تحديث كل 5 ثوانٍ'
+                            : 'اتصل براوتر MikroTik لمشاهدة بيانات الشبكة الحية',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.55),
                           fontSize: 12,
@@ -151,7 +151,7 @@ class _HologramDashboardScreenState
                       loading: () => const _LoadingState(),
                       error: (error, stack) => _OfflineState(
                         connected: connection.isConnected,
-                        message: connection.error ?? 'Router telemetry unavailable',
+                        message: connection.error ?? 'بيانات الراوتر غير متاحة حالياً',
                       ),
                       data: (data) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +162,7 @@ class _HologramDashboardScreenState
                               const SizedBox(width: 9),
                               const Expanded(
                                 child: Text(
-                                  'CORE SYSTEM TELEMETRY',
+                                  'مؤشرات النظام الأساسية',
                                   style: TextStyle(
                                     color: _cyan,
                                     fontSize: 10,
@@ -177,7 +177,7 @@ class _HologramDashboardScreenState
                           const SizedBox(height: 24),
                           identity.when(
                             data: (value) => _TelemetryRow(
-                              title: 'ROUTER IDENTITY',
+                              title: 'هوية الراوتر',
                               value: value.isNotEmpty
                                   ? value
                                   : (data.boardName.isNotEmpty
@@ -186,29 +186,29 @@ class _HologramDashboardScreenState
                               icon: Icons.memory,
                             ),
                             loading: () => _TelemetryRow(
-                              title: 'ROUTER IDENTITY',
+                              title: 'هوية الراوتر',
                               value: data.boardName.isEmpty
-                                  ? 'Loading…'
+                                  ? 'جارٍ التحميل…'
                                   : data.boardName,
                               icon: Icons.memory,
                             ),
                             error: (_, __) => _TelemetryRow(
-                              title: 'ROUTER IDENTITY',
+                              title: 'هوية الراوتر',
                               value: data.boardName.isEmpty
-                                  ? 'Unavailable'
+                                  ? 'غير متاح'
                                   : data.boardName,
                               icon: Icons.memory,
                             ),
                           ),
                           const SizedBox(height: 19),
                           _TelemetryRow(
-                            title: 'SYSTEM UPTIME',
+                            title: 'مدة تشغيل النظام',
                             value: data.uptime.isEmpty ? '—' : data.uptime,
                             icon: Icons.schedule,
                           ),
                           const SizedBox(height: 19),
                           _TelemetryRow(
-                            title: 'ROUTEROS VERSION',
+                            title: 'إصدار RouterOS',
                             value: data.version.isEmpty ? '—' : data.version,
                             icon: Icons.verified_outlined,
                           ),
@@ -219,7 +219,7 @@ class _HologramDashboardScreenState
                             children: [
                               Expanded(
                                 child: _MetricGauge(
-                                  title: 'CPU LOAD',
+                                  title: 'حمل المعالج',
                                   value: data.cpuLoad.clamp(0, 100).toDouble(),
                                   valueText: '${data.cpuLoad}%',
                                   color: _pink,
@@ -228,7 +228,7 @@ class _HologramDashboardScreenState
                               const SizedBox(width: 18),
                               Expanded(
                                 child: _MetricGauge(
-                                  title: 'MEMORY USED',
+                                  title: 'استخدام الذاكرة',
                                   value: data.memUsedPercent,
                                   valueText: '${data.memUsedPercent.round()}%',
                                   color: _cyan,
@@ -250,7 +250,7 @@ class _HologramDashboardScreenState
                       Expanded(
                         child: _MiniTelemetryCard(
                           icon: Icons.memory,
-                          label: 'CPU CORES',
+                          label: 'أنوية المعالج',
                           value: resource.when(
                             data: (d) => d.cpuCount.toString(),
                             loading: () => '—',
@@ -263,7 +263,7 @@ class _HologramDashboardScreenState
                       Expanded(
                         child: _MiniTelemetryCard(
                           icon: Icons.sd_storage_outlined,
-                          label: 'FREE MEMORY',
+                          label: 'الذاكرة الحرة',
                           value: resource.when(
                             data: (d) => '${d.freeMemory} MB',
                             loading: () => '—',
