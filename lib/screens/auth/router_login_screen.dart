@@ -122,9 +122,9 @@ class _RouterLoginScreenState extends ConsumerState<RouterLoginScreen>
       restPort: _version == RouterVersion.v7
           ? port
           : (_useSsl ? 443 : 80),
-      apiPort: _version == RouterVersion.v7
-          ? 8728
-          : port,
+      apiPort: _version == RouterVersion.v6
+          ? port
+          : (_useSsl ? 8729 : 8728),
       version: _version,
       useSsl: _useSsl,
     );
