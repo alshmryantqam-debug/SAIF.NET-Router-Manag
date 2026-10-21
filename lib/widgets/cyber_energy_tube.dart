@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'nova_ui_kit.dart';
+
 /// Glassmorphism WAN editor. Changes are delegated to the Riverpod screen;
 /// this component does not make router requests itself.
 class CyberEnergyTube extends StatelessWidget {
@@ -301,28 +303,10 @@ class CyberEnergyTube extends StatelessWidget {
                     ),
                   ],
                 ),
-                SliderTheme(
-                  data: SliderThemeData(
-                    trackHeight: 3,
-                    activeTrackColor: energyColor,
-                    inactiveTrackColor: Colors.white.withOpacity(0.11),
-                    thumbColor: Colors.white,
-                    overlayColor: energyColor.withOpacity(0.18),
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 9,
-                      elevation: 10,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 19,
-                    ),
-                  ),
-                  child: Slider(
-                    value: boundedWeight,
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    onChanged: onChanged,
-                  ),
+                NovaWeightRail(
+                  value: boundedWeight,
+                  onChanged: onChanged,
+                  color: energyColor,
                 ),
                 Text(
                   'الوزن نسبة توزيع اتصالات وليس قياساً مباشراً لسرعة الخط.',

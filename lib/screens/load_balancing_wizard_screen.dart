@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +8,7 @@ import '../providers/load_balancing_provider.dart';
 import '../services/mikrotik_service.dart';
 import '../widgets/cyber_energy_tube.dart';
 import '../widgets/cyber_reactor_core.dart';
+import '../widgets/nova_ui_kit.dart';
 import '../widgets/particle_matrix_bg.dart';
 
 const Color _fusionCyan = Color(0xFF00E5FF);
@@ -109,17 +108,21 @@ class _LoadBalancingWizardScreenState
           style: TextStyle(color: Colors.white70, height: 1.5),
         ),
         actions: [
-          TextButton(
+          NovaCyberButton(
+            text: 'إلغاء',
+            icon: Icons.close_rounded,
+            color: _fusionCyan,
+            height: 48,
+            compact: true,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('إلغاء'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: _fusionPink,
-              foregroundColor: Colors.white,
-            ),
+          NovaCyberButton(
+            text: 'أوافق على التنفيذ',
+            icon: Icons.bolt_rounded,
+            color: _fusionPink,
+            height: 48,
+            compact: true,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('أوافق على التنفيذ'),
           ),
         ],
       ),
@@ -304,35 +307,19 @@ class _LoadBalancingWizardScreenState
                     const SizedBox(height: 2),
                     _weightShareText(fusion.wans[index], totalWeight),
                   ],
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: _fusionCyan.withOpacity(0.55)),
-                      foregroundColor: _fusionCyan,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
+                  NovaCyberButton(
+                    text: fusion.wans.length >= 4
+                        ? 'MAX WAN SOURCES REACHED'
+                        : 'ADD NEW WAN SOURCE',
+                    icon: Icons.add_link_rounded,
+                    color: _fusionCyan,
                     onPressed: candidates.isEmpty ||
                             fusion.wans.length >= 4 ||
                             !connection.isConnected
                         ? null
-                        : () {
-                            ref.read(loadBalancingProvider.notifier).addWan(
-                                  candidates.first,
-                                );
-                          },
-                    icon: const Icon(Icons.add_link_rounded),
-                    label: Text(
-                      fusion.wans.length >= 4
-                          ? 'MAX WAN SOURCES REACHED'
-                          : 'ADD NEW WAN SOURCE',
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                        : () => ref
+                            .read(loadBalancingProvider.notifier)
+                            .addWan(candidates.first),
                   ),
                   if (connection.isConnected && interfaces.isNotEmpty) ...[
                     const SizedBox(height: 8),
@@ -477,67 +464,16 @@ class _LoadBalancingWizardScreenState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: 60,
-                    child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _fusionPink.withOpacity(0.16),
-                    disabledBackgroundColor: Colors.white.withOpacity(0.04),
-                    foregroundColor: _fusionPink,
-                    disabledForegroundColor: Colors.white24,
-                    elevation: 0,
-                    side: BorderSide(
-                      color: canApply ? _fusionPink : Colors.white24,
-                      width: 1.8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: canApply ? () => _executeFusion(fusion) : null,
-                  child: fusion.isApplying
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: _fusionPink,
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'APPLYING PCC TO ROUTER...',
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.bolt_rounded, size: 28),
-                            SizedBox(width: 10),
-                            Flexible(
-                              child: Text(
-                                'ENGAGE CORE FUSION',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                    ),
+                  NovaCyberButton(
+                    height: 64,
+                    text: fusion.isApplying
+                        ? 'APPLYING PCC TO ROUTER...'
+                        : 'ENGAGE CORE FUSION',
+                    icon: fusion.isApplying
+                        ? Icons.sync_rounded
+                        : Icons.electric_bolt_rounded,
+                    color: _fusionPink,
+                    onPressed: canApply ? () => _executeFusion(fusion) : null,
                   ),
                   if (fusion.isApplying && fusion.statusMessage != null) ...[
                     const SizedBox(height: 10),
@@ -812,26 +748,11 @@ class _LoadBalancingWizardScreenState
     required Widget child,
     Color borderColor = const Color(0x553D8FFF),
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xCC0B1020),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: borderColor, width: 1.1),
-            boxShadow: [
-              BoxShadow(
-                color: borderColor.withOpacity(0.07),
-                blurRadius: 20,
-              ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
+    return NovaTechPanel(
+      accentColor: borderColor,
+      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.zero,
+      child: child,
     );
   }
 
