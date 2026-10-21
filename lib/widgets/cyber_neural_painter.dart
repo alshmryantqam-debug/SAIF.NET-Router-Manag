@@ -42,7 +42,7 @@ class _CyberNeuralPainterState extends State<CyberNeuralPainter>
   List<NeuralNode> _generateNodes(int count) {
     final random = Random(42);
     return List<NeuralNode>.generate(
-      count.clamp(0, 120),
+      count.clamp(0, 120).toInt(),
       (_) => NeuralNode(
         random.nextDouble(),
         random.nextDouble(),
