@@ -194,6 +194,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/roles',
       ),
       _ToolEntry(
+        title: 'مركز القيادة المداري',
+        subtitle: 'رادار الارتباط ولوحات حالة الباكهول',
+        icon: Icons.satellite_alt_rounded,
+        accent: _cyan,
+        route: '/orbital-uplink',
+      ),
+      _ToolEntry(
         title: 'خزنة البيانات الكميّة',
         subtitle: 'واجهة النسخ الاحتياطي وسجل العمليات',
         icon: Icons.enhanced_encryption_rounded,
