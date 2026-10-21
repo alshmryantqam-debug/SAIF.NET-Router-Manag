@@ -128,7 +128,7 @@ class LiveDashboardProvider extends ChangeNotifier {
           : 'تعذر الوصول إلى الراوتر؛ سيُعاد الاتصال تلقائياً.');
     } catch (error) {
       _markFailure(error is FormatException
-          ? error.message
+          ? error.message.toString()
           : 'تعذر قراءة بيانات الراوتر؛ ستتم إعادة المحاولة.');
     } finally {
       _requestInFlight = false;
