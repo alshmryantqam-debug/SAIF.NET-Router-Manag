@@ -11,6 +11,7 @@ import 'providers/pppoe_provider.dart';
 import 'providers/quantum_domination_provider.dart';
 import 'providers/sessions_provider.dart';
 import 'providers/surgical_provider.dart';
+import 'providers/oracle_provider.dart';
 import 'providers/torch_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
@@ -64,6 +65,11 @@ void main() {
           create: (context) => TorchProvider(context.read<ConnectionProvider>()),
           update: (context, connectionProvider, torchProvider) =>
               torchProvider ?? TorchProvider(connectionProvider),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, OracleProvider>(
+          create: (context) => OracleProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, oracleProvider) =>
+              oracleProvider ?? OracleProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, SurgicalProvider>(
           create: (context) => SurgicalProvider(context.read<ConnectionProvider>()),
