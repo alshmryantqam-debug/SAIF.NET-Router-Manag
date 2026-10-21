@@ -143,17 +143,25 @@ class _LoadBalancingWizardScreenState
           rollbackPlanAvailable: _rollbackReady,
         );
     if (!mounted) return;
-    if (success) {
-      final message = ref.read(loadBalancingProvider).message ??
-          'اكتمل تنفيذ PCC والتحقق منه.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: const Color(0xFF174C48),
-          duration: const Duration(seconds: 6),
+    final latest = ref.read(loadBalancingProvider);
+    final status = latest.statusMessage ?? '';
+    final message = success
+        ? 'CORE FUSION COMPLETE: ALL ROUTES STABILIZED'
+        : 'FUSION FAILED: ' + (latest.error ?? status);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      );
-    }
+        backgroundColor: success ? _fusionCyan : _fusionRed,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+    if (success) Navigator.of(context).pop();
   }
 
   @override
@@ -476,10 +484,14 @@ class _LoadBalancingWizardScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _fusionPink.withOpacity(0.16),
                     disabledBackgroundColor: Colors.white.withOpacity(0.04),
@@ -536,7 +548,21 @@ class _LoadBalancingWizardScreenState
                             ),
                           ],
                         ),
-                ),
+                    ),
+                  ),
+                  if (fusion.isApplying && fusion.statusMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      fusion.statusMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFE040FB),
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
