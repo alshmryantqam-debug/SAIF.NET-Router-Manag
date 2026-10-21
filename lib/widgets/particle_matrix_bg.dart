@@ -16,7 +16,7 @@ class ParticleMatrixBg extends StatefulWidget {
   const ParticleMatrixBg({
     super.key,
     required this.child,
-    this.particleCount = 40,
+    this.particleCount = 30,
   });
 
   final Widget child;
@@ -97,7 +97,7 @@ class _ParticleMatrixBgState extends State<ParticleMatrixBg>
         return Stack(
           fit: StackFit.expand,
           children: [
-            const ColoredBox(color: Color(0xFF070B14)),
+            const ColoredBox(color: Color(0xFF070914)),
             Positioned.fill(
               child: IgnorePointer(
                 child: AnimatedBuilder(
@@ -148,15 +148,15 @@ class _ParticlePainter extends CustomPainter {
 
   final List<Particle> particles;
 
-  static const Color _cyan = Color(0xFF00E5FF);
+  static const Color _cyan = Color(0xFF8C78FF);
 
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
-      ..color = _cyan.withOpacity(0.3)
+      ..color = _cyan.withOpacity(0.24)
       ..strokeWidth = 1;
     final dotPaint = Paint()
-      ..color = _cyan.withOpacity(0.8)
+      ..color = const Color(0xFF8DEBFF).withOpacity(0.78)
       ..style = PaintingStyle.fill;
 
     for (var i = 0; i < particles.length; i++) {
