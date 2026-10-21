@@ -95,6 +95,36 @@ class RouterosRestApi {
     return List<dynamic>.from(response.data as List);
   }
 
+  /// Active RouterOS PPPoE sessions (not configured PPP secrets).
+  Future<List<dynamic>> getActiveHotspotSessions() async {
+    final response = await _dio.get<dynamic>('ip/hotspot/active');
+    if (response.data is! List) {
+      throw const FormatException('Unexpected RouterOS hotspot active response.');
+    }
+    return List<dynamic>.from(response.data as List);
+  }
+
+  /// Removes an active session by its RouterOS internal ID (for example *3).
+  Future<bool> removeActivePPPoESession(String id) async {
+    if (id.trim().isEmpty) return false;
+    try {
+      await _dio.delete<dynamic>('ppp/active/${Uri.encodeComponent(id)}');
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
+  Future<bool> removeActiveHotspotSession(String id) async {
+    if (id.trim().isEmpty) return false;
+    try {
+      await _dio.delete<dynamic>('ip/hotspot/active/${Uri.encodeComponent(id)}');
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
   Future<bool> createPPPoEUser(
       String username, String password, String profile) async {
     try {
