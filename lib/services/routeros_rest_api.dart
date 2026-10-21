@@ -7,6 +7,15 @@ import 'package:dio/io.dart';
 import '../models/router_config.dart';
 import 'router_operation_guard.dart';
 
+/// Sanitized RouterOS command failure. Never includes request headers or secrets.
+class RouterOsApiException implements Exception {
+  final String message;
+  const RouterOsApiException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 /// RouterOS REST client. Self-signed certificates are accepted only for the
 /// configured router endpoint; do not use this on an untrusted network.
 class RouterosRestApi {
@@ -112,24 +121,91 @@ class RouterosRestApi {
     return List<dynamic>.from(response.data as List);
   }
 
-  /// Removes an active session by its RouterOS internal ID (for example *3).
-  Future<bool> removeActivePPPoESession(String id) async {
-    if (id.trim().isEmpty) return false;
+  /// RouterOS REST normally reports failures with an HTTP error body; the
+  /// parser also recognises !trap payloads should a proxy/API adapter return one.
+  void _throwIfRouterOsError(dynamic data) {
+    if (data is Map) {
+      final trap = data['!trap'];
+      if (trap != null) {
+        String detail = 'رفض الراوتر تنفيذ الأمر.';
+        if (trap is List && trap.isNotEmpty && trap.first is Map) {
+          final first = Map<String, dynamic>.from(trap.first as Map);
+          detail = (first['message'] ?? first['category'] ?? detail).toString();
+        } else if (trap is Map) {
+          detail = (trap['message'] ?? trap['category'] ?? detail).toString();
+        }
+        throw RouterOsApiException('خطأ من الراوتر: $detail');
+      }
+      final error = data['error'];
+      final detail = data['detail'] ?? data['message'];
+      if (error != null || detail != null) {
+        throw RouterOsApiException(
+          'رفض الراوتر الأمر: ${(detail ?? error).toString()}',
+        );
+      }
+    }
+    if (data is List) {
+      for (final row in data) {
+        if (row is Map && (row.containsKey('!trap') ||
+            row.containsKey('error') || row.containsKey('detail'))) {
+          _throwIfRouterOsError(row);
+        }
+      }
+    }
+  }
+
+  String _describeDioFailure(DioException error) {
+    final data = error.response?.data;
     try {
-      await _dio.delete<dynamic>('ppp/active/${Uri.encodeComponent(id)}');
+      _throwIfRouterOsError(data);
+    } on RouterOsApiException {
+      rethrow;
+    } catch (_) {
+      // Continue with a safe generic message if the error body is malformed.
+    }
+    switch (error.response?.statusCode) {
+      case 401:
+      case 403:
+        return 'رفض الراوتر العملية: تحقق من صلاحيات المستخدم.';
+      case 404:
+        return 'لم تعد الجلسة موجودة على الراوتر.';
+      case 400:
+        return 'رفض الراوتر صيغة الأمر أو معرّف الجلسة.';
+      default:
+        if (error.response == null) return 'تعذر الوصول إلى الراوتر أو انتهت مهلة الاتصال.';
+        return 'فشل أمر الراوتر (رمز ${error.response?.statusCode ?? 'غير معروف'}).';
+    }
+  }
+
+  /// Disconnects a live session using its RouterOS internal ID.
+  /// Throws a sanitised RouterOsApiException on API/permission/trap failures.
+  Future<bool> removeActivePPPoESession(String id) async {
+    if (id.trim().isEmpty) {
+      throw const RouterOsApiException('معرّف جلسة الاتصال غير صالح.');
+    }
+    try {
+      final response = await _dio.delete<dynamic>(
+        'ppp/active/${Uri.encodeComponent(id)}',
+      );
+      _throwIfRouterOsError(response.data);
       return true;
-    } on DioException {
-      return false;
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
     }
   }
 
   Future<bool> removeActiveHotspotSession(String id) async {
-    if (id.trim().isEmpty) return false;
+    if (id.trim().isEmpty) {
+      throw const RouterOsApiException('معرّف جلسة نقطة الاتصال غير صالح.');
+    }
     try {
-      await _dio.delete<dynamic>('ip/hotspot/active/${Uri.encodeComponent(id)}');
+      final response = await _dio.delete<dynamic>(
+        'ip/hotspot/active/${Uri.encodeComponent(id)}',
+      );
+      _throwIfRouterOsError(response.data);
       return true;
-    } on DioException {
-      return false;
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
     }
   }
 
