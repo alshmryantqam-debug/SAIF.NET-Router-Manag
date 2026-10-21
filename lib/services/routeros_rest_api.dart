@@ -96,6 +96,14 @@ class RouterosRestApi {
   }
 
   /// Active RouterOS PPPoE sessions (not configured PPP secrets).
+  Future<List<dynamic>> getActivePPPoESessions() async {
+    final response = await _dio.get<dynamic>('ppp/active');
+    if (response.data is! List) {
+      throw const FormatException('Unexpected RouterOS PPPoE active response.');
+    }
+    return List<dynamic>.from(response.data as List);
+  }
+
   Future<List<dynamic>> getActiveHotspotSessions() async {
     final response = await _dio.get<dynamic>('ip/hotspot/active');
     if (response.data is! List) {
