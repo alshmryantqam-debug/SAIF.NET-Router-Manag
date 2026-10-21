@@ -11,12 +11,14 @@ import 'terminal_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'queues_screen.dart';
 import 'settings_screen.dart';
+import 'network_audit_screen.dart';
 
 class ToolsScreen extends StatelessWidget {
   const ToolsScreen({super.key});
   @override
   Widget build(BuildContext context) {
     final items = <_Tool>[
+      _Tool('مركز تدقيق الشبكة', 'فحص CPU والمنافذ والمسارات وNAT وPCC والسجل', Icons.health_and_safety_rounded, const NetworkAuditScreen()),
       _Tool('إعدادات WAN وTTL', 'حالة الواجهات والمسارات وقاعدة TTL', Icons.alt_route_rounded, const WanTtlScreen()),
       _Tool('إدارة الهوتسبوت المتقدمة', 'الجلسات والبروفايلات وتصدير البطاقات', Icons.wifi_tethering_rounded, const HotspotOperationsScreen()),
       _Tool('درع الحماية السيبراني', 'قواعد الجدار الناري والعناوين المحظورة', Icons.shield_outlined, const CyberShieldScreen()),
@@ -29,29 +31,62 @@ class ToolsScreen extends StatelessWidget {
       _Tool('غرفة العمليات', 'سجل الراوتر وأوامر آمنة', Icons.receipt_long_outlined, const TerminalScreen()),
       _Tool('الفوترة', 'الاشتراكات والإيرادات', Icons.payments_outlined),
     ];
-    return Scaffold(appBar: AppBar(title: const Text('الأدوات')), body: RefreshIndicator(
-      onRefresh: () async { await HapticFeedback.lightImpact(); },
-      child: GridView.builder(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.all(16), itemCount: items.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: .9),
-        itemBuilder: (context, i) {
-          final item = items[i];
-          return Opacity(opacity: item.screen == null ? .6 : 1, child: GlassCard(padding: EdgeInsets.zero, child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: item.screen == null ? null : () async {
-              await HapticFeedback.lightImpact();
-              if (!context.mounted) return;
-              Navigator.push(context, PageRouteBuilder<void>(pageBuilder: (_, __, ___) => item.screen!, transitionDuration: const Duration(milliseconds: 260), transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child)));
-            },
-            child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: NovaColors.primary.withOpacity(.14), borderRadius: BorderRadius.circular(14)), child: Icon(item.icon, color: NovaColors.primary)), const Spacer(), if (item.screen == null) const StatusPill('قريباً', NovaColors.warn)]),
-              const Spacer(), Text(item.title, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 6), Text(item.subtitle, style: const TextStyle(fontSize: 12, color: NovaColors.muted)),
-            ])),
-          )));
-        },
+    return Scaffold(
+      appBar: AppBar(title: const Text('الأدوات')),
+      body: RefreshIndicator(
+        onRefresh: () async { await HapticFeedback.lightImpact(); },
+        child: GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: .9,
+          ),
+          itemBuilder: (context, i) {
+            final item = items[i];
+            return Opacity(
+              opacity: item.screen == null ? .6 : 1,
+              child: GlassCard(
+                padding: EdgeInsets.zero,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: item.screen == null ? null : () async {
+                    await HapticFeedback.lightImpact();
+                    if (!context.mounted) return;
+                    Navigator.push(context, PageRouteBuilder<void>(
+                      pageBuilder: (_, __, ___) => item.screen!,
+                      transitionDuration: const Duration(milliseconds: 260),
+                      transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
+                    ));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: NovaColors.primary.withOpacity(.14), borderRadius: BorderRadius.circular(14)),
+                          child: Icon(item.icon, color: NovaColors.primary),
+                        ),
+                        const Spacer(),
+                        if (item.screen == null) const StatusPill('قريباً', NovaColors.warn),
+                      ]),
+                      const Spacer(),
+                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 6),
+                      Text(item.subtitle, style: const TextStyle(fontSize: 12, color: NovaColors.muted)),
+                    ]),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
-    ));
+    );
   }
 }
+
 class _Tool {
   final String title, subtitle;
   final IconData icon;
