@@ -23,7 +23,6 @@ class StealthShieldProvider extends ChangeNotifier {
 
   String? _interfaceName;
   String? _originalMac;
-  String? _appliedMac;
 
   static const String _ruleComment = 'NOVA_WAN_TTL_SHIELD';
 
@@ -70,7 +69,6 @@ class StealthShieldProvider extends ChangeNotifier {
       // can still be reversed from the screen.
       _interfaceName = name;
       _originalMac = currentMac;
-      _appliedMac = mac;
       _terminalLog = 'جارٍ تطبيق MAC على $name. قد ينقطع اتصال الإدارة عبر هذا المنفذ.';
       notifyListeners();
       await dio.post<dynamic>('interface/ethernet/set', data: {
@@ -167,7 +165,6 @@ class StealthShieldProvider extends ChangeNotifier {
       _isShieldActive = false;
       _interfaceName = null;
       _originalMac = null;
-      _appliedMac = null;
       _terminalLog = 'تم التحقق من إزالة قاعدة TTL واستعادة MAC الذي قرأه التطبيق قبل التغيير.';
     } catch (error) {
       _terminalLog = 'تعذرت الاستعادة الكاملة: ${_safeError(error)}. قد يكون جزء من الإعداد قد تغيّر؛ افحص الراوتر قبل المتابعة.';
