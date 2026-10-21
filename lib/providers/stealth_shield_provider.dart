@@ -36,12 +36,9 @@ class StealthShieldProvider extends ChangeNotifier {
       _setLog('فشل: اتصل بالراوتر أولاً. لم يتم تغيير أي إعداد.');
       return;
     }
-    if (name.isEmpty || !RegExp(r'^[A-Za-z0-9_.-]{1, interface 32}$').hasMatch(name)) {
-      // Keep the validation conservative; interface names are sent as REST values.
-      if (name.isEmpty || name.length > 32 || name.contains(RegExp(r'[^A-Za-z0-9_.-]'))) {
-        _setLog('اسم المنفذ غير صالح.');
-        return;
-      }
+    if (name.isEmpty || name.length > 32 || name.contains(RegExp(r'[^A-Za-z0-9_.-]'))) {
+      _setLog('اسم المنفذ غير صالح.');
+      return;
     }
     if (!RegExp(r'^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$').hasMatch(mac) ||
         mac == '00:00:00:00:00:00' ||
@@ -56,7 +53,7 @@ class StealthShieldProvider extends ChangeNotifier {
     try {
       final response = await dio.get<dynamic>('interface/ethernet');
       final rows = _asRows(response.data);
-      final target = rows.where((row) => row['name']?.toString() == name).firstOrNull;
+      final target = _firstWhereOrNull(rows, (row) => row['name']?.toString() == name);
       if (target == null || target['.id'] == null) {
         throw Exception('لم يتم العثور على منفذ Ethernet باسم $name.');
       }
@@ -95,7 +92,7 @@ class StealthShieldProvider extends ChangeNotifier {
       });
 
       final verifyInterfaces = _asRows((await dio.get<dynamic>('interface/ethernet')).data);
-      final verified = verifyInterfaces.where((row) => row['name']?.toString() == name).firstOrNull;
+      final verified = _firstWhereOrNull(verifyInterfaces, (row) => row['name']?.toString() == name);
       final verifyRules = _asRows((await dio.get<dynamic>('ip/firewall/mangle')).data);
       final ruleExists = verifyRules.any((row) =>
           row['comment']?.toString() == _ruleComment &&
@@ -156,7 +153,7 @@ class StealthShieldProvider extends ChangeNotifier {
       });
 
       final interfaces = _asRows((await dio.get<dynamic>('interface/ethernet')).data);
-      final current = interfaces.where((row) => row['name']?.toString() == name).firstOrNull;
+      final current = _firstWhereOrNull(interfaces, (row) => row['name']?.toString() == name);
       final remainingRules = _asRows((await dio.get<dynamic>('ip/firewall/mangle')).data)
           .any((row) => row['comment']?.toString() == _ruleComment);
       if (current?['mac-address']?.toString().toUpperCase() != _originalMac!.toUpperCase() ||
@@ -187,6 +184,16 @@ class StealthShieldProvider extends ChangeNotifier {
     return data.whereType<Map>()
         .map((row) => Map<String, dynamic>.from(row))
         .toList(growable: false);
+  }
+
+  Map<String, dynamic>? _firstWhereOrNull(
+    List<Map<String, dynamic>> rows,
+    bool Function(Map<String, dynamic>) test,
+  ) {
+    for (final row in rows) {
+      if (test(row)) return row;
+    }
+    return null;
   }
 
   String _safeError(Object error) {
