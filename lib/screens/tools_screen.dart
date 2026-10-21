@@ -57,6 +57,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/pppoe',
       ),
       _ToolEntry(
+        title: 'المصفوفة العصبية PPPoE',
+        subtitle: 'تصوير بصري حي للعُقد والنبضات',
+        icon: Icons.hub_rounded,
+        accent: _cyan,
+        route: '/pppoe/neural-matrix',
+      ),
+      _ToolEntry(
         title: 'Hotspot',
         subtitle: 'المستخدمون والجلسات النشطة',
         icon: Icons.wifi_rounded,
