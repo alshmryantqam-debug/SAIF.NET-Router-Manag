@@ -79,7 +79,7 @@ class _ReactorPainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final coreRadius = 37.0;
-    final maxRadius = math.min(size.width * 0.42, size.height * 0.43);
+    final maxRadius = math.min(size.width * 0.42, size.height * 0.43).toDouble();
 
     // شبكة خلفية خافتة تمنح المفاعل عمقاً بصرياً.
     final gridPaint = Paint()
