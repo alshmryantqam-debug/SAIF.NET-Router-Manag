@@ -7,7 +7,8 @@ import '../models/hotspot_user.dart';
 import '../providers/connection_provider.dart';
 import '../theme.dart';
 import '../widgets/primary_button.dart';
-import '../widgets/ultra_input.dart';
+import '../widgets/cyber_text_field.dart';
+import '../widgets/particle_matrix_bg.dart';
 
 class AddHotspotUserScreen extends ConsumerStatefulWidget {
   const AddHotspotUserScreen({super.key});
@@ -87,14 +88,27 @@ class _AddHotspotUserScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('مستخدم Hotspot جديد'),
-        backgroundColor: AppColors.bgCard,
+        title: const Text(
+          'HOTSPOT ACCESS NODE',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+            shadows: [Shadow(color: Color(0xFF00E5FF), blurRadius: 10)],
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
+      body: ParticleMatrixBg(
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _card(
@@ -102,7 +116,7 @@ class _AddHotspotUserScreenState
                 Row(
                   children: [
                     Expanded(
-                      child: UltraInput(
+                      child: CyberTextField(
                         controller: _nameCtrl,
                         label: 'اسم المستخدم',
                         icon: Icons.person_outline_rounded,
@@ -138,7 +152,7 @@ class _AddHotspotUserScreenState
                         controller: _passCtrl,
                         label: 'كلمة المرور',
                         icon: Icons.lock_outline_rounded,
-                        obscure: _obscure,
+                        isPassword: _obscure,
                         enabled: !_busy,
                         validator: (v) {
                           if ((v ?? '').isEmpty) {
@@ -253,6 +267,8 @@ class _AddHotspotUserScreenState
               onPressed: _save,
             ),
           ],
+        ),
+          ),
         ),
       ),
     );
