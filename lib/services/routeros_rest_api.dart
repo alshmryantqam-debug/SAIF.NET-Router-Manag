@@ -196,6 +196,48 @@ class RouterosRestApi {
     }
   }
 
+  /// Read DHCP server configuration and RouterOS logs for evidence-based review.
+  Future<List<dynamic>> getDhcpServers() async {
+    final response = await _dio.get<dynamic>('ip/dhcp-server');
+    if (response.data is! List) {
+      throw const FormatException('Unexpected DHCP server response.');
+    }
+    return List<dynamic>.from(response.data as List);
+  }
+
+  Future<List<dynamic>> getRouterLogs() async {
+    final response = await _dio.get<dynamic>('log');
+    if (response.data is! List) {
+      throw const FormatException('Unexpected RouterOS log response.');
+    }
+    return List<dynamic>.from(response.data as List);
+  }
+
+  /// Applies an ARP mode only to a selected bridge or Ethernet interface.
+  /// This can interrupt clients if static ARP entries are not complete.
+  Future<bool> setInterfaceArpMode({
+    required String id,
+    required String type,
+    required String mode,
+  }) async {
+    if (id.trim().isEmpty ||
+        (mode != 'enabled' && mode != 'reply-only') ||
+        (type != 'bridge' && type != 'ether')) {
+      return false;
+    }
+
+    final menu = type == 'bridge' ? 'interface/bridge' : 'interface/ethernet';
+    try {
+      final response = await _dio.patch<dynamic>(
+        '$menu/${Uri.encodeComponent(id)}',
+        data: {'arp': mode},
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException {
+      return false;
+    }
+  }
+
   Future<List<dynamic>> getInterfaces() async {
     final response = await _dio.get('interface');
     return List<dynamic>.from(response.data as List);
