@@ -1117,14 +1117,19 @@ class PccFusionEngine {
         wans.fold<int>(0, (sum, wan) => sum + wan.weight.round());
     final tableNames = <String>[];
     final markNames = <String>[];
-    for (final wan in wans) {
+    for (var wanIndex = 0; wanIndex < wans.length; wanIndex++) {
+      final wan = wans[wanIndex];
       final compact = wan.interfaceName
           .toLowerCase()
           .replaceAll(RegExp(r'[^a-z0-9]'), '');
-      final shortName =
-          compact.length > 6 ? compact.substring(0, 6) : compact;
-      tableNames.add('sfpc_' + shortName + '_' + generation);
-      markNames.add('sfpc_' + shortName + '_' + generation + '_c');
+      final shortName = compact.isEmpty
+          ? 'wan'
+          : (compact.length > 6 ? compact.substring(0, 6) : compact);
+      // The index keeps table/mark names unique even for similar names,
+      // e.g. starlink-east and starlink-west.
+      final uniqueSuffix = '_' + wanIndex.toString() + '_' + generation;
+      tableNames.add('sfpc_' + shortName + uniqueSuffix);
+      markNames.add('sfpc_' + shortName + uniqueSuffix + '_c');
     }
 
     final created = <Map<String, String>>[];
@@ -1280,7 +1285,8 @@ class PccFusionEngine {
           final gatewayIndex = (tableIndex + offset) % wans.length;
           stagedRoutes.add(await addItem('/ip/route', <String, dynamic>{
             'dst-address': '0.0.0.0/0',
-            'gateway': wans[gatewayIndex].gateway.trim() + '@main',
+            'gateway': wans[gatewayIndex].gateway.trim() + '%' +
+                wans[gatewayIndex].interfaceName.trim(),
             'routing-table': tableNames[tableIndex],
             'check-gateway': 'ping',
             'distance': (offset + 1).toString(),
@@ -1300,7 +1306,8 @@ class PccFusionEngine {
       for (var index = 0; index < wans.length; index++) {
         stagedRoutes.add(await addItem('/ip/route', <String, dynamic>{
           'dst-address': '0.0.0.0/0',
-          'gateway': wans[index].gateway.trim(),
+          'gateway': wans[index].gateway.trim() + '%' +
+              wans[index].interfaceName.trim(),
           'check-gateway': 'ping',
           'distance': (mainDefaultBaseDistance + index + 1).toString(),
           'disabled': 'true',
