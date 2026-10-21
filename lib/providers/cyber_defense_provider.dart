@@ -63,17 +63,17 @@ class CyberDefenseProvider extends ChangeNotifier {
     _notice = '';
     notifyListeners();
     try {
-      await connection.fetchInterfaces();
       final results = await Future.wait<List<dynamic>>([
+        connection.getInterfacesFromRouter(),
         connection.getDhcpServers(),
         connection.getRouterLogs(),
       ]);
 
-      _interfaces = connection.interfaces
+      _interfaces = results[0]
           .whereType<Map>()
           .map((row) => Map<String, dynamic>.from(row))
           .toList(growable: false);
-      _dhcpServers = results[0]
+      _dhcpServers = results[1]
           .whereType<Map>()
           .map((row) => Map<String, dynamic>.from(row))
           .toList(growable: false);
@@ -87,7 +87,7 @@ class CyberDefenseProvider extends ChangeNotifier {
         'duplicate address',
         'dhcp server conflict',
       ];
-      _dhcpAlerts = results[1]
+      _dhcpAlerts = results[2]
           .whereType<Map>()
           .map((row) => Map<String, dynamic>.from(row))
           .where((row) {
