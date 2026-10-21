@@ -53,7 +53,7 @@ class QuantumDominationProvider extends ChangeNotifier {
 
   int? currentLimitMbps(TrafficCategory category) {
     final value = queueFor(category)?['max-limit']?.toString() ?? '';
-    final match = RegExp(r'^(\\d+(?:\\.\\d+)?)([kKmMgG]?)').firstMatch(value);
+    final match = RegExp(r'^(\d+(?:\.\d+)?)([kKmMgG]?)').firstMatch(value);
     if (match == null) return null;
     final amount = double.tryParse(match.group(1) ?? '');
     if (amount == null) return null;
