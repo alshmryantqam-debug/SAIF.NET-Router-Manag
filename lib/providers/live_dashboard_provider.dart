@@ -32,6 +32,9 @@ class LiveDashboardProvider extends ChangeNotifier {
   DateTime? get lastUpdated => _lastUpdated;
   String get boardName => routerModel;
   String get cpuLoadText => cpuLoad.toStringAsFixed(0);
+  // Compatibility aliases for the existing dashboard lifecycle.
+  void startPolling() => startLiveMonitoring();
+  void stopPolling() => stopLiveMonitoring();
   String get freeMemory => freeMemoryMB.toStringAsFixed(1);
   String get totalMemory => totalMemoryMB.toStringAsFixed(1);
   double get memoryUsagePercent => totalMemoryMB <= 0
