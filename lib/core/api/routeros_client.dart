@@ -68,16 +68,30 @@ class RestClient implements RouterOsClient {
 
   Future<dynamic> _send(String method, String path,
       {Object? data, Map<String, dynamic>? query}) async {
-    try {
-      final r = await _dio.request(
-        path.replaceFirst(RegExp(r'^/+'), ''),
-        data: data,
-        queryParameters: query,
-        options: Options(method: method),
-      );
-      return r.data;
-    } on DioException catch (e) {
-      throw _map(e);
+    // Retry read-only GETs only. Replaying mutations can duplicate live changes.
+    const maxReadAttempts = 3;
+    final canRetry = method.toUpperCase() == 'GET';
+    for (var attempt = 1; ; attempt++) {
+      try {
+        final r = await _dio.request(
+          path.replaceFirst(RegExp(r'^/+'), ''),
+          data: data,
+          queryParameters: query,
+          options: Options(method: method),
+        );
+        return r.data;
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        final transientStatus = status == 408 || status == 429 || status == 502 || status == 503 || status == 504;
+        final transientNetwork = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError;
+        if (canRetry && attempt < maxReadAttempts && (transientStatus || transientNetwork)) {
+          await Future<void>.delayed(Duration(milliseconds: 250 * attempt));
+          continue;
+        }
+        throw _map(e);
+      }
     }
   }
 
@@ -85,23 +99,39 @@ class RestClient implements RouterOsClient {
     final code = e.response?.statusCode;
     String? detail;
     final d = e.response?.data;
-    if (d is Map && d['detail'] != null) detail = d['detail'].toString();
-
+    if (d is Map) {
+      final raw = d['detail'] ?? d['message'];
+      if (raw != null) detail = raw.toString();
+    } else if (d is String && d.trim().isNotEmpty) {
+      detail = d.trim();
+    }
+    if (code == 400) {
+      return RosException(RosErrorType.server,
+          'رفض الراوتر الطلب: تحقق من الحقول والقيم وصيغة RouterOS${detail == null ? '' : '. التفاصيل: $detail'}', 400);
+    }
     if (code == 401) {
       return RosException(RosErrorType.auth, 'اسم المستخدم أو كلمة المرور غير صحيحة', 401);
     }
     if (code == 403) {
-      return RosException(RosErrorType.forbidden,
-          'صلاحيات الحساب لا تكفي. استخدم حساباً من المجموعة full', 403);
+      return RosException(RosErrorType.forbidden, 'صلاحيات الحساب لا تكفي لتنفيذ العملية المطلوبة.', 403);
     }
     if (code == 404) {
-      return RosException(RosErrorType.notFound, detail ?? 'المسار غير موجود في الراوتر', 404);
+      return RosException(RosErrorType.notFound, detail ?? 'المسار أو العنصر غير موجود في الراوتر', 404);
+    }
+    if (code == 408) {
+      return RosException(RosErrorType.timeout, 'انتهت مهلة طلب الراوتر (408)', 408);
+    }
+    if (code == 429) {
+      return RosException(RosErrorType.server, 'الراوتر يطلب تقليل سرعة الطلبات (429). حاول بعد قليل.', 429);
+    }
+    if (code != null && code >= 500) {
+      return RosException(RosErrorType.server, 'خطأ داخلي في الراوتر ($code)${detail == null ? '' : ': $detail'}', code);
     }
     if (code != null && code >= 400) {
-      return RosException(RosErrorType.server, detail ?? 'خطأ من الراوتر ($code)', code);
+      return RosException(RosErrorType.server, detail ?? 'رفض الراوتر الطلب ($code)', code);
     }
     if (e.error is HandshakeException) {
-      return RosException(RosErrorType.tls, 'فشل تفاوض TLS مع الراوتر');
+      return RosException(RosErrorType.tls, 'فشل تفاوض TLS مع الراوتر؛ تحقق من المنفذ والشهادة.');
     }
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
@@ -114,7 +144,6 @@ class RestClient implements RouterOsClient {
         return RosException(RosErrorType.unknown, e.message ?? 'خطأ غير معروف');
     }
   }
-
 
   @override
   Future<List<dynamic>> getPPPoESecrets() async => List<dynamic>.from(await get('ppp/secret') as List);
