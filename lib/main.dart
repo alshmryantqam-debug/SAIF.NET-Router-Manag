@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/connection_provider.dart';
+import 'providers/cyber_defense_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
@@ -38,6 +39,12 @@ void main() {
             pppoeProvider.updateConnectionProvider(connectionProvider);
             return pppoeProvider;
           },
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, CyberDefenseProvider>(
+          create: (context) =>
+              CyberDefenseProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, cyberDefenseProvider) =>
+              cyberDefenseProvider ?? CyberDefenseProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, SessionsProvider>(
           create: (context) =>
