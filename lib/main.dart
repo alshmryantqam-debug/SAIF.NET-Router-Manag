@@ -12,6 +12,7 @@ import 'providers/pppoe_provider.dart';
 import 'providers/quantum_domination_provider.dart';
 import 'providers/sessions_provider.dart';
 import 'providers/surgical_provider.dart';
+import 'providers/stealth_shield_provider.dart';
 import 'providers/oracle_provider.dart';
 import 'providers/torch_provider.dart';
 import 'screens/auth/app_login_screen.dart';
@@ -59,6 +60,12 @@ void main() {
               CyberDefenseProvider(context.read<ConnectionProvider>()),
           update: (context, connectionProvider, cyberDefenseProvider) =>
               cyberDefenseProvider ?? CyberDefenseProvider(connectionProvider),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, StealthShieldProvider>(
+          create: (context) =>
+              StealthShieldProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, shieldProvider) =>
+              shieldProvider ?? StealthShieldProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, QuantumDominationProvider>(
           create: (context) => QuantumDominationProvider(context.read<ConnectionProvider>()),
