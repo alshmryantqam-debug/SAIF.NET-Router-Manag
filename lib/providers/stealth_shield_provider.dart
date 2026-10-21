@@ -16,6 +16,7 @@ class StealthShieldProvider extends ChangeNotifier {
 
   bool _isShieldActive = false;
   bool get isShieldActive => _isShieldActive;
+  bool get canRestore => _originalMac != null && _interfaceName != null;
 
   String _terminalLog = 'النظام جاهز. اتصل بالراوتر قبل تنفيذ أي تغيير.';
   String get terminalLog => _terminalLog;
@@ -65,6 +66,11 @@ class StealthShieldProvider extends ChangeNotifier {
         throw Exception('MAC المدخل يطابق العنوان الحالي بالفعل.');
       }
 
+      // Keep the rollback data before the first write so a partial failure
+      // can still be reversed from the screen.
+      _interfaceName = name;
+      _originalMac = currentMac;
+      _appliedMac = mac;
       _terminalLog = 'جارٍ تطبيق MAC على $name. قد ينقطع اتصال الإدارة عبر هذا المنفذ.';
       notifyListeners();
       await dio.post<dynamic>('interface/ethernet/set', data: {
@@ -104,9 +110,6 @@ class StealthShieldProvider extends ChangeNotifier {
         throw Exception('لم يؤكد التحقق النهائي تطبيق كل الإعدادات. افحص إعدادات الراوتر قبل إعادة المحاولة.');
       }
 
-      _interfaceName = name;
-      _originalMac = currentMac;
-      _appliedMac = mac;
       _isShieldActive = true;
       _terminalLog = 'أكد الراوتر تغيير MAC وإضافة قاعدة TTL=65 على $name. هذا لا يضمن إخفاء الراوتر عن مزود الخدمة.';
     } catch (error) {
