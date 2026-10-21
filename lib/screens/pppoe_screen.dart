@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/pppoe_provider.dart';
+import 'active_sessions_screen.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -111,6 +112,15 @@ class _PppoeScreenState extends State<PppoeScreen> {
       appBar: AppBar(
         title: const Text('مشتركو PPPoE'),
         actions: [
+          IconButton(
+            tooltip: 'الجلسات النشطة',
+            icon: const Icon(Icons.devices_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ActiveSessionsScreen(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'تحديث القائمة',
             icon: const Icon(Icons.refresh),
