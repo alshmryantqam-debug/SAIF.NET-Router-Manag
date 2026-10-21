@@ -22,6 +22,7 @@ class MikrotikService {
     required String type,
     required String mode,
   }) => _api.setInterfaceArpMode(id: id, type: type, mode: mode);
+  Future<List<dynamic>> getTorchPackets(String interfaceName) => _api.getTorchPackets(interfaceName);
   Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
   Future<List<dynamic>> getIpAddresses() => _api.getIpAddresses();
   Future<List<dynamic>> getQueues() => _api.getQueues();
