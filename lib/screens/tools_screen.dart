@@ -143,6 +143,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/network-engineering',
       ),
       _ToolEntry(
+        title: 'السونار التكتيكي',
+        subtitle: 'تصويب الهدف وفحص الاتصال',
+        icon: Icons.radar_rounded,
+        accent: _cyan,
+        route: '/tactical-sonar',
+      ),
+      _ToolEntry(
         title: 'مفاعل دمج الخطوط (PCC)',
         subtitle: 'توزيع WAN بالأوزان وتطبيق محكوم',
         icon: Icons.merge_type_rounded,
