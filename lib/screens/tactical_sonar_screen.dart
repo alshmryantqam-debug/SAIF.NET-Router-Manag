@@ -134,14 +134,15 @@ class _TacticalSonarScreenState extends ConsumerState<TacticalSonarScreen> {
         return;
       }
 
-      final latency = _readMetric(result!, <String>['time', 'avg-rtt', 'rtt']) ?? '—';
+      final latency = _readMetric(result!, <String>['avg-rtt', 'time', 'rtt']) ?? '—';
+      final packetLoss = _readMetric(result, <String>['packet-loss']) ?? '—';
       final minLatency = _readMetric(result, <String>['min-rtt', 'min-rtt-time']) ?? latency;
       final maxLatency = _readMetric(result, <String>['max-rtt', 'max-rtt-time']) ?? latency;
       setState(() {
         _isPinging = false;
         _isTimeout = false;
         _latency = latency;
-        _packetDrop = '0%';
+        _packetDrop = packetLoss;
         _minLatency = minLatency;
         _maxLatency = maxLatency;
       });
