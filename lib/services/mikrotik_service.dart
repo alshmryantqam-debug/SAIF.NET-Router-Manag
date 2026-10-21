@@ -1080,6 +1080,13 @@ class PccFusionEngine {
       return value == 'true' || value == 'yes';
     }
 
+    bool isOwnedComment(Object? value) {
+      final comment = (value ?? '').toString();
+      return comment.startsWith('SAIFNET-PCC-') ||
+          comment == 'Nova_PCC' ||
+          comment.startsWith('Nova_PCC:');
+    }
+
     onProgress?.call('جارٍ فحص تعارض قواعد PCC الحالية...');
     final mangleRows = _asList(await _service._rest!.get('/ip/firewall/mangle'));
     final unmanagedPcc = mangleRows.where((row) {
@@ -1093,7 +1100,7 @@ class PccFusionEngine {
       final competesWithOutput = chain == 'output';
       return classifier.isNotEmpty &&
           !isDisabled(row) &&
-          !comment.startsWith('SAIFNET-PCC-') &&
+          !isOwnedComment(comment) &&
           (competesWithLan || competesWithOutput);
     }).toList();
     if (unmanagedPcc.isNotEmpty) {
@@ -1135,7 +1142,7 @@ class PccFusionEngine {
       Map<String, dynamic> body,
     ) async {
       final response = await _service._rest!.put(path, body);
-      final id = (_extractMap(response)['.id'] ?? '').toString();
+      final id = (_service._extractMap(response)['.id'] ?? '').toString();
       if (id.isEmpty) {
         throw RouterOsException(
           'لم يُرجع الراوتر معرّف العنصر الجديد في ' + path + '.',
@@ -1169,18 +1176,15 @@ class PccFusionEngine {
     }
 
     final oldMangle = mangleRows
-        .where((row) =>
-            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .where((row) => isOwnedComment(row['comment']))
         .toList();
     final oldNat = _asList(await _service._rest!.get('/ip/firewall/nat'))
-        .where((row) =>
-            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .where((row) => isOwnedComment(row['comment']))
         .toList();
     onProgress?.call('جارٍ فحص المسارات الحالية وتحديد أولوية Failover الآمنة...');
     final routeRows = _asList(await _service._rest!.get('/ip/route'));
     final oldRoutes = routeRows
-        .where((row) =>
-            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .where((row) => isOwnedComment(row['comment']))
         .toList();
     final unmanagedMainDefaults = routeRows.where((row) {
       final destination = (row['dst-address'] ?? '').toString();
@@ -1188,7 +1192,7 @@ class PccFusionEngine {
       final comment = (row['comment'] ?? '').toString();
       return destination == '0.0.0.0/0' &&
           (table.isEmpty || table == 'main') &&
-          !comment.startsWith('SAIFNET-PCC-') &&
+          !isOwnedComment(comment) &&
           !isDisabled(row);
     });
     final mainDefaultBaseDistance = unmanagedMainDefaults.fold<int>(
@@ -1231,17 +1235,23 @@ class PccFusionEngine {
     ]) {
       final comment = (row['comment'] ?? '').toString();
       const prefix = 'SAIFNET-PCC-';
-      if (!comment.startsWith(prefix)) continue;
-      final remaining = comment.substring(prefix.length);
-      final split = remaining.indexOf(':');
-      if (split > 0) oldGenerations.add(remaining.substring(0, split));
+      if (comment.startsWith(prefix)) {
+        final remaining = comment.substring(prefix.length);
+        final split = remaining.indexOf(':');
+        if (split > 0) oldGenerations.add(remaining.substring(0, split));
+      }
     }
     final priorTables = _asList(await _service._rest!.get('/routing/table'));
+    final legacyTableNames = oldRoutes
+        .map((row) => (row['routing-table'] ?? '').toString())
+        .where((name) => name.isNotEmpty && name != 'main')
+        .toSet();
     for (final row in priorTables) {
       final name = (row['name'] ?? '').toString();
       final id = (row['.id'] ?? '').toString();
       if (id.isNotEmpty &&
-          oldGenerations.any((old) => name.endsWith('_' + old))) {
+          (oldGenerations.any((old) => name.endsWith('_' + old)) ||
+              legacyTableNames.contains(name))) {
         oldTableCandidates.add(<String, String>{'name': name, 'id': id});
       }
     }
@@ -1254,7 +1264,7 @@ class PccFusionEngine {
           'name': name,
           'fib': 'yes',
         });
-        final id = (_extractMap(response)['.id'] ?? '').toString();
+        final id = (_service._extractMap(response)['.id'] ?? '').toString();
         if (id.isEmpty) {
           throw const RouterOsException(
             'لم يُرجع الراوتر معرّف جدول التوجيه.',

@@ -148,7 +148,6 @@ class LoadBalancingNotifier extends StateNotifier<LoadBalancingState> {
       statusMessage: 'جارٍ بدء محرك الدمج والتحقق من إعدادات الراوتر...',
       clearError: true,
       clearMessage: true,
-      clearStatusMessage: true,
     );
     try {
       final message = await PccFusionEngine(_ref.read(mikrotikProvider)).execute(
