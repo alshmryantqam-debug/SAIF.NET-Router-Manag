@@ -39,6 +39,8 @@ class ConnectionProvider extends ChangeNotifier {
   List<dynamic> get queues => _queues;
 
   /// Real active-session endpoints used by the sessions feature.
+  Future<List<dynamic>> getRawPPPoESecrets() => _service.getPPPoESecrets();
+  Future<List<dynamic>> getRawHotspotUsers() => _service.getHotspotUsers();
   Future<void> updatePppSecret(String id, Map<String, dynamic> fields) => _service.updatePppSecret(id, fields);
   Future<void> updateHotspotUser(String id, Map<String, dynamic> fields) => _service.updateHotspotUser(id, fields);
   Future<List<dynamic>> getProfiles({required bool pppoe}) => _service.getProfiles(pppoe: pppoe);
