@@ -25,6 +25,8 @@ class MikrotikService {
   Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
   Future<List<dynamic>> getIpAddresses() => _api.getIpAddresses();
   Future<List<dynamic>> getQueues() => _api.getQueues();
+  Future<List<dynamic>> getQueueTrees() => _api.getQueueTrees();
+  Future<void> updateQueueTree({required String id, String? maxLimit, int? priority}) => _api.updateQueueTree(id: id, maxLimit: maxLimit, priority: priority);
   Future<String> executeRawCommand(String command) => _api.executeRawCommand(command);
   Future<bool> runSystemScript(String script) => _api.runSystemScript(script);
   Future<List<dynamic>> getPPPoESecrets() => _api.getPPPoESecrets();
