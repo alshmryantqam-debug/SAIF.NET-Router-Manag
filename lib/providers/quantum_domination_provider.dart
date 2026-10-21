@@ -63,7 +63,7 @@ class QuantumDominationProvider extends ChangeNotifier {
       'k' => amount / 1000,
       _ => amount,
     };
-    return mbps.round().clamp(1, 1000);
+    return mbps.round().clamp(1, 1000).toInt();
   }
 
   int? currentPriority(TrafficCategory category) =>
