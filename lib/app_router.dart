@@ -29,6 +29,7 @@ import 'screens/radio_radar_screen.dart';
 import 'screens/network_engineering_screen.dart';
 import 'screens/nova_core_engine_screen.dart';
 import 'screens/orbital_uplink_screen.dart';
+import 'screens/god_mode_screen.dart';
 import 'screens/quantum_backup_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
@@ -181,6 +182,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const BusinessGate(
           allowed: [BusinessRole.manager, BusinessRole.technician],
           child: OrbitalUplinkScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/god-mode',
+        name: 'god-mode',
+        builder: (_, __) => const BusinessGate(
+          allowed: [BusinessRole.manager],
+          child: GodModeScreen(),
         ),
       ),
       GoRoute(
