@@ -53,6 +53,10 @@ class ConnectionProvider extends ChangeNotifier {
 
   Future<List<dynamic>> getInterfacesFromRouter() => _service.getInterfaces();
 
+  Future<List<dynamic>> getQueueTrees() => _service.getQueueTrees();
+
+  Future<void> updateQueueTree({required String id, String? maxLimit, int? priority}) => _service.updateQueueTree(id: id, maxLimit: maxLimit, priority: priority);
+
   Future<List<dynamic>> getDhcpServers() => _service.getDhcpServers();
 
   Future<List<dynamic>> getRouterLogs() => _service.getRouterLogs();
