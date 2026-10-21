@@ -54,7 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .clamp(0.0, 1.0)
         .toDouble();
     final double cpuValue =
-        (double.tryParse(dashProvider.cpuLoad) ?? 0).clamp(0.0, 100.0).toDouble();
+        dashProvider.cpuLoad.clamp(0.0, 100.0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
