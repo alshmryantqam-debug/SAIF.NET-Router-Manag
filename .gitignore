@@ -15,3 +15,24 @@ android/app/key.properties
 # IDE
 .idea/
 .vscode/
+
+# Test and analysis outputs
+coverage/
+test-results/
+test-results.xml
+junit*.xml
+*.lcov
+*.info
+
+# Generated release artifacts
+dist/
+*.apk
+*.aab
+
+# Generated platform folders (created only for local/CI builds)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
