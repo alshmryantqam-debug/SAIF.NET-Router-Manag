@@ -34,12 +34,12 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
 
   String _formatBytes(String value) {
     final bytes = int.tryParse(value) ?? 0;
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024) return '$bytes بايت';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} كيلوبايت';
     if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ميغابايت';
     }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} غيغابايت';
   }
 
   Future<void> _kick(SessionsProvider provider, MikrotikSession session) async {
