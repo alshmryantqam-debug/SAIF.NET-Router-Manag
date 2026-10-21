@@ -6,6 +6,7 @@ import 'providers/connection_provider.dart';
 import 'providers/btest_provider.dart';
 import 'providers/cyber_defense_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/live_dashboard_provider.dart';
 import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
 import 'providers/quantum_domination_provider.dart';
@@ -22,6 +23,14 @@ void main() {
       providers: [
         ChangeNotifierProvider<ConnectionProvider>(
           create: (_) => ConnectionProvider(),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, LiveDashboardProvider>(
+          create: (context) => LiveDashboardProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, liveProvider) {
+            if (liveProvider == null) return LiveDashboardProvider(connectionProvider);
+            liveProvider.updateConnectionProvider(connectionProvider);
+            return liveProvider;
+          },
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, DashboardProvider>(
           create: (context) =>
