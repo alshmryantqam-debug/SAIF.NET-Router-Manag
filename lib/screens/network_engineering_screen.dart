@@ -396,6 +396,7 @@ class _NetworkEngineeringScreenState extends ConsumerState<NetworkEngineeringScr
           const SizedBox(height: 16),
           _message(Icons.info_outline_rounded, connected ? 'الراوتر متصل. اقرأ الواجهات أولاً ثم تحقق يدويًا من أسماء الخطوط والبوابات.' : 'اتصل بالراوتر أولاً لتفعيل اكتشاف الواجهات وبيانات الشبكة.', connected ? AppColors.secondary : AppColors.warning),
         ],
+        ),
       ),
     );
   }
