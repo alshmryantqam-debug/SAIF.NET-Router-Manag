@@ -94,6 +94,7 @@ class MikrotikApiService {
 
   /// Runs a bounded ping burst and returns real summary metrics from RouterOS.
   /// RouterOS returns one row per probe; do not treat the first row as the whole test.
+  /// Runs a bounded ping burst and summarizes the probe rows returned by RouterOS.
   Future<Map<String, dynamic>?> pingTarget(
     String targetIp, {
     int count = 4,
@@ -110,7 +111,6 @@ class MikrotikApiService {
           '/tool/ping',
           data: {'address': target, 'count': count.toString()},
         ));
-
     final rows = data is List
         ? data.whereType<Map>().map(_mapCast).toList(growable: false)
         : data is Map
@@ -127,7 +127,68 @@ class MikrotikApiService {
           value == 'null') {
         return null;
       }
-      final match = RegExp(r'^([0-9]+(?:\\.[0-9]+)?)\\s*(us|µs|ms|s)?
+      final match = RegExp(r'^([0-9]+(?:\.[0-9]+)?)\s*(us|µs|ms|s)?$')
+          .firstMatch(value);
+      if (match == null) return null;
+      final number = double.tryParse(match.group(1)!);
+      if (number == null) return null;
+      switch (match.group(2)) {
+        case 'us':
+        case 'µs':
+          return number / 1000;
+        case 's':
+          return number * 1000;
+        default:
+          return number;
+      }
+    }
+
+    final successfulTimes = <double>[];
+    for (final row in rows) {
+      final status = row['status']?.toString().toLowerCase() ?? '';
+      if (status.contains('timeout') ||
+          status.contains('unreachable') ||
+          status == 'failed') {
+        continue;
+      }
+      final time = parseMilliseconds(row['time'] ?? row['avg-rtt'] ?? row['rtt']);
+      if (time != null) successfulTimes.add(time);
+    }
+
+    final sent = count;
+    final received = successfulTimes.length.clamp(0, sent);
+    final loss = ((sent - received) * 100 / sent).round();
+    String formatMs(double value) {
+      final formatted = value == value.roundToDouble()
+          ? value.toStringAsFixed(0)
+          : value.toStringAsFixed(2);
+      return formatted + 'ms';
+    }
+
+    if (successfulTimes.isEmpty) {
+      return <String, dynamic>{
+        'status': 'timeout',
+        'sent': sent,
+        'received': 0,
+        'packet-loss': loss.toString() + '%',
+      };
+    }
+
+    final sum = successfulTimes.fold<double>(0, (total, value) => total + value);
+    final average = sum / successfulTimes.length;
+    final minimum = successfulTimes.reduce((a, b) => a < b ? a : b);
+    final maximum = successfulTimes.reduce((a, b) => a > b ? a : b);
+    return <String, dynamic>{
+      'status': 'success',
+      'sent': sent,
+      'received': received,
+      'packet-loss': loss.toString() + '%',
+      'time': formatMs(average),
+      'avg-rtt': formatMs(average),
+      'min-rtt': formatMs(minimum),
+      'max-rtt': formatMs(maximum),
+    };
+  }
 
   Future<dynamic> _request(Future<Response<dynamic>> Function() request) async {
     if (_closed) throw const MikrotikApiException('الخدمة مغلقة.');
