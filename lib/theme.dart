@@ -3,47 +3,47 @@ import 'package:flutter/material.dart';
 /// Shared visual language for SAIF.NET. Kept dependency-free so the first
 /// frame can render without waiting for network or platform services.
 class AppColors {
-  static const bgDeep = Color(0xFF080711);
-  static const bgSurface = Color(0xFF11101D);
-  static const bgCard = Color(0xFF171525);
-  static const bgElevated = Color(0xFF211D34);
-  static const glass = Color(0xE6191728);
-  static const border = Color(0xFF302A45);
-  static const primary = Color(0xFFB18CFF);
-  static const primaryStrong = Color(0xFF8657F5);
-  static const secondary = Color(0xFF5DE1E6);
-  static const accent = Color(0xFFFFD18A);
-  static const success = Color(0xFF5BE0AD);
-  static const warning = Color(0xFFFFC36E);
-  static const danger = Color(0xFFFF718A);
-  static const textPrimary = Color(0xFFF8F6FF);
-  static const textSecondary = Color(0xFFC4BDD7);
-  static const textMuted = Color(0xFF8D859F);
+  static const bgDeep = Color(0xFF070914);
+  static const bgSurface = Color(0xFF0D1222);
+  static const bgCard = Color(0xFF121A2C);
+  static const bgElevated = Color(0xFF1B2540);
+  static const glass = Color(0xE6121B2D);
+  static const border = Color(0xFF2A3855);
+  static const primary = Color(0xFFB9A2FF);
+  static const primaryStrong = Color(0xFF7657F6);
+  static const secondary = Color(0xFF56E4F4);
+  static const accent = Color(0xFFFFD28A);
+  static const success = Color(0xFF54E6B0);
+  static const warning = Color(0xFFFFC56F);
+  static const danger = Color(0xFFFF6D91);
+  static const textPrimary = Color(0xFFF5F7FF);
+  static const textSecondary = Color(0xFFB8C4DA);
+  static const textMuted = Color(0xFF8493AD);
 }
 
 class AppGradients {
   static const glass = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF28213D), Color(0xFF151321)],
+    colors: [Color(0xFF202A46), Color(0xFF11182A)],
   );
 
   static const primary = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFFD2B8FF), Color(0xFF9B70FF), Color(0xFF6544D8)],
+    colors: [Color(0xFFD5C7FF), Color(0xFF9A7BFF), Color(0xFF5A43D6)],
   );
 
   static const command = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF30234D), Color(0xFF1A172C), Color(0xFF11101D)],
+    colors: [Color(0xFF273052), Color(0xFF151D31), Color(0xFF0D1222)],
   );
 
   static const aqua = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF75F0E7), Color(0xFF36B7C8)],
+    colors: [Color(0xFF8AF4F0), Color(0xFF42BBD9)],
   );
 }
 
