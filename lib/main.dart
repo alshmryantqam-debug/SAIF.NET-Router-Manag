@@ -10,6 +10,7 @@ import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
 import 'providers/quantum_domination_provider.dart';
 import 'providers/sessions_provider.dart';
+import 'providers/torch_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
 
@@ -57,6 +58,11 @@ void main() {
           create: (context) => BtestProvider(context.read<ConnectionProvider>()),
           update: (context, connectionProvider, btestProvider) =>
               btestProvider ?? BtestProvider(connectionProvider),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, TorchProvider>(
+          create: (context) => TorchProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, torchProvider) =>
+              torchProvider ?? TorchProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, SessionsProvider>(
           create: (context) =>
