@@ -53,6 +53,24 @@ class ConnectionProvider extends ChangeNotifier {
 
   Future<List<dynamic>> getInterfacesFromRouter() => _service.getInterfaces();
 
+  Future<List<dynamic>> runBandwidthTest({
+    required String address,
+    required String protocol,
+    required String user,
+    required String password,
+    required int packetSize,
+    required int durationSeconds,
+  }) => _service.runBandwidthTest(
+    address: address,
+    protocol: protocol,
+    user: user,
+    password: password,
+    packetSize: packetSize,
+    durationSeconds: durationSeconds,
+  );
+
+  void cancelBandwidthTest() => _service.cancelBandwidthTest();
+
   Future<List<dynamic>> getQueueTrees() => _service.getQueueTrees();
 
   Future<void> updateQueueTree({required String id, String? maxLimit, int? priority}) => _service.updateQueueTree(id: id, maxLimit: maxLimit, priority: priority);
