@@ -390,7 +390,7 @@ class RouterosRestApi {
         (maxLimit == null && priority == null) ||
         (priority != null && (priority < 1 || priority > 8)) ||
         (maxLimit != null &&
-            !RegExp(r'^\\d+(?:\\.\\d+)?[kKmMgG]?$', caseSensitive: false).hasMatch(maxLimit))) {
+            !RegExp(r'^\d+(?:\.\d+)?[kKmMgG]?$', caseSensitive: false).hasMatch(maxLimit))) {
       throw const RouterOsApiException('إعدادات شجرة الطوابير غير صالحة.');
     }
     final data = <String, dynamic>{};
