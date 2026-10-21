@@ -184,3 +184,34 @@ class RouterHealthAnalyzer {
     return List<RouterHealthFinding>.unmodifiable(findings);
   }
 }
+
+/// Runs the analyzer against live router reads. All calls are read-only.
+/// WAN names must be supplied from the operator's known configuration; the
+/// audit deliberately does not guess which interfaces carry production traffic.
+class RouterHealthAuditService {
+  const RouterHealthAuditService(
+    this._service, {
+    this._analyzer = const RouterHealthAnalyzer(),
+  });
+
+  final MikrotikService _service;
+  final RouterHealthAnalyzer _analyzer;
+
+  Future<List<RouterHealthFinding>> run({
+    Set<String> wanInterfaces = const <String>{},
+  }) async {
+    final results = await Future.wait<Object>([
+      _service.systemResource(),
+      _service.interfaces(),
+      _service.simpleQueues(),
+    ]);
+
+    return _analyzer.analyze(
+      resources: results[0] as SystemResource,
+      interfaces: results[1] as List<InterfaceInfo>,
+      queues: results[2] as List<Map<String, String>>,
+      wanInterfaces: wanInterfaces,
+    );
+  }
+}
+
