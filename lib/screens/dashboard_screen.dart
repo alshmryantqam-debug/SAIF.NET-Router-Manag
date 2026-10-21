@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/glass_card.dart';
 import 'hotspot_screen.dart';
 import 'cyber_defense_screen.dart';
+import 'quantum_domination_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
@@ -321,6 +322,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   label: const Text(
                     'درع الحماية السيبراني',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF27C9FF)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(color: Color(0xFFE040FB), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const QuantumDominationScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.hub_rounded, color: Color(0xFFE040FB)),
+                  label: const Text(
+                    'مصفوفة تدفق البيانات والتحكم',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE040FB)),
                   ),
                 ),
               ),
