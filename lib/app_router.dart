@@ -28,6 +28,7 @@ import 'screens/voltage_alarm_screen.dart';
 import 'screens/radio_radar_screen.dart';
 import 'screens/network_engineering_screen.dart';
 import 'screens/nova_core_engine_screen.dart';
+import 'screens/quantum_backup_screen.dart';
 import 'theme.dart';
 import 'widgets/main_shell.dart';
 
@@ -163,6 +164,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const BusinessGate(
           allowed: [BusinessRole.manager, BusinessRole.technician],
           child: LiveTrafficScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/quantum-backup',
+        name: 'quantum-backup',
+        builder: (_, __) => const BusinessGate(
+          allowed: [BusinessRole.manager],
+          child: QuantumBackupScreen(),
         ),
       ),
       GoRoute(
