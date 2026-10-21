@@ -38,6 +38,19 @@ class ConnectionProvider extends ChangeNotifier {
   List<dynamic> get ipAddresses => _ipAddresses;
   List<dynamic> get queues => _queues;
 
+  /// Real active-session endpoints used by the sessions feature.
+  Future<List<dynamic>> getActivePPPoESessions() =>
+      _service.getActivePPPoESessions();
+
+  Future<List<dynamic>> getActiveHotspotSessions() =>
+      _service.getActiveHotspotSessions();
+
+  Future<bool> removeActivePPPoESession(String id) =>
+      _service.removeActivePPPoESession(id);
+
+  Future<bool> removeActiveHotspotSession(String id) =>
+      _service.removeActiveHotspotSession(id);
+
   /// Connects to RouterOS REST over HTTPS and verifies credentials by reading
   /// /system/identity. Use SSL bypass only on a trusted local management LAN.
   ///
