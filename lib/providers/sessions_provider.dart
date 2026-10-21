@@ -57,8 +57,10 @@ class SessionsProvider extends ChangeNotifier {
           .where((session) => session.id.isNotEmpty)
           .toList(growable: false);
     } catch (error) {
+      _pppoeSessions = const [];
+      _hotspotSessions = const [];
+      _isConnected = false;
       _errorMessage = 'تعذر جلب الجلسات من الراوتر: ${_safeError(error)}';
-      // Keep the last known successful data, but surface the failure explicitly.
     } finally {
       _isLoading = false;
       notifyListeners();
