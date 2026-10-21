@@ -2,11 +2,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// مكعب هولوغرافي متحرك لواجهة خزنة النسخ الاحتياطي.
+/// مكعب هولوغرافي بحالات واضحة مع تحرير آمن لمتحكم الحركة.
 class CyberDataVaultCube extends StatefulWidget {
-  const CyberDataVaultCube({super.key, this.isProcessing = false});
+  const CyberDataVaultCube({
+    super.key,
+    this.isProcessing = false,
+    this.isSuccess = false,
+    this.isFailed = false,
+  });
 
   final bool isProcessing;
+  final bool isSuccess;
+  final bool isFailed;
 
   @override
   State<CyberDataVaultCube> createState() => _CyberDataVaultCubeState();
@@ -21,7 +28,7 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(seconds: widget.isProcessing ? 1 : 8),
+      duration: Duration(milliseconds: widget.isProcessing ? 800 : 12000),
     )..repeat();
   }
 
@@ -30,7 +37,9 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isProcessing != widget.isProcessing) {
       _controller
-        ..duration = Duration(seconds: widget.isProcessing ? 1 : 8)
+        ..duration = Duration(
+          milliseconds: widget.isProcessing ? 800 : 12000,
+        )
         ..repeat();
     }
   }
@@ -41,11 +50,23 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
     super.dispose();
   }
 
+  Color _color() {
+    if (widget.isFailed) return const Color(0xFFFF5252);
+    if (widget.isSuccess) return const Color(0xFF4CAE7D);
+    if (widget.isProcessing) return const Color(0xFFE040FB);
+    return const Color(0xFF00E5FF);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final color = widget.isProcessing
-        ? const Color(0xFFFF5252)
-        : const Color(0xFF00E5FF);
+    final color = _color();
+    final statusIcon = widget.isProcessing
+        ? Icons.sync_rounded
+        : widget.isFailed
+            ? Icons.error_outline_rounded
+            : widget.isSuccess
+                ? Icons.check_circle_outline_rounded
+                : Icons.lock_outline_rounded;
 
     return SizedBox(
       height: 190,
@@ -53,20 +74,20 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          final angle = _controller.value * math.pi * 2;
+          final angle = _controller.value * 2 * math.pi;
           return Stack(
             alignment: Alignment.center,
             children: [
               Container(
-                width: 120,
-                height: 120,
+                width: 155,
+                height: 155,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(widget.isProcessing ? 0.40 : 0.22),
+                      color: color.withOpacity(0.22),
                       blurRadius: 52,
-                      spreadRadius: 16,
+                      spreadRadius: 12,
                     ),
                   ],
                 ),
@@ -74,59 +95,35 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
               Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0025)
+                  ..setEntry(3, 2, 0.002)
                   ..rotateX(angle)
-                  ..rotateY(angle * 0.82)
-                  ..rotateZ(angle * 0.18),
-                child: SizedBox(
-                  width: 112,
-                  height: 112,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      _buildFace(color, 104, 0),
-                      _buildFace(color, 104, math.pi / 2),
-                      Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()..rotateX(math.pi / 2),
-                        child: _buildFace(color, 104, 0),
-                      ),
-                      Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()..rotateY(math.pi / 4),
-                        child: Container(
-                          width: 112,
-                          height: 112,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: color.withOpacity(0.45),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ..rotateY(angle)
+                  ..rotateZ(angle * 0.15),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    _buildCubeFace(color, 110, 0),
+                    _buildCubeFace(color, 110, math.pi / 2),
+                    Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()..rotateX(math.pi / 2),
+                      child: _buildCubeFace(color, 110, 0),
+                    ),
+                  ],
                 ),
               ),
               Container(
-                width: 54,
-                height: 54,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF080D19).withOpacity(0.88),
+                  color: const Color(0xE6090D18),
                   shape: BoxShape.circle,
-                  border: Border.all(color: color.withOpacity(0.8)),
+                  border: Border.all(color: color.withOpacity(0.85)),
                   boxShadow: [
-                    BoxShadow(color: color.withOpacity(0.35), blurRadius: 18),
+                    BoxShadow(color: color.withOpacity(0.24), blurRadius: 16),
                   ],
                 ),
-                child: Icon(
-                  widget.isProcessing
-                      ? Icons.enhanced_encryption_rounded
-                      : Icons.lock_outline_rounded,
-                  color: Colors.white,
-                  size: 29,
-                ),
+                child: Icon(statusIcon, color: Colors.white, size: 34),
               ),
             ],
           );
@@ -135,7 +132,7 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
     );
   }
 
-  Widget _buildFace(Color color, double size, double rotation) {
+  Widget _buildCubeFace(Color color, double size, double rotation) {
     return Transform(
       alignment: Alignment.center,
       transform: Matrix4.identity()..rotateY(rotation),
@@ -143,8 +140,8 @@ class _CyberDataVaultCubeState extends State<CyberDataVaultCube>
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.055),
-          border: Border.all(color: color.withOpacity(0.92), width: 1.4),
+          color: color.withOpacity(0.05),
+          border: Border.all(color: color.withOpacity(0.85), width: 1.7),
         ),
         child: CustomPaint(painter: _GridFacePainter(color: color)),
       ),
@@ -159,29 +156,14 @@ class _GridFacePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withOpacity(0.24)
-      ..strokeWidth = 0.7;
-    for (double x = 0; x <= size.width; x += 13) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final grid = Paint()
+      ..color = color.withOpacity(0.3)
+      ..strokeWidth = 0.8;
+    for (double x = 0; x < size.width; x += 22) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
     }
-    for (double y = 0; y <= size.height; y += 13) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-    final cornerPaint = Paint()
-      ..color = color
-      ..strokeWidth = 2;
-    const arm = 10.0;
-    for (final point in <Offset>[
-      Offset.zero,
-      Offset(size.width, 0),
-      Offset(0, size.height),
-      Offset(size.width, size.height),
-    ]) {
-      final dx = point.dx == 0 ? arm : -arm;
-      final dy = point.dy == 0 ? arm : -arm;
-      canvas.drawLine(point, point.translate(dx, 0), cornerPaint);
-      canvas.drawLine(point, point.translate(0, dy), cornerPaint);
+    for (double y = 0; y < size.height; y += 22) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
     }
   }
 
