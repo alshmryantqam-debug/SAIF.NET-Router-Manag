@@ -41,8 +41,18 @@ jobs:
         run: |
           if [ ! -f android/app/src/main/AndroidManifest.xml ]; then
             rm -rf android
-            flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .
+            flutter create --project-name nova --platforms=android --org net.saif .
           fi
+
+      - name: Set NOVA app identity
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          content = path.read_text()
+          content = content.replace('android:label="nova"', 'android:label="نوڨا NOVA"')
+          path.write_text(content)
+          PY
 
       - name: Ensure Android network permission
         run: |
