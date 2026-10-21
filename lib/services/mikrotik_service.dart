@@ -27,6 +27,22 @@ class MikrotikService {
   Future<List<dynamic>> getQueues() => _api.getQueues();
   Future<List<dynamic>> getQueueTrees() => _api.getQueueTrees();
   Future<void> updateQueueTree({required String id, String? maxLimit, int? priority}) => _api.updateQueueTree(id: id, maxLimit: maxLimit, priority: priority);
+  Future<List<dynamic>> runBandwidthTest({
+    required String address,
+    required String protocol,
+    required String user,
+    required String password,
+    required int packetSize,
+    required int durationSeconds,
+  }) => _api.runBandwidthTest(
+    address: address,
+    protocol: protocol,
+    user: user,
+    password: password,
+    packetSize: packetSize,
+    durationSeconds: durationSeconds,
+  );
+  void cancelBandwidthTest() => _api.cancelBandwidthTest();
   Future<String> executeRawCommand(String command) => _api.executeRawCommand(command);
   Future<bool> runSystemScript(String script) => _api.runSystemScript(script);
   Future<List<dynamic>> getPPPoESecrets() => _api.getPPPoESecrets();
