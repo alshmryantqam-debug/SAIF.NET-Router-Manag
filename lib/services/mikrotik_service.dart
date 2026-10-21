@@ -15,6 +15,13 @@ class MikrotikService {
   Future<bool> removeActivePPPoESession(String id) => _api.removeActivePPPoESession(id);
   Future<bool> removeActiveHotspotSession(String id) => _api.removeActiveHotspotSession(id);
   Future<bool> createPPPoEUser(String u, String p, String prof) => _api.createPPPoEUser(u, p, prof);
+  Future<List<dynamic>> getDhcpServers() => _api.getDhcpServers();
+  Future<List<dynamic>> getRouterLogs() => _api.getRouterLogs();
+  Future<bool> setInterfaceArpMode({
+    required String id,
+    required String type,
+    required String mode,
+  }) => _api.setInterfaceArpMode(id: id, type: type, mode: mode);
   Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
   Future<List<dynamic>> getIpAddresses() => _api.getIpAddresses();
   Future<List<dynamic>> getQueues() => _api.getQueues();
