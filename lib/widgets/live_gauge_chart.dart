@@ -21,7 +21,9 @@ class LiveGaugeChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final value = percentage.isFinite ? percentage.clamp(0.0, 1.0) : 0.0;
+    final double value = percentage.isFinite
+        ? percentage.clamp(0.0, 1.0).toDouble()
+        : 0.0;
     final color = isOffline ? const Color(0xFFFF4D67) : activeColor;
 
     return Container(
@@ -108,7 +110,7 @@ class _GaugePainter extends CustomPainter {
     canvas.drawArc(
       rect,
       -math.pi / 2,
-      math.pi * 2 * percentage.clamp(0.0, 1.0),
+      math.pi * 2 * percentage.clamp(0.0, 1.0).toDouble(),
       false,
       foreground,
     );
