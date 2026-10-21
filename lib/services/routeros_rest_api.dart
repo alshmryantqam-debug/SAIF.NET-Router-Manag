@@ -366,6 +366,81 @@ class RouterosRestApi {
     return List<dynamic>.from(response.data as List);
   }
 
+
+  CancelToken? _bandwidthTestCancelToken;
+
+  /// Runs one bounded RouterOS bandwidth test. RouterOS REST returns the
+  /// per-second records only when the command ends; it does not stream them.
+  Future<List<dynamic>> runBandwidthTest({
+    required String address,
+    required String protocol,
+    required String user,
+    required String password,
+    required int packetSize,
+    required int durationSeconds,
+  }) async {
+    final host = address.trim();
+    final selectedProtocol = protocol.toLowerCase();
+    if (host.isEmpty ||
+        !['tcp', 'udp'].contains(selectedProtocol) ||
+        durationSeconds < 1 ||
+        durationSeconds > 10 ||
+        (selectedProtocol == 'udp' && (packetSize < 28 || packetSize > 64000))) {
+      throw const RouterOsApiException('معطيات اختبار السرعة غير صالحة.');
+    }
+    if (_bandwidthTestCancelToken != null &&
+        !_bandwidthTestCancelToken!.isCancelled) {
+      throw const RouterOsApiException('يوجد اختبار سرعة قيد التنفيذ.');
+    }
+
+    final cancelToken = CancelToken();
+    _bandwidthTestCancelToken = cancelToken;
+    final data = <String, dynamic>{
+      'address': host,
+      'protocol': selectedProtocol,
+      'duration': '${durationSeconds}s',
+      'direction': 'both',
+      'connection-count': '4',
+      'random-data': 'yes',
+    };
+    if (user.trim().isNotEmpty) data['user'] = user.trim();
+    if (password.isNotEmpty) data['password'] = password;
+    if (selectedProtocol == 'udp') {
+      data['local-udp-tx-size'] = packetSize.toString();
+      data['remote-udp-tx-size'] = packetSize.toString();
+    }
+
+    try {
+      final response = await _dio.post<dynamic>(
+        'tool/bandwidth-test',
+        data: data,
+        cancelToken: cancelToken,
+        options: Options(receiveTimeout: Duration(seconds: durationSeconds + 55)),
+      );
+      _throwIfRouterOsError(response.data);
+      if (response.data is! List) {
+        throw const RouterOsApiException('استجابة اختبار السرعة غير مفهومة.');
+      }
+      return List<dynamic>.from(response.data as List);
+    } on DioException catch (error) {
+      if (CancelToken.isCancel(error)) {
+        throw const RouterOsApiException('تم إلغاء اختبار السرعة.');
+      }
+      throw RouterOsApiException(_describeDioFailure(error));
+    } finally {
+      if (identical(_bandwidthTestCancelToken, cancelToken)) {
+        _bandwidthTestCancelToken = null;
+      }
+    }
+  }
+
+  void cancelBandwidthTest() {
+    final token = _bandwidthTestCancelToken;
+    if (token != null && !token.isCancelled) {
+      token.cancel('تم طلب إيقاف اختبار السرعة');
+    }
+  }
+
   Future<String> _executeTemporaryScript(String source) async {
     final scriptName =
         'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
