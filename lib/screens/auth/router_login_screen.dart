@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/connection_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../theme.dart';
-import '../dashboard_screen.dart';
+import '../main_dashboard_screen.dart';
 
 class RouterLoginScreen extends StatefulWidget {
   const RouterLoginScreen({Key? key}) : super(key: key);
@@ -33,7 +33,7 @@ class _RouterLoginScreenState extends State<RouterLoginScreen> {
 
     if (success) {
       _showCustomSnackBar('تم الاتصال بنجاح: ${provider.routerIdentity}', AppTheme.successColor, Icons.check_circle);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainDashboardScreen()));
     } else {
       _showCustomSnackBar(provider.errorMessage, AppTheme.dangerColor, Icons.error_outline);
     }
