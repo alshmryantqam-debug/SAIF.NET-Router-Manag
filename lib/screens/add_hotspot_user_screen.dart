@@ -148,7 +148,7 @@ class _AddHotspotUserScreenState
                 Row(
                   children: [
                     Expanded(
-                      child: UltraInput(
+                      child: CyberTextField(
                         controller: _passCtrl,
                         label: 'كلمة المرور',
                         icon: Icons.lock_outline_rounded,
@@ -190,14 +190,14 @@ class _AddHotspotUserScreenState
             const SizedBox(height: 12),
             _card(
               children: [
-                UltraInput(
+                CyberTextField(
                   controller: _profileCtrl,
                   label: 'البروفايل',
                   icon: Icons.category_outlined,
                   enabled: !_busy,
                 ),
                 const SizedBox(height: 12),
-                UltraInput(
+                CyberTextField(
                   controller: _commentCtrl,
                   label: 'تعليق (اختياري)',
                   icon: Icons.comment_outlined,
@@ -208,7 +208,7 @@ class _AddHotspotUserScreenState
             const SizedBox(height: 12),
             _card(
               children: [
-                UltraInput(
+                CyberTextField(
                   controller: _uptimeCtrl,
                   label: 'مدة الصلاحية (اختياري)',
                   icon: Icons.timer_outlined,
@@ -217,7 +217,7 @@ class _AddHotspotUserScreenState
                   enabled: !_busy,
                 ),
                 const SizedBox(height: 12),
-                UltraInput(
+                CyberTextField(
                   controller: _bytesCtrl,
                   label: 'حد التحميل بالبايت (اختياري)',
                   icon: Icons.data_usage_outlined,
