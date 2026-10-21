@@ -28,11 +28,3 @@ junit*.xml
 dist/
 *.apk
 *.aab
-
-# Generated platform folders (created only for local/CI builds)
-android/
-ios/
-linux/
-macos/
-windows/
-web/
