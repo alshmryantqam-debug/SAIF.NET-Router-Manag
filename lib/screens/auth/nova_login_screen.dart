@@ -9,11 +9,11 @@ import 'package:uuid/uuid.dart';
 import '../../models/router_config.dart';
 import '../../providers/connection_provider.dart';
 
-const _ink = Color(0xFF080D17);
-const _panel = Color(0xCC111B29);
-const _cyan = Color(0xFF73E5F2);
+const _ink = Color(0xFF070914);
+const _panel = Color(0xD9121A2D);
+const _cyan = Color(0xFFB9A2FF);
 const _text = Color(0xFFF1F5F9);
-const _muted = Color(0xFF9AA9BA);
+const _muted = Color(0xFF9BAAC4);
 const _danger = Color(0xFFFF7888);
 
 class NovaLoginScreen extends ConsumerStatefulWidget {
@@ -145,8 +145,8 @@ class _NovaLoginScreenState extends ConsumerState<NovaLoginScreen> {
         backgroundColor: _ink,
         body: Stack(
           children: [
-            const Positioned(top: -120, right: -110, child: _SoftGlow(size: 300, color: Color(0x243BC9E0))),
-            const Positioned(bottom: -140, left: -120, child: _SoftGlow(size: 310, color: Color(0x1B8A70E8))),
+            const Positioned(top: -120, right: -110, child: _SoftGlow(size: 300, color: Color(0x2B927BFF))),
+            const Positioned(bottom: -140, left: -120, child: _SoftGlow(size: 310, color: Color(0x23845BFF))),
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
