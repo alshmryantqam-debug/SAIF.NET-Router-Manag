@@ -10,6 +10,10 @@ class MikrotikService {
 
   Future<Map<String, dynamic>> getSystemResource() => _api.getSystemResource();
   Future<List<dynamic>> getActivePPPoE() => _api.getActivePPPoE();
+  Future<List<dynamic>> getActivePPPoESessions() => _api.getActivePPPoESessions();
+  Future<List<dynamic>> getActiveHotspotSessions() => _api.getActiveHotspotSessions();
+  Future<bool> removeActivePPPoESession(String id) => _api.removeActivePPPoESession(id);
+  Future<bool> removeActiveHotspotSession(String id) => _api.removeActiveHotspotSession(id);
   Future<bool> createPPPoEUser(String u, String p, String prof) => _api.createPPPoEUser(u, p, prof);
   Future<List<dynamic>> getInterfaces() => _api.getInterfaces();
   Future<List<dynamic>> getIpAddresses() => _api.getIpAddresses();
