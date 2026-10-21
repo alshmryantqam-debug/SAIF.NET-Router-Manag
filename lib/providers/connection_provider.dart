@@ -53,6 +53,9 @@ class ConnectionProvider extends ChangeNotifier {
 
   Future<List<dynamic>> getInterfacesFromRouter() => _service.getInterfaces();
 
+  Future<List<dynamic>> getTorchPackets(String interfaceName) =>
+      _service.getTorchPackets(interfaceName);
+
   Future<List<dynamic>> runBandwidthTest({
     required String address,
     required String protocol,
