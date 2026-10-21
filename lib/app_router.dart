@@ -18,6 +18,7 @@ import 'screens/load_balancing_wizard_screen.dart';
 import 'screens/live_traffic_screen.dart';
 import 'screens/pppoe_screen.dart';
 import 'screens/pppoe_neural_matrix_screen.dart';
+import 'screens/tactical_sonar_screen.dart';
 import 'screens/routers_list_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/tools_screen.dart';
@@ -191,6 +192,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const BusinessGate(
           allowed: [BusinessRole.manager, BusinessRole.technician],
           child: OrbitalUplinkScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/tactical-sonar',
+        name: 'tactical-sonar',
+        builder: (_, __) => const BusinessGate(
+          allowed: [BusinessRole.manager, BusinessRole.technician],
+          child: TacticalSonarScreen(),
         ),
       ),
       GoRoute(
