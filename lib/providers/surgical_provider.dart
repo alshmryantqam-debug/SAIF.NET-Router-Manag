@@ -50,7 +50,7 @@ class SurgicalProvider extends ChangeNotifier {
         final matches = sessions.whereType<Map>().where((s) => (s['name'] ?? '') == name).toList();
         final session = matches.isEmpty ? null : Map<String, dynamic>.from(matches.first);
         _target = TargetUser(id:user.id, name:user.name, profile:user.profile,
-          callerId: (session?['caller-id'] ?? user.comment).toString().trim().isEmpty ? null : (session?['caller-id'] ?? user.comment).toString(),
+          callerId: (session?['caller-id'] ?? '').toString().trim().isEmpty ? null : session!['caller-id'].toString(),
           activeMac: session?['caller-id']?.toString(),
           activeSessionId: session?['.id']?.toString(), isPppoe:true);
       } else {
