@@ -46,6 +46,9 @@ class MikrotikService {
   void cancelBandwidthTest() => _api.cancelBandwidthTest();
   Future<String> executeRawCommand(String command) => _api.executeRawCommand(command);
   Future<bool> runSystemScript(String script) => _api.runSystemScript(script);
+  Future<void> updatePppSecret(String id, Map<String, dynamic> fields) => _api.updatePppSecret(id, fields);
+  Future<void> updateHotspotUser(String id, Map<String, dynamic> fields) => _api.updateHotspotUser(id, fields);
+  Future<List<dynamic>> getProfiles({required bool pppoe}) => _api.getProfiles(pppoe: pppoe);
   Future<List<dynamic>> getPPPoESecrets() => _api.getPPPoESecrets();
   Future<bool> togglePPPoESecret(String id, bool disabled) => _api.togglePPPoESecret(id, disabled);
   Future<bool> removePPPoESecret(String id) => _api.removePPPoESecret(id);
