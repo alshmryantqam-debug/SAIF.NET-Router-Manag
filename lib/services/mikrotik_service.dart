@@ -1002,7 +1002,7 @@ class PccFusionEngine {
         kind: RouterOsErrorKind.network,
       );
     }
-    if (_rest == null || _service._activeProtocol != ApiProtocol.rest) {
+    if (_service._rest == null || _service._activeProtocol != ApiProtocol.rest) {
       throw const RouterOsException(
         'تطبيق PCC الآمن متاح عبر REST API في RouterOS v7 فقط. لم يتم تغيير أي إعداد.',
         kind: RouterOsErrorKind.methodNotAllowed,
