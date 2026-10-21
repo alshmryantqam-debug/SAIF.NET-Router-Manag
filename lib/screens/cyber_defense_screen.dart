@@ -27,7 +27,7 @@ class _CyberDefenseScreenState extends State<CyberDefenseScreen> {
     final target = provider.selectedInterface;
     if (target == null) return;
 
-    final currentArp = target['arp']?.toString() ?? 'غير معروف';
+    final currentArp = _arpLabel(target['arp']?.toString());
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -255,7 +255,7 @@ class _CyberDefenseScreenState extends State<CyberDefenseScreen> {
                             ),
                             const SizedBox(width: 8),
                             Expanded(child: Text(
-                              'حالة السياسة الحالية: ${state.selectedInterface?['arp']?.toString() ?? 'غير معروفة'}',
+                              'حالة السياسة الحالية: ${_arpLabel(state.selectedInterface?['arp']?.toString())}',
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             )),
                           ]),
@@ -292,6 +292,21 @@ class _CyberDefenseScreenState extends State<CyberDefenseScreen> {
         ),
       ),
     );
+  }
+
+  String _arpLabel(String? mode) {
+    switch (mode) {
+      case 'enabled':
+        return 'مفعّل';
+      case 'reply-only':
+        return 'الرد على السجلات فقط';
+      case 'proxy-arp':
+        return 'الرد بالوكالة';
+      case 'disabled':
+        return 'معطّل';
+      default:
+        return 'غير معروف';
+    }
   }
 
   Widget _noticePanel(String message, Color color, IconData icon) => NovaTechPanel(
