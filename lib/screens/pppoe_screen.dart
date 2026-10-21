@@ -176,6 +176,12 @@ class _PppoeScreenState extends ConsumerState<PppoeScreen> {
                     ),
                   ),
                   _hudIconButton(
+                    icon: Icons.hub_rounded,
+                    tooltip: 'فتح المصفوفة العصبية',
+                    onTap: () => context.go('/pppoe/neural-matrix'),
+                  ),
+                  const SizedBox(width: 5),
+                  _hudIconButton(
                     icon: Icons.refresh_rounded,
                     tooltip: 'تحديث البيانات',
                     onTap: _refresh,
