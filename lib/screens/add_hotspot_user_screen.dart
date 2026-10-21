@@ -278,9 +278,16 @@ class _AddHotspotUserScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: const Color(0x99070B14),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: const Color(0x3300E5FF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1100E5FF),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(children: children),
     );
