@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api/routeros_client.dart' show RosException;
@@ -154,6 +155,22 @@ class _NetworkAuditScreenState extends State<NetworkAuditScreen> {
     }
   }
 
+  Future<void> _copyReport() async {
+    if (_findings.isEmpty) return;
+    final buffer = StringBuffer()
+      ..writeln('NOVA - تقرير تدقيق الشبكة')
+      ..writeln('وقت الفحص: ${_lastRun?.toLocal().toIso8601String() ?? 'غير معروف'}')
+      ..writeln('النمط: قراءة فقط');
+    for (final finding in _findings) {
+      buffer.writeln('[${finding.level.name}] ${finding.title}: ${finding.detail}');
+    }
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم نسخ تقرير التدقيق إلى الحافظة')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final connected = context.watch<ConnectionProvider>().isConnected;
@@ -162,7 +179,11 @@ class _NetworkAuditScreenState extends State<NetworkAuditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('مركز تدقيق الشبكة'),
-        actions: [IconButton(tooltip: 'إعادة الفحص', onPressed: _loading ? null : _runAudit, icon: const Icon(Icons.refresh_rounded))],
+        actions: [
+          if (_findings.isNotEmpty)
+            IconButton(tooltip: 'نسخ التقرير', onPressed: _copyReport, icon: const Icon(Icons.copy_all_rounded)),
+          IconButton(tooltip: 'إعادة الفحص', onPressed: _loading ? null : _runAudit, icon: const Icon(Icons.refresh_rounded)),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _runAudit,
