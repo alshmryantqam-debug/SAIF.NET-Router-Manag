@@ -339,7 +339,89 @@ class RouterosRestApi {
         (maxLimit == null && priority == null) ||
         (priority != null && (priority < 1 || priority > 8)) ||
         (maxLimit != null &&
-            !RegExp(r'^\\d+(?:\\.\\d+)?[kKmMgG]?$').hasMatch(maxLimit))) {
+            !RegExp(r'^\d+(?:\.\d+)?[kKmMgG]?.hasMatch(maxLimit))) {
+      throw const RouterOsApiException('إعدادات شجرة الطوابير غير صالحة.');
+    }
+    final data = <String, dynamic>{};
+    if (maxLimit != null) data['max-limit'] = maxLimit;
+    if (priority != null) data['priority'] = priority.toString();
+    try {
+      final response = await _dio.patch<dynamic>(
+        'queue/tree/${Uri.encodeComponent(id)}',
+        data: data,
+      );
+      _throwIfRouterOsError(response.data);
+    } on DioException catch (error) {
+      throw RouterOsApiException(_describeDioFailure(error));
+    }
+  }
+
+  Future<List<dynamic>> getQueues() async {
+    final response = await _dio.get('queue/simple');
+    return List<dynamic>.from(response.data as List);
+  }
+
+  Future<List<dynamic>> getIpAddresses() async {
+    final response = await _dio.get('ip/address');
+    return List<dynamic>.from(response.data as List);
+  }
+
+  Future<String> _executeTemporaryScript(String source) async {
+    final scriptName =
+        'nova_terminal_${DateTime.now().millisecondsSinceEpoch}';
+    String? scriptId;
+    try {
+      final created = await _dio.put('system/script', data: {
+        'name': scriptName,
+        'source': source,
+        'policy': 'read,write,policy,test',
+      });
+      if (created.data is Map) {
+        scriptId = created.data['.id']?.toString();
+      }
+      if (scriptId == null || scriptId.isEmpty) {
+        final scripts = await _dio.get('system/script',
+            queryParameters: {'name': scriptName});
+        if (scripts.data is List && (scripts.data as List).isNotEmpty) {
+          scriptId = (scripts.data as List).first['.id']?.toString();
+        }
+      }
+      final target =
+          (scriptId != null && scriptId.isNotEmpty) ? scriptId : scriptName;
+      await _dio.post('system/script/run', data: {'number': target});
+      return 'SUCCESS: RouterOS accepted the script for execution. REST does not provide a general interactive CLI output stream.';
+    } finally {
+      if (scriptId != null && scriptId.isNotEmpty) {
+        try {
+          await _dio.delete('system/script/$scriptId');
+        } catch (_) {
+          // Best-effort cleanup.
+        }
+      }
+    }
+  }
+
+  Future<bool> runSystemScript(String scriptContent) async {
+    try {
+      final result = await _executeTemporaryScript(scriptContent);
+      return result.startsWith('SUCCESS:');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String> executeRawCommand(String command) async {
+    if (command.trim().isEmpty) return 'ERROR: Command is empty.';
+    try {
+      return await _executeTemporaryScript(command);
+    } on DioException catch (e) {
+      return 'ERROR: ${e.response?.statusCode} - ${e.response?.data ?? e.message}';
+    } catch (e) {
+      return 'ERROR: $e';
+    }
+  }
+}
+).hasMatch(maxLimit))) {
       throw const RouterOsApiException('إعدادات شجرة الطوابير غير صالحة.');
     }
     final data = <String, dynamic>{};
