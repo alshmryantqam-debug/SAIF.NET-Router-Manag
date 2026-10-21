@@ -51,6 +51,16 @@ class ConnectionProvider extends ChangeNotifier {
   Future<bool> removeActiveHotspotSession(String id) =>
       _service.removeActiveHotspotSession(id);
 
+  Future<List<dynamic>> getDhcpServers() => _service.getDhcpServers();
+
+  Future<List<dynamic>> getRouterLogs() => _service.getRouterLogs();
+
+  Future<bool> setInterfaceArpMode({
+    required String id,
+    required String type,
+    required String mode,
+  }) => _service.setInterfaceArpMode(id: id, type: type, mode: mode);
+
   /// Connects to RouterOS REST over HTTPS and verifies credentials by reading
   /// /system/identity. Use SSL bypass only on a trusted local management LAN.
   ///
