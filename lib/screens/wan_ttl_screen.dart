@@ -165,7 +165,7 @@ class _WanTtlScreenState extends State<WanTtlScreen> {
   Widget build(BuildContext context) {
     final connected = context.watch<ConnectionProvider>().isConnected;
     final wanInterfaces = _interfaces.where((i) => (i['type'] ?? '').toString().toLowerCase().contains('ether') || (i['type'] ?? '').toString().toLowerCase().contains('sfp')).toList();
-    final routes = _routes.where((r) => (r['dst-address'] ?? '').toString() == '0.0.0.0/0' && !_flag(r['dynamic']) == false ? true : (r['dst-address'] ?? '').toString() == '0.0.0.0/0').toList();
+    final routes = _routes.where((r) => (r['dst-address'] ?? '').toString() == '0.0.0.0/0').toList();
     final tagged = _mangle.where((r) => (r['comment'] ?? '').toString().startsWith('NOVA-WAN-TTL:')).toList();
     return Scaffold(
       appBar: AppBar(title: const Text('إعدادات WAN وTTL'), actions: [IconButton(onPressed: _loading ? null : _refresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'تحديث')]),
