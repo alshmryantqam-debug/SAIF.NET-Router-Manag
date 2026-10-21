@@ -47,7 +47,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppTheme.cardColor,
-        title: const Text('تأكيد طرد الجلسة'),
+        title: const Text('تأكيد فصل الجلسة'),
         content: Text('سيتم فصل "${session.name}" عن الراوتر الآن.'),
         actions: [
           TextButton(
@@ -57,7 +57,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(backgroundColor: AppTheme.dangerColor),
-            child: const Text('طرد الجلسة'),
+            child: const Text('فصل الجلسة'),
           ),
         ],
       ),
@@ -66,30 +66,31 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
     final success = await provider.kickSession(session);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? 'تم إرسال أمر الطرد وتحديث الجلسات من الراوتر.' : provider.errorMessage),
+      content: Text(success ? 'تم فصل الجلسة والتحقق من تحديث القائمة من الراوتر.' : provider.errorMessage),
       backgroundColor: success ? AppTheme.successColor : AppTheme.dangerColor,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<SessionsProvider>();
-    final all = [...state.pppoeSessions, ...state.hotspotSessions];
-    final query = _searchQuery.trim().toLowerCase();
-    final visible = all.where((session) =>
-      session.name.toLowerCase().contains(query) ||
-      session.address.toLowerCase().contains(query) ||
-      session.callerId.toLowerCase().contains(query)
-    ).toList(growable: false);
+    return Consumer<SessionsProvider>(
+      builder: (context, state, child) {
+        final all = [...state.pppoeSessions, ...state.hotspotSessions];
+        final query = _searchQuery.trim().toLowerCase();
+        final visible = all.where((session) =>
+          session.name.toLowerCase().contains(query) ||
+          session.address.toLowerCase().contains(query) ||
+          session.callerId.toLowerCase().contains(query)
+        ).toList(growable: false);
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('الجلسات النشطة الحقيقية'),
+        title: const Text('الجلسات النشطة المباشرة'),
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: 'تحديث من الراوتر',
+            tooltip: 'تحديث البيانات من الراوتر',
             onPressed: state.isLoading ? null : () => state.fetchAllSessions(),
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -106,7 +107,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                   onChanged: (value) => setState(() => _searchQuery = value),
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'ابحث بالاسم أو IP أو MAC',
+                    hintText: 'ابحث بالاسم أو عنوان الشبكة أو عنوان الجهاز',
                     prefixIcon: const Icon(Icons.search, color: Color(0xFF00E5FF)),
                     filled: true,
                     fillColor: Colors.black.withOpacity(0.38),
@@ -120,11 +121,11 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(children: [
-                  Expanded(child: _countPanel('الإجمالي', all.length, const Color(0xFF00E5FF))),
+                  Expanded(child: _countPanel('المجموع', all.length, const Color(0xFF00E5FF))),
                   const SizedBox(width: 8),
-                  Expanded(child: _countPanel('PPPoE', state.pppoeSessions.length, const Color(0xFF8B5CF6))),
+                  Expanded(child: _countPanel('اتصال مشفّر', state.pppoeSessions.length, const Color(0xFF8B5CF6))),
                   const SizedBox(width: 8),
-                  Expanded(child: _countPanel('Hotspot', state.hotspotSessions.length, const Color(0xFFE040FB))),
+                  Expanded(child: _countPanel('نقطة اتصال', state.hotspotSessions.length, const Color(0xFFE040FB))),
                 ]),
               ),
               if (state.errorMessage.isNotEmpty)
@@ -138,7 +139,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                       Expanded(child: Text(state.errorMessage, style: const TextStyle(color: Colors.white70))),
                       TextButton(
                         onPressed: state.isLoading ? null : () => state.fetchAllSessions(),
-                        child: const Text('إعادة المحاولة'),
+                        child: const Text('المحاولة مجدداً'),
                       ),
                     ]),
                   ),
@@ -148,7 +149,7 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
                 child: state.isLoading && all.isEmpty
                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
                     : !state.isConnected && all.isEmpty
-                        ? const Center(child: Text('اتصل بالراوتر لعرض الجلسات الفعلية.', style: TextStyle(color: Colors.white70)))
+                        ? const Center(child: Text('اتصل بالراوتر لعرض الجلسات الحقيقية.', style: TextStyle(color: Colors.white70)))
                         : visible.isEmpty
                             ? Center(child: Text(
                                 query.isEmpty ? 'لا توجد جلسات نشطة حالياً على الراوتر.' : 'لا توجد نتائج مطابقة.',
@@ -168,6 +169,8 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
           ),
         ),
       ),
+        );
+      },
     );
   }
 
@@ -195,22 +198,22 @@ class _ActiveSessionsScreenState extends State<ActiveSessionsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(color: accent.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-              child: Text(session.isPppoe ? 'PPPoE' : 'Hotspot', style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold)),
+              child: Text(session.isPppoe ? 'اشتراك مباشر' : 'نقطة اتصال', style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.bold)),
             ),
           ]),
           const SizedBox(height: 12),
-          _detailRow('IP', session.address),
-          _detailRow('MAC / Caller ID', session.callerId.isEmpty ? '—' : session.callerId),
+          _detailRow('عنوان الشبكة', session.address),
+          _detailRow('عنوان الجهاز', session.callerId.isEmpty ? '—' : session.callerId),
           _detailRow('مدة الاتصال', session.uptime),
-          _detailRow('RX', _formatBytes(session.bytesIn)),
-          _detailRow('TX', _formatBytes(session.bytesOut)),
+          _detailRow('البيانات الواردة', _formatBytes(session.bytesIn)),
+          _detailRow('البيانات الصادرة', _formatBytes(session.bytesOut)),
           const SizedBox(height: 10),
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: OutlinedButton.icon(
               onPressed: () => _kick(provider, session),
               icon: const Icon(Icons.link_off_rounded, size: 18),
-              label: const Text('طرد الجلسة'),
+              label: const Text('فصل الجلسة'),
               style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
             ),
           ),
