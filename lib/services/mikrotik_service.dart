@@ -441,8 +441,8 @@ class MikrotikService {
   }
 
 
-  /// Applies guarded RouterOS v7 PCC using a staged generation.
-  /// Unmanaged active PCC rules are detected before any write is attempted.
+  /// Applies guarded RouterOS v7 PCC through a staged, verifiable generation.
+  /// Existing PCC rules not created by SAIF.NET are never overwritten.
   Future<String> applyPccLoadBalancing({
     required String lanInterface,
     required List<PccWanConfig> wans,
@@ -468,7 +468,387 @@ class MikrotikService {
       );
     }
 
-    final namePattern = RegExp(r'^[a-zA-Z0-9_.-]{1,64}
+    final namePattern = RegExp(r'^[a-zA-Z0-9_.-]{1,64}$');
+    final lan = lanInterface.trim();
+    if (!namePattern.hasMatch(lan)) {
+      throw const RouterOsException(
+        'اسم واجهة LAN غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    if (wans.length < 2 || wans.length > 4) {
+      throw const RouterOsException(
+        'يجب تحديد خطّي WAN على الأقل، وبحد أقصى أربعة خطوط.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    if (wans.any((wan) =>
+        !namePattern.hasMatch(wan.interfaceName.trim()) ||
+        wan.weight < 1 ||
+        wan.weight > 10 ||
+        wan.weight.roundToDouble() != wan.weight)) {
+      throw const RouterOsException(
+        'تحقق من أسماء الواجهات وأوزان WAN؛ الوزن الصحيح من 1 إلى 10.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final names = wans.map((wan) => wan.interfaceName.trim()).toSet();
+    if (names.length != wans.length || names.contains(lan)) {
+      throw const RouterOsException(
+        'يجب أن تكون واجهات WAN فريدة ومختلفة عن واجهة LAN.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    for (final wan in wans) {
+      final gateway = InternetAddress.tryParse(wan.gateway.trim());
+      if (gateway == null || gateway.type != InternetAddressType.IPv4) {
+        throw RouterOsException(
+          'بوابة WAN ' + wan.interfaceName +
+              ' غير صالحة. أدخل عنوان IPv4 مثل 192.168.1.1.',
+          kind: RouterOsErrorKind.badRequest,
+        );
+      }
+    }
+
+    final discoveredInterfaces = await interfaces();
+    final interfacesByName = <String, InterfaceInfo>{
+      for (final item in discoveredInterfaces) item.name: item,
+    };
+    final lanInfo = interfacesByName[lan];
+    if (lanInfo == null || lanInfo.disabled) {
+      throw RouterOsException(
+        'واجهة LAN "' + lan + '" غير موجودة أو معطلة على الراوتر.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    for (final wan in wans) {
+      final wanName = wan.interfaceName.trim();
+      final info = interfacesByName[wanName];
+      if (info == null || info.disabled || !info.running) {
+        throw RouterOsException(
+          'واجهة WAN "' + wanName +
+              '" غير موجودة أو معطلة أو لا تحمل رابطاً عاملاً.',
+          kind: RouterOsErrorKind.badRequest,
+        );
+      }
+    }
+
+    final mangleRows = _asList(await _rest!.get('/ip/firewall/mangle'));
+    bool isDisabled(Map<String, dynamic> row) {
+      final value = (row['disabled'] ?? 'false').toString().toLowerCase();
+      return value == 'true' || value == 'yes';
+    }
+
+    final unmanagedActivePcc = mangleRows.where((row) {
+      final classifier =
+          (row['per-connection-classifier'] ?? '').toString().trim();
+      final comment = (row['comment'] ?? '').toString();
+      return classifier.isNotEmpty &&
+          !isDisabled(row) &&
+          !comment.startsWith('SAIFNET-PCC-');
+    }).toList();
+    if (unmanagedActivePcc.isNotEmpty) {
+      throw const RouterOsException(
+        'اكتُشفت قواعد PCC فعّالة لا يديرها SAIF.NET. أوقف التعارض أو ادمج الإعدادات يدويًا بعد النسخ الاحتياطي؛ لم يجر أي تغيير.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+
+    final generation =
+        DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+    final tag = 'SAIFNET-PCC-' + generation;
+    final totalWeight =
+        wans.fold<int>(0, (sum, wan) => sum + wan.weight.round());
+    final tableNames = <String>[];
+    final markNames = <String>[];
+    for (final wan in wans) {
+      final normalized = wan.interfaceName
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final shortName =
+          normalized.length > 6 ? normalized.substring(0, 6) : normalized;
+      tableNames.add('sfpc_' + shortName + '_' + generation);
+      markNames.add('sfpc_' + shortName + '_' + generation + '_c');
+    }
+
+    final createdItems = <Map<String, String>>[];
+    final createdTables = <Map<String, String>>[];
+    final stagedRoutes = <Map<String, String>>[];
+    final stagedNat = <Map<String, String>>[];
+    final stagedConnectionMarks = <Map<String, String>>[];
+    final stagedRoutingMarks = <Map<String, String>>[];
+    final previousOwnedItems = <Map<String, String>>[];
+    final previouslyEnabledItems = <Map<String, String>>[];
+    final oldTableCandidates = <Map<String, String>>[];
+
+    Future<Map<String, String>> createItem(
+      String path,
+      Map<String, dynamic> body,
+    ) async {
+      final response = await _rest!.post(path, body);
+      final id = (_extractMap(response)['.id'] ?? '').toString();
+      if (id.isEmpty) {
+        throw RouterOsException(
+          'لم يُرجع الراوتر معرّف العنصر الجديد في ' + path + '.',
+          kind: RouterOsErrorKind.protocol,
+        );
+      }
+      final item = <String, String>{'path': path, 'id': id};
+      createdItems.add(item);
+      return item;
+    }
+
+    Future<void> rollbackNewGeneration() async {
+      for (final item in createdItems.reversed) {
+        try {
+          await _rest!.delete(item['path']! + '/' + item['id']!);
+        } catch (_) {}
+      }
+      for (final table in createdTables.reversed) {
+        try {
+          await _rest!.delete('/routing/table/' + table['id']!);
+        } catch (_) {}
+      }
+      for (final item in previouslyEnabledItems) {
+        try {
+          await _rest!.patch(
+            item['path']! + '/' + item['id']!,
+            <String, dynamic>{'disabled': 'false'},
+          );
+        } catch (_) {}
+      }
+    }
+
+    final oldMangle = mangleRows
+        .where((row) =>
+            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .toList();
+    final oldNat = _asList(await _rest!.get('/ip/firewall/nat'))
+        .where((row) =>
+            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .toList();
+    final oldRoutes = _asList(await _rest!.get('/ip/route'))
+        .where((row) =>
+            (row['comment'] ?? '').toString().startsWith('SAIFNET-PCC-'))
+        .toList();
+    for (final entry in <MapEntry<String, List<Map<String, dynamic>>>>[
+      MapEntry('/ip/firewall/mangle', oldMangle),
+      MapEntry('/ip/firewall/nat', oldNat),
+      MapEntry('/ip/route', oldRoutes),
+    ]) {
+      for (final row in entry.value) {
+        final id = (row['.id'] ?? '').toString();
+        if (id.isEmpty) continue;
+        final wasActive = !isDisabled(row);
+        final item = <String, String>{
+          'path': entry.key,
+          'id': id,
+          'wasActive': wasActive.toString(),
+        };
+        previousOwnedItems.add(item);
+        if (wasActive) previouslyEnabledItems.add(item);
+      }
+    }
+
+    final oldGenerations = <String>{};
+    for (final row in <Map<String, dynamic>>[
+      ...oldMangle,
+      ...oldNat,
+      ...oldRoutes,
+    ]) {
+      final comment = (row['comment'] ?? '').toString();
+      final prefix = 'SAIFNET-PCC-';
+      if (!comment.startsWith(prefix)) continue;
+      final remaining = comment.substring(prefix.length);
+      final separator = remaining.indexOf(':');
+      if (separator > 0) oldGenerations.add(remaining.substring(0, separator));
+    }
+    final existingTables = _asList(await _rest!.get('/routing/table'));
+    for (final row in existingTables) {
+      final tableName = (row['name'] ?? '').toString();
+      final id = (row['.id'] ?? '').toString();
+      if (id.isNotEmpty &&
+          oldGenerations.any((old) => tableName.endsWith('_' + old))) {
+        oldTableCandidates.add(<String, String>{'name': tableName, 'id': id});
+      }
+    }
+
+    try {
+      // Build the new generation disabled first. The old working generation
+      // remains intact unless every prerequisite object was successfully staged.
+      for (final table in tableNames) {
+        final response = await _rest!.post('/routing/table', <String, dynamic>{
+          'name': table,
+          'fib': 'yes',
+        });
+        final id = (_extractMap(response)['.id'] ?? '').toString();
+        if (id.isEmpty) {
+          throw const RouterOsException(
+            'لم يُرجع الراوتر معرّف جدول التوجيه الجديد.',
+            kind: RouterOsErrorKind.protocol,
+          );
+        }
+        createdTables.add(<String, String>{'name': table, 'id': id});
+      }
+
+      for (var index = 0; index < wans.length; index++) {
+        final route = await createItem('/ip/route', <String, dynamic>{
+          'dst-address': '0.0.0.0/0',
+          'gateway': wans[index].gateway.trim() + '@main',
+          'routing-table': tableNames[index],
+          'distance': '1',
+          'disabled': 'true',
+          'comment': tag + ':route:' + index.toString(),
+        });
+        stagedRoutes.add(route);
+      }
+
+      var bucket = 0;
+      for (var wanIndex = 0; wanIndex < wans.length; wanIndex++) {
+        for (var repeat = 0;
+            repeat < wans[wanIndex].weight.round();
+            repeat++) {
+          final rule = await createItem(
+            '/ip/firewall/mangle',
+            <String, dynamic>{
+              'chain': 'prerouting',
+              'action': 'mark-connection',
+              'in-interface': lan,
+              'connection-state': 'new',
+              'connection-mark': 'no-mark',
+              'dst-address-type': '!local',
+              'per-connection-classifier':
+                  'both-addresses-and-ports:' +
+                      totalWeight.toString() +
+                      '/' +
+                      bucket.toString(),
+              'new-connection-mark': markNames[wanIndex],
+              'passthrough': 'yes',
+              'disabled': 'true',
+              'comment': tag + ':mangle:conn:' + bucket.toString(),
+            },
+          );
+          stagedConnectionMarks.add(rule);
+          bucket++;
+        }
+      }
+
+      for (var index = 0; index < wans.length; index++) {
+        final rule = await createItem(
+          '/ip/firewall/mangle',
+          <String, dynamic>{
+            'chain': 'prerouting',
+            'action': 'mark-routing',
+            'in-interface': lan,
+            'connection-mark': markNames[index],
+            'new-routing-mark': tableNames[index],
+            'passthrough': 'no',
+            'disabled': 'true',
+            'comment': tag + ':mangle:route:' + index.toString(),
+          },
+        );
+        stagedRoutingMarks.add(rule);
+      }
+
+      for (var index = 0; index < wans.length; index++) {
+        final rule = await createItem('/ip/firewall/nat', <String, dynamic>{
+          'chain': 'srcnat',
+          'action': 'masquerade',
+          'out-interface': wans[index].interfaceName.trim(),
+          'disabled': 'true',
+          'comment': tag + ':nat:' + index.toString(),
+        });
+        stagedNat.add(rule);
+      }
+
+      // Park previously managed rules. If the new set fails verification,
+      // they are re-enabled by rollbackNewGeneration().
+      for (final old in previousOwnedItems) {
+        if (old['wasActive'] != 'true') continue;
+        await _rest!.patch(
+          old['path']! + '/' + old['id']!,
+          <String, dynamic>{'disabled': 'true'},
+        );
+      }
+
+      Future<void> enableAll(List<Map<String, String>> items) async {
+        for (final item in items) {
+          await _rest!.patch(
+            item['path']! + '/' + item['id']!,
+            <String, dynamic>{'disabled': 'false'},
+          );
+        }
+      }
+
+      await enableAll(stagedRoutes);
+      await enableAll(stagedNat);
+      await enableAll(stagedConnectionMarks);
+      await enableAll(stagedRoutingMarks);
+
+      final verifyMangle = _asList(await _rest!.get('/ip/firewall/mangle'))
+          .where((row) => (row['comment'] ?? '').toString().startsWith(tag))
+          .toList();
+      final verifyNat = _asList(await _rest!.get('/ip/firewall/nat'))
+          .where((row) => (row['comment'] ?? '').toString().startsWith(tag))
+          .toList();
+      final verifyRoutes = _asList(await _rest!.get('/ip/route'))
+          .where((row) => (row['comment'] ?? '').toString().startsWith(tag))
+          .toList();
+      if (verifyMangle.length != totalWeight + wans.length ||
+          verifyNat.length != wans.length ||
+          verifyRoutes.length != wans.length ||
+          verifyMangle.any(isDisabled) ||
+          verifyNat.any(isDisabled) ||
+          verifyRoutes.any(isDisabled)) {
+        throw const RouterOsException(
+          'فشل التحقق من قواعد PCC الجديدة؛ تمت محاولة استعادة الجيل السابق.',
+          kind: RouterOsErrorKind.server,
+        );
+      }
+    } catch (_) {
+      await rollbackNewGeneration();
+      rethrow;
+    }
+
+    // The new generation is active and verified. Remove only SAIF.NET-owned
+    // records from the prior generation, leaving all unrelated rules untouched.
+    for (final old in previousOwnedItems) {
+      try {
+        await _rest!.delete(old['path']! + '/' + old['id']!);
+      } catch (_) {}
+    }
+
+    if (oldTableCandidates.isNotEmpty) {
+      final routesNow = _asList(await _rest!.get('/ip/route'));
+      final mangleNow = _asList(await _rest!.get('/ip/firewall/mangle'));
+      final rulesNow = _asList(await _rest!.get('/routing/rule'));
+      for (final table in oldTableCandidates) {
+        final name = table['name']!;
+        final referencedByRoute = routesNow.any(
+          (row) => (row['routing-table'] ?? '').toString() == name,
+        );
+        final referencedByMangle = mangleNow.any(
+          (row) => (row['new-routing-mark'] ?? '').toString() == name,
+        );
+        final referencedByRule = rulesNow.any(
+          (row) => (row['table'] ?? '').toString() == name,
+        );
+        if (!referencedByRoute && !referencedByMangle && !referencedByRule) {
+          try {
+            await _rest!.delete('/routing/table/' + table['id']!);
+          } catch (_) {}
+        }
+      }
+    }
+
+    return 'تم تطبيق PCC والتحقق منه على ' +
+        wans.length.toString() +
+        ' خطوط. مجموع الأوزان ' +
+        totalWeight.toString() +
+        '. لا تتضمن هذه العملية مسارات failover احتياطية؛ يلزم إعدادها واختبارها بشكل مستقل.';
+  }
+
+  Future<void> addHotspotUser(HotspotUser user) async {
     if (_rest != null) {
       await _rest!.post('/ip/hotspot/user', user.toParams());
       return;
