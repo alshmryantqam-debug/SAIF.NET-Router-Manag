@@ -9,6 +9,7 @@ import 'hotspot_screen.dart';
 import 'cyber_defense_screen.dart';
 import 'quantum_domination_screen.dart';
 import 'btest_command_screen.dart';
+import 'torch_analyzer_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
