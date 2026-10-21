@@ -128,7 +128,7 @@ class _GraphPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(scanX - 18, 0, 36, size.height))
       ..strokeWidth = 1.4;
     canvas.drawRect(
-      Rect.fromLTWH(math.max(0, scanX - 18), 0, 36, size.height),
+      Rect.fromLTWH(math.max(0.0, scanX - 18), 0, 36, size.height),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
