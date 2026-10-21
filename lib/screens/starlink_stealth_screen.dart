@@ -25,7 +25,7 @@ class _StarlinkStealthScreenState extends State<StarlinkStealthScreen> {
   }
 
   Future<void> _run(StealthShieldProvider provider) async {
-    final active = provider.isShieldActive;
+    final active = provider.canRestore;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -119,7 +119,7 @@ class _StarlinkStealthScreenState extends State<StarlinkStealthScreen> {
                           style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.5)),
                       const SizedBox(height: 14),
                       _field(controller: _interfaceController, label: 'اسم منفذ Ethernet', icon: Icons.settings_ethernet_rounded,
-                          enabled: !provider.isShieldActive && !provider.isCloaking),
+                          enabled: !provider.canRestore && !provider.isCloaking),
                       const SizedBox(height: 12),
                       _field(controller: _macController, label: 'MAC جديد (مثال: 02:11:22:33:44:55)', icon: Icons.fingerprint_rounded,
                           enabled: !provider.isShieldActive && !provider.isCloaking),
@@ -145,16 +145,16 @@ class _StarlinkStealthScreenState extends State<StarlinkStealthScreen> {
                         child: FilledButton.icon(
                           onPressed: !connected || provider.isCloaking ? null : () => _run(provider),
                           style: FilledButton.styleFrom(
-                            backgroundColor: provider.isShieldActive ? red : cyan,
-                            foregroundColor: provider.isShieldActive ? Colors.white : const Color(0xFF06121A),
+                            backgroundColor: provider.canRestore ? red : cyan,
+                            foregroundColor: provider.canRestore ? Colors.white : const Color(0xFF06121A),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
                           icon: provider.isCloaking
                               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Icon(provider.isShieldActive ? Icons.restore_rounded : Icons.security_rounded),
+                              : Icon(provider.canRestore ? Icons.restore_rounded : Icons.security_rounded),
                           label: Text(
                             provider.isCloaking ? 'جارٍ التنفيذ والتحقق...' :
-                                provider.isShieldActive ? 'إزالة القاعدة واستعادة MAC' : 'تطبيق إعداد WAN',
+                                provider.canRestore ? 'إزالة القاعدة واستعادة MAC' : 'تطبيق إعداد WAN',
                             style: const TextStyle(fontWeight: FontWeight.w900),
                           ),
                         ),
