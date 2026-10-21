@@ -1,4 +1,4 @@
-name: nova_router_manager
+name: nova
 description: "Nova - Enterprise MikroTik Management"
 publish_to: 'none'
 version: 1.0.0+1
