@@ -194,6 +194,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         route: '/roles',
       ),
       _ToolEntry(
+        title: 'خزنة البيانات الكميّة',
+        subtitle: 'واجهة النسخ الاحتياطي وسجل العمليات',
+        icon: Icons.enhanced_encryption_rounded,
+        accent: _cyan,
+        route: '/quantum-backup',
+      ),
+      _ToolEntry(
         title: 'لوحة التحكم',
         subtitle: 'مركز محركات الشبكة والصيانة',
         icon: Icons.tune_rounded,
