@@ -4,6 +4,7 @@ import '../core/theme/nova_theme.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/nova_widgets.dart';
 import 'interfaces_screen.dart';
+import 'cyber_shield_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'queues_screen.dart';
 import 'settings_screen.dart';
@@ -13,6 +14,7 @@ class ToolsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = <_Tool>[
+      _Tool('درع الحماية السيبراني', 'قواعد الجدار الناري والعناوين المحظورة', Icons.shield_outlined, const CyberShieldScreen()),
       _Tool('معالج PCC', 'موازنة خطوط الإنترنت', Icons.account_tree_outlined, const LoadBalancingWizardScreen()),
       _Tool('الطوابير', 'إدارة حدود السرعة', Icons.speed_outlined, const QueuesScreen()),
       _Tool('الواجهات والمنافذ', 'حالة خطوط الإنترنت ومراقبة الاستخدام', Icons.cable_outlined, const InterfacesScreen()),
