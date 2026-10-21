@@ -1,7 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
-/// Neon RX/TX graph drawn directly on a tactical grid.
-class CyberTrafficGraph extends StatelessWidget {
+/// رسم موجات RX/TX بتأثير نيون وشبكة تكتيكية، دون مكتبات رسوم خارجية.
+class CyberTrafficGraph extends StatefulWidget {
   const CyberTrafficGraph({
     super.key,
     required this.rxData,
@@ -16,10 +18,36 @@ class CyberTrafficGraph extends StatelessWidget {
   final double height;
 
   @override
+  State<CyberTrafficGraph> createState() => _CyberTrafficGraphState();
+}
+
+class _CyberTrafficGraphState extends State<CyberTrafficGraph>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final safeMax = widget.maxValue.isFinite && widget.maxValue > 0
+        ? widget.maxValue
+        : 1.0;
     return Container(
       width: double.infinity,
-      height: height,
+      height: widget.height,
       decoration: BoxDecoration(
         color: const Color(0xB8050914),
         borderRadius: BorderRadius.circular(14),
@@ -27,13 +55,17 @@ class CyberTrafficGraph extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child: CustomPaint(
-          painter: _GraphPainter(
-            rxData: rxData,
-            txData: txData,
-            maxValue: maxValue.isFinite && maxValue > 0 ? maxValue : 1,
+        child: AnimatedBuilder(
+          animation: _pulse,
+          builder: (context, child) => CustomPaint(
+            painter: _GraphPainter(
+              rxData: widget.rxData,
+              txData: widget.txData,
+              maxValue: safeMax,
+              phase: _pulse.value,
+            ),
+            child: const SizedBox.expand(),
           ),
-          child: const SizedBox.expand(),
         ),
       ),
     );
@@ -45,11 +77,13 @@ class _GraphPainter extends CustomPainter {
     required this.rxData,
     required this.txData,
     required this.maxValue,
+    required this.phase,
   });
 
   final List<double> rxData;
   final List<double> txData;
   final double maxValue;
+  final double phase;
 
   static const Color _rx = Color(0xFF00E5FF);
   static const Color _tx = Color(0xFFE040FB);
@@ -78,6 +112,42 @@ class _GraphPainter extends CustomPainter {
 
     _drawSeries(canvas, size, rxData, _rx);
     _drawSeries(canvas, size, txData, _tx);
+
+    // خط مسح متحرك يوضح أن المخطط حي، دون إخفاء منحنيات البيانات.
+    final scanX = size.width * phase;
+    final scanPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          _rx.withOpacity(0.05),
+          _rx.withOpacity(0.48),
+          _rx.withOpacity(0.05),
+          Colors.transparent,
+        ],
+        stops: const [0, 0.35, 0.5, 0.65, 1],
+      ).createShader(Rect.fromLTWH(scanX - 18, 0, 36, size.height))
+      ..strokeWidth = 1.4;
+    canvas.drawRect(
+      Rect.fromLTWH(math.max(0, scanX - 18), 0, 36, size.height),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_rx.withOpacity(0), _rx.withOpacity(0.10), _rx.withOpacity(0)],
+        ).createShader(Rect.fromLTWH(scanX - 18, 0, 36, size.height)),
+    );
+    canvas.drawLine(
+      Offset(scanX, 0),
+      Offset(scanX, size.height),
+      scanPaint..shader = null..color = _rx.withOpacity(0.72),
+    );
+    canvas.drawLine(
+      Offset(scanX, 0),
+      Offset(scanX, size.height),
+      Paint()
+        ..color = Colors.white.withOpacity(0.55)
+        ..strokeWidth = 0.7,
+    );
   }
 
   void _drawSeries(Canvas canvas, Size size, List<double> data, Color color) {
@@ -86,7 +156,8 @@ class _GraphPainter extends CustomPainter {
     final stepX = values.length > 1 ? size.width / (values.length - 1) : size.width;
     final points = <Offset>[];
     for (var i = 0; i < values.length; i++) {
-      final value = values[i].isFinite ? values[i].clamp(0.0, maxValue).toDouble() : 0.0;
+      final raw = values[i];
+      final value = raw.isFinite ? raw.clamp(0.0, maxValue).toDouble() : 0.0;
       final y = size.height - (value / maxValue) * (size.height - 8) - 4;
       points.add(Offset(i * stepX, y.clamp(0.0, size.height).toDouble()));
     }
@@ -104,16 +175,18 @@ class _GraphPainter extends CustomPainter {
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    final fill = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.22), color.withOpacity(0.005)],
-      ).createShader(Offset.zero & size);
-    canvas.drawPath(fillPath, fill);
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.22), color.withOpacity(0.005)],
+        ).createShader(Offset.zero & size),
+    );
 
     final glow = Paint()
-      ..color = color.withOpacity(0.5)
+      ..color = color.withOpacity(0.34 + (0.22 * (0.5 + 0.5 * math.sin(phase * math.pi * 2))))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 7
       ..strokeCap = StrokeCap.round
@@ -130,14 +203,14 @@ class _GraphPainter extends CustomPainter {
     canvas.drawPath(path, core);
 
     final dot = points.last;
-    canvas.drawCircle(dot, 4, Paint()..color = color.withOpacity(0.18));
-    canvas.drawCircle(dot, 2, Paint()..color = color);
+    canvas.drawCircle(dot, 4.5, Paint()..color = color.withOpacity(0.18));
+    canvas.drawCircle(dot, 2.2, Paint()..color = color);
   }
 
   @override
-  bool shouldRepaint(covariant _GraphPainter oldDelegate) {
-    return oldDelegate.rxData != rxData ||
-        oldDelegate.txData != txData ||
-        oldDelegate.maxValue != maxValue;
-  }
+  bool shouldRepaint(covariant _GraphPainter oldDelegate) =>
+      oldDelegate.rxData != rxData ||
+      oldDelegate.txData != txData ||
+      oldDelegate.maxValue != maxValue ||
+      oldDelegate.phase != phase;
 }
