@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 
+import 'routeros_rest_api.dart' show isPrivateHost;
+
 /// RouterOS v7 REST client. TLS certificate validation stays enabled by default.
 class MikrotikApiService {
   MikrotikApiService({
@@ -34,9 +36,10 @@ class MikrotikApiService {
       if (adapter is IOHttpClientAdapter) {
         adapter.createHttpClient = () {
           final client = HttpClient();
-          // Insecure by design; opt in only on a trusted LAN.
+          // Self-signed certificates are accepted only for private/local hosts.
           client.badCertificateCallback =
-              (X509Certificate certificate, String host, int port) => true;
+              (X509Certificate certificate, String host, int port) =>
+                  isPrivateHost(host);
           return client;
         };
       }
