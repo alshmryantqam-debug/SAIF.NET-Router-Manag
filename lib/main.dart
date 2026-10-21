@@ -56,7 +56,7 @@ class NovaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SAIF.NET',
+      title: 'نوڨا NOVA',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       locale: const Locale('ar'),
