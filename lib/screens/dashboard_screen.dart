@@ -10,6 +10,7 @@ import 'cyber_defense_screen.dart';
 import 'quantum_domination_screen.dart';
 import 'btest_command_screen.dart';
 import 'torch_analyzer_screen.dart';
+import 'surgical_operations_screen.dart';
 import 'load_balancing_wizard_screen.dart';
 import 'pppoe_screen.dart';
 
@@ -428,6 +429,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(color: Color(0xFF4CAE7D), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SurgicalOperationsScreen()),
+                  ),
+                  icon: const Icon(Icons.gps_fixed_rounded, color: Color(0xFF4CAE7D)),
+                  label: const Text(
+                    'غرفة العمليات الجراحية',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4CAE7D)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               const SizedBox(height: 12),
               if (!connProvider.isConnected)
                 const Text('حالة الاتصال: غير متصل',
