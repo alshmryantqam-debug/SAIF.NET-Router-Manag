@@ -8,7 +8,8 @@ import '../models/router_config.dart';
 import '../providers/connection_provider.dart';
 import '../providers/load_balancing_provider.dart';
 import '../services/mikrotik_service.dart';
-import '../widgets/cyber_fusion_slider.dart';
+import '../widgets/cyber_energy_tube.dart';
+import '../widgets/cyber_reactor_core.dart';
 import '../widgets/particle_matrix_bg.dart';
 
 const Color _fusionCyan = Color(0xFF00E5FF);
@@ -24,9 +25,7 @@ class LoadBalancingWizardScreen extends ConsumerStatefulWidget {
 }
 
 class _LoadBalancingWizardScreenState
-    extends ConsumerState<LoadBalancingWizardScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
+    extends ConsumerState<LoadBalancingWizardScreen> {
   final TextEditingController _lanController =
       TextEditingController(text: 'bridge-local');
   bool _initialInterfacesHandled = false;
@@ -34,17 +33,7 @@ class _LoadBalancingWizardScreenState
   bool _rollbackReady = false;
 
   @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
   void dispose() {
-    _pulseController.dispose();
     _lanController.dispose();
     super.dispose();
   }
@@ -572,73 +561,129 @@ class _LoadBalancingWizardScreenState
   }
 
   Widget _buildCore(LoadBalancingState fusion, bool connected) {
+    final reactorColor = fusion.isApplying ? _fusionPink : _fusionCyan;
+    final reactorStatus = fusion.isApplying
+        ? (fusion.statusMessage ?? 'تشغيل بروتوكول الاندماج...')
+        : connected
+            ? 'UPLINK SECURE • ENGINE STANDBY'
+            : 'AWAITING ROUTER LINK';
+
     return _glassPanel(
-      borderColor: _fusionCyan.withOpacity(0.3),
+      borderColor: reactorColor.withOpacity(0.48),
       child: Column(
         children: [
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              final pulse = _pulseController.value;
-              final diameter = 82 + (pulse * 14);
-              return Container(
-                width: diameter,
-                height: diameter,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _fusionCyan.withOpacity(0.35 + pulse * 0.4),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _fusionPink.withOpacity(0.16 + pulse * 0.2),
-                      blurRadius: 34,
-                      spreadRadius: 5,
-                    ),
-                    BoxShadow(
-                      color: _fusionCyan.withOpacity(0.12 + (1 - pulse) * 0.18),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.merge_type_rounded,
-                    color: Colors.white,
-                    size: 38,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 2),
+          CyberReactorCore(isFusing: fusion.isApplying),
+          const SizedBox(height: 4),
           const Text(
-            'FUSION REACTOR // PCC',
+            'QUANTUM FUSION REACTOR',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: _fusionCyan,
+              color: Colors.white,
               fontFamily: 'monospace',
               fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-              fontSize: 17,
+              letterSpacing: 1.8,
+              fontSize: 16,
+              shadows: [
+                Shadow(color: _fusionCyan, blurRadius: 12),
+                Shadow(color: _fusionPink, blurRadius: 24),
+              ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 7),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: Text(
+              reactorStatus,
+              key: ValueKey<String>(reactorStatus),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: reactorColor,
+                fontFamily: 'monospace',
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 17),
+          Row(
+            children: [
+              Expanded(
+                child: _reactorMetric(
+                  'WAN NODES',
+                  fusion.wans.length.toString(),
+                  reactorColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _reactorMetric(
+                  'TOTAL WEIGHT',
+                  fusion.totalWeight.toString(),
+                  reactorColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _reactorMetric(
+                  'POLICY TABLES',
+                  fusion.wans.length.toString(),
+                  reactorColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
           Text(
-            connected ? 'ROUTER LINK ESTABLISHED' : 'ROUTER LINK OFFLINE',
+            'WEIGHTED PCC // LIVE RIVERPOD CONTROL PLANE',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: connected ? const Color(0xFF67F5BE) : _fusionRed,
+              color: Colors.white.withOpacity(0.42),
               fontFamily: 'monospace',
-              fontSize: 10,
-              letterSpacing: 1,
+              fontSize: 8,
+              letterSpacing: 1.15,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'توزيع اتصالات WAN بأوزان نسبية مع تنفيذ محكوم ومراجعة للتعارضات.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _reactorMetric(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.24),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.20)),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.05), blurRadius: 12),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              color: color,
+              fontFamily: 'monospace',
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontFamily: 'monospace',
+              fontSize: 8,
+              letterSpacing: 0.25,
+            ),
           ),
         ],
       ),
@@ -665,118 +710,27 @@ class _LoadBalancingWizardScreenState
     if (wan.interfaceName.isNotEmpty && !names.contains(wan.interfaceName)) {
       names.add(wan.interfaceName);
     }
-    final selected =
-        names.contains(wan.interfaceName) ? wan.interfaceName : null;
     final wanNumber = index + 1;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _glassPanel(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 33,
-                    height: 33,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: _fusionCyan.withOpacity(0.09),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _fusionCyan.withOpacity(0.4)),
-                    ),
-                    child: Text(
-                      'W' + wanNumber.toString(),
-                      style: const TextStyle(
-                        color: _fusionCyan,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: selected,
-                      isExpanded: true,
-                      dropdownColor: const Color(0xFF171323),
-                      decoration: const InputDecoration(
-                        labelText: 'واجهة مصدر الطاقة',
-                      ),
-                      items: names
-                          .map(
-                            (name) => DropdownMenuItem<String>(
-                              value: name,
-                              child: Text(
-                                name,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          ref
-                              .read(loadBalancingProvider.notifier)
-                              .updateWan(index, interfaceName: value);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                key: ValueKey<String>(
-                  'gateway-' + index.toString() + '-' + wan.interfaceName,
-                ),
-                initialValue: wan.gateway,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                onChanged: (value) => ref
-                    .read(loadBalancingProvider.notifier)
-                    .updateWan(index, gateway: value.trim()),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'monospace',
-                ),
-                decoration: InputDecoration(
-                  labelText: 'بوابة WAN ' +
-                      wanNumber.toString() +
-                      ' (Gateway IPv4)',
-                  hintText: '192.168.1.1',
-                  prefixIcon: const Icon(
-                    Icons.route_rounded,
-                    color: _fusionCyan,
-                  ),
-                  helperText:
-                      'العنوان الذي يستطيع الراوتر الوصول إليه عبر هذا الخط',
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        CyberFusionSlider(
-          interfaceName: wan.interfaceName.isEmpty
-              ? 'WAN ' + wanNumber.toString()
-              : wan.interfaceName,
-          weight: wan.weight,
-          onChanged: (value) => ref
-              .read(loadBalancingProvider.notifier)
-              .updateWan(index, weight: value),
-          onRemove: () =>
-              ref.read(loadBalancingProvider.notifier).removeWan(index),
-        ),
-      ],
+    return CyberEnergyTube(
+      interfaceName: wan.interfaceName.isEmpty
+          ? 'WAN ' + wanNumber.toString()
+          : wan.interfaceName,
+      gatewayAddress: wan.gateway,
+      availableInterfaces: names,
+      weight: wan.weight,
+      canRemove: fusion.wans.length > 2,
+      onInterfaceChanged: (value) => ref
+          .read(loadBalancingProvider.notifier)
+          .updateWan(index, interfaceName: value),
+      onGatewayChanged: (value) => ref
+          .read(loadBalancingProvider.notifier)
+          .updateWan(index, gateway: value.trim()),
+      onChanged: (value) => ref
+          .read(loadBalancingProvider.notifier)
+          .updateWan(index, weight: value),
+      onRemove: () =>
+          ref.read(loadBalancingProvider.notifier).removeWan(index),
     );
   }
 
