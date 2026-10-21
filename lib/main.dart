@@ -7,6 +7,7 @@ import 'providers/cyber_defense_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/hotspot_provider.dart';
 import 'providers/pppoe_provider.dart';
+import 'providers/quantum_domination_provider.dart';
 import 'providers/sessions_provider.dart';
 import 'screens/auth/app_login_screen.dart';
 import 'theme.dart';
@@ -45,6 +46,11 @@ void main() {
               CyberDefenseProvider(context.read<ConnectionProvider>()),
           update: (context, connectionProvider, cyberDefenseProvider) =>
               cyberDefenseProvider ?? CyberDefenseProvider(connectionProvider),
+        ),
+        ChangeNotifierProxyProvider<ConnectionProvider, QuantumDominationProvider>(
+          create: (context) => QuantumDominationProvider(context.read<ConnectionProvider>()),
+          update: (context, connectionProvider, quantumProvider) =>
+              quantumProvider ?? QuantumDominationProvider(connectionProvider),
         ),
         ChangeNotifierProxyProvider<ConnectionProvider, SessionsProvider>(
           create: (context) =>
