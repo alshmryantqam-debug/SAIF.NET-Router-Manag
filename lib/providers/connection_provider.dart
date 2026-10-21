@@ -51,6 +51,8 @@ class ConnectionProvider extends ChangeNotifier {
   Future<bool> removeActiveHotspotSession(String id) =>
       _service.removeActiveHotspotSession(id);
 
+  Future<List<dynamic>> getInterfacesFromRouter() => _service.getInterfaces();
+
   Future<List<dynamic>> getDhcpServers() => _service.getDhcpServers();
 
   Future<List<dynamic>> getRouterLogs() => _service.getRouterLogs();
