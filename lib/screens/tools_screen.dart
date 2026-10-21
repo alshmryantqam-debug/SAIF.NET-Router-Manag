@@ -135,6 +135,13 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         accent: _cyan,
         route: '/network-engineering',
       ),
+      _ToolEntry(
+        title: 'مفاعل دمج الخطوط (PCC)',
+        subtitle: 'توزيع WAN بالأوزان وتطبيق محكوم',
+        icon: Icons.merge_type_rounded,
+        accent: _cyan,
+        route: '/load-balancing-wizard',
+      ),
     ],
   ),
   _ToolCategory(

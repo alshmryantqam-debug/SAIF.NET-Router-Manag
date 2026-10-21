@@ -14,6 +14,7 @@ import 'screens/firewall_screen.dart';
 import 'screens/hotspot_screen.dart';
 import 'screens/interfaces_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/load_balancing_wizard_screen.dart';
 import 'screens/pppoe_screen.dart';
 import 'screens/routers_list_screen.dart';
 import 'screens/settings_screen.dart';
@@ -145,6 +146,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/load-balancing-wizard',
+        name: 'load-balancing-wizard',
+        builder: (_, __) => const BusinessGate(
+          allowed: [BusinessRole.manager],
+          child: LoadBalancingWizardScreen(),
+        ),
       ),
       GoRoute(
         path: '/network-engineering',
