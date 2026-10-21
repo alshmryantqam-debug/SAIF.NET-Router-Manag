@@ -33,6 +33,7 @@ class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
   double _rxMbps = 0;
   double _txMbps = 0;
   bool _isMonitoring = false;
+  bool _isSampling = false;
   bool _isLoadingInterfaces = false;
   String? _error;
   DateTime? _lastSample;
@@ -109,7 +110,8 @@ class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
   }
 
   Future<void> _sampleTraffic() async {
-    if (!mounted || !_isMonitoring) return;
+    if (!mounted || !_isMonitoring || _isSampling) return;
+    _isSampling = true;
     try {
       final rows = await ref.read(mikrotikProvider).interfaces();
       if (!mounted || !_isMonitoring) return;
@@ -145,6 +147,8 @@ class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
       });
     } catch (e) {
       if (mounted) setState(() => _error = 'فشل تحديث العداد: $e');
+    } finally {
+      _isSampling = false;
     }
   }
 
