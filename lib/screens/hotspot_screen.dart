@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/hotspot_provider.dart';
+import 'active_sessions_screen.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -122,6 +123,15 @@ class _HotspotScreenState extends State<HotspotScreen> {
       appBar: AppBar(
         title: const Text('بطاقات الهوتسبوت'),
         actions: [
+          IconButton(
+            tooltip: 'الجلسات النشطة',
+            icon: const Icon(Icons.devices_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ActiveSessionsScreen(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'تحديث',
             icon: const Icon(Icons.refresh),
