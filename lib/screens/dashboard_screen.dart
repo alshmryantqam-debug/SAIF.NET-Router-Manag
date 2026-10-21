@@ -334,6 +334,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.cardColor,
+                    side: const BorderSide(color: Color(0xFFFF5252), width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TorchAnalyzerScreen()),
+                  ),
+                  icon: const Icon(Icons.radar_rounded, color: Color(0xFFFF5252)),
+                  label: const Text('مصيدة الحزم السيبرانية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFFF5252))),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.cardColor,
                     side: const BorderSide(color: Color(0xFF00D9FF), width: 1.5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
