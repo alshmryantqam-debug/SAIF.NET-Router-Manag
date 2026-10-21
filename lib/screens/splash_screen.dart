@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/connection_provider.dart';
 
-const _ink = Color(0xFF080D17);
-const _cyan = Color(0xFF73E5F2);
-const _muted = Color(0xFF9AA9BA);
+const _ink = Color(0xFF070914);
+const _cyan = Color(0xFFB9A2FF);
+const _muted = Color(0xFF9BAAC4);
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -58,8 +58,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         backgroundColor: _ink,
         body: Stack(
           children: [
-            const Positioned(top: -120, right: -90, child: _SoftGlow(size: 300, color: Color(0x223BC9E0))),
-            const Positioned(bottom: -160, left: -100, child: _SoftGlow(size: 320, color: Color(0x1B8A70E8))),
+            const Positioned(top: -120, right: -90, child: _SoftGlow(size: 300, color: Color(0x2B927BFF))),
+            const Positioned(bottom: -160, left: -100, child: _SoftGlow(size: 320, color: Color(0x23845BFF))),
             Center(
               child: FadeTransition(
                 opacity: _fade,
