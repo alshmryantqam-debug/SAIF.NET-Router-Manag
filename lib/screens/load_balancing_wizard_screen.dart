@@ -114,9 +114,9 @@ class _LoadBalancingWizardScreenState
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
         ),
         content: const Text(
-          'سيضيف التطبيق جداول توجيه وقواعد PCC وNAT للواجهات المختارة. '
-          'لن يضيف مسارات failover احتياطية. إذا اكتشف قواعد PCC فعالة غير مُدارة '
-          'من SAIF.NET فسيرفض التنفيذ لتجنب تداخل القواعد.',
+          'سيبني المحرك قواعد PCC حسب الأوزان ومسارات بديلة لكل جدول، ثم يضيف مسارات main احتياطية بعد المسارات الافتراضية الموجودة. '
+          'سينظف فقط القواعد التي تحمل علامة SAIFNET-PCC-. لن يحذف قواعد PCC الأخرى؛ وإذا اكتشف تعارضاً فعالاً فسيوقف التنفيذ قبل التغيير. '
+          'فحص الانقطاع يعتمد على ping إلى بوابة كل خط ولا يثبت أن الإنترنت بعد البوابة يعمل.',
           style: TextStyle(color: Colors.white70, height: 1.5),
         ),
         actions: [
@@ -275,6 +275,14 @@ class _LoadBalancingWizardScreenState
                     _messageBox(
                       Icons.verified_rounded,
                       fusion.message!,
+                      _fusionCyan,
+                    ),
+                  ],
+                  if (fusion.isApplying && fusion.statusMessage != null) ...[
+                    const SizedBox(height: 12),
+                    _messageBox(
+                      Icons.sync_rounded,
+                      fusion.statusMessage!,
                       _fusionCyan,
                     ),
                   ],
@@ -437,7 +445,7 @@ class _LoadBalancingWizardScreenState
                   const SizedBox(height: 12),
                   _messageBox(
                     Icons.warning_amber_rounded,
-                    'التطبيق ينشئ قواعد PCC وجداول توجيه وNAT. لا ينشئ مسارات failover احتياطية. إذا وجد قواعد PCC فعالة غير مُدارة من SAIF.NET فسيتوقف قبل التعديل منعاً لتكرار التصنيف.',
+                    'المحرك ينشئ PCC موزوناً، ومسارات failover داخل كل جدول، ومسارات main احتياطية بعد المسارات الموجودة. ينظف فقط ما يحمل علامة SAIFNET-PCC-. يعتمد فحص الخط على ping للبوابة، وقد لا يكشف انقطاع الإنترنت بعد البوابة.',
                     Colors.amber,
                   ),
                   const SizedBox(height: 18),

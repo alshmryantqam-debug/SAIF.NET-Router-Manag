@@ -11,6 +11,7 @@ class LoadBalancingState {
     this.isApplying = false,
     this.error,
     this.message,
+    this.statusMessage,
   });
 
   final String lanInterface;
@@ -18,6 +19,7 @@ class LoadBalancingState {
   final bool isApplying;
   final String? error;
   final String? message;
+  final String? statusMessage;
 
   int get totalWeight =>
       wans.fold<int>(0, (sum, wan) => sum + wan.weight.round());
@@ -28,8 +30,10 @@ class LoadBalancingState {
     bool? isApplying,
     String? error,
     String? message,
+    String? statusMessage,
     bool clearError = false,
     bool clearMessage = false,
+    bool clearStatusMessage = false,
   }) {
     return LoadBalancingState(
       lanInterface: lanInterface ?? this.lanInterface,
@@ -37,6 +41,7 @@ class LoadBalancingState {
       isApplying: isApplying ?? this.isApplying,
       error: clearError ? null : (error ?? this.error),
       message: clearMessage ? null : (message ?? this.message),
+      statusMessage: clearStatusMessage ? null : (statusMessage ?? this.statusMessage),
     );
   }
 }
@@ -140,22 +145,36 @@ class LoadBalancingNotifier extends StateNotifier<LoadBalancingState> {
     final snapshot = state;
     state = state.copyWith(
       isApplying: true,
+      statusMessage: 'جارٍ بدء محرك الدمج والتحقق من إعدادات الراوتر...',
       clearError: true,
       clearMessage: true,
+      clearStatusMessage: true,
     );
     try {
-      final message = await _ref.read(mikrotikProvider).applyPccLoadBalancing(
+      final message = await PccFusionEngine(_ref.read(mikrotikProvider)).execute(
             lanInterface: snapshot.lanInterface,
             wans: snapshot.wans,
             explicitlyConfirmed: explicitlyConfirmed,
             backupVerified: backupVerified,
             rollbackPlanAvailable: rollbackPlanAvailable,
+            onProgress: (status) {
+              state = state.copyWith(
+                statusMessage: status,
+                clearError: true,
+                clearMessage: true,
+              );
+            },
           );
-      state = state.copyWith(isApplying: false, message: message);
+      state = state.copyWith(
+        isApplying: false,
+        message: message,
+        statusMessage: 'اكتمل محرك الدمج والتحقق من الموارد.',
+      );
       return true;
     } catch (error) {
       state = state.copyWith(
         isApplying: false,
+        statusMessage: 'فشل التنفيذ؛ تمت محاولة التراجع عن الموارد الجديدة.',
         error: error.toString().replaceFirst('Exception: ', ''),
       );
       return false;

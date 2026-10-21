@@ -164,6 +164,10 @@ class RouterOsRestApi {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _send('GET', path, query: query);
 
+  /// Creates one RouterOS REST resource (RouterOS REST uses PUT for add).
+  Future<dynamic> put(String path, Map<String, dynamic> body) =>
+      _send('PUT', path, body: body);
+
   Future<dynamic> post(String path, [Map<String, dynamic>? body]) =>
       _send('POST', path, body: body ?? <String, dynamic>{});
 
