@@ -13,7 +13,7 @@ import 'services/business_service.dart';
 import 'screens/firewall_screen.dart';
 import 'screens/hotspot_screen.dart';
 import 'screens/interfaces_screen.dart';
-import 'screens/login_screen.dart';
+import 'screens/auth/router_login_screen.dart';
 import 'screens/load_balancing_wizard_screen.dart';
 import 'screens/pppoe_screen.dart';
 import 'screens/routers_list_screen.dart';
@@ -56,7 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (_, __) => const LoginScreen(),
+        builder: (_, __) => const RouterLoginScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellKey,
