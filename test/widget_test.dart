@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tikplus_ultra/models/hotspot_user.dart';
-import 'package:tikplus_ultra/models/router_config.dart';
-import 'package:tikplus_ultra/models/voucher.dart';
-import 'package:tikplus_ultra/services/mikrotik_service.dart';
-import 'package:tikplus_ultra/services/routeros_binary_api.dart';
-import 'package:tikplus_ultra/services/routeros_rest_api.dart';
+import 'package:nova_router_manager/models/hotspot_user.dart';
+import 'package:nova_router_manager/models/router_config.dart';
+import 'package:nova_router_manager/models/voucher.dart';
+import 'package:nova_router_manager/services/mikrotik_service.dart';
+import 'package:nova_router_manager/services/routeros_binary_api.dart';
+import 'package:nova_router_manager/services/routeros_rest_api.dart';
 
 void main() {
   group('Router profile', () {
