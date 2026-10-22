@@ -70,13 +70,7 @@ class ControlPanelScreen extends StatelessWidget {
                     subtitle: 'Cake QoS & Netcut Guard',
                     icon: Icons.memory_rounded,
                     accentColor: _pink,
-                    onTap: () => _showUnavailableFeature(
-                      context,
-                      title: 'نواة نـوڨـا',
-                      message:
-                          'واجهة Cake QoS وNetcut Guard غير متاحة في هذا الفرع بعد. لم يتم تغيير إعدادات الراوتر.',
-                      color: _pink,
-                    ),
+                    onTap: () => context.go('/nova-core-engine'),
                   ),
                 ],
               ),
@@ -140,13 +134,7 @@ class ControlPanelScreen extends StatelessWidget {
                     subtitle: 'تشفير وإرسال لتيليجرام',
                     icon: Icons.backup_rounded,
                     accentColor: _purple,
-                    onTap: () => _showUnavailableFeature(
-                      context,
-                      title: 'النسخ الاحتياطي',
-                      message:
-                          'لم تُربط عملية النسخ المشفر والإرسال إلى تيليجرام بهذه الشاشة بعد. لم يتم إنشاء نسخة أو إرسال بيانات.',
-                      color: _purple,
-                    ),
+                    onTap: () => context.go('/quantum-backup'),
                   ),
                   CyberToolCard(
                     title: 'إعادة التشغيل',
