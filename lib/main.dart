@@ -8,17 +8,17 @@ import 'theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: TikPlusApp()));
+  runApp(const ProviderScope(child: NovaApp()));
 }
 
-class TikPlusApp extends ConsumerWidget {
-  const TikPlusApp({super.key});
+class NovaApp extends ConsumerWidget {
+  const NovaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GoRouter router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'SAIF.NET Router Manager',
+      title: 'NOVA | إدارة الشبكات',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: router,
