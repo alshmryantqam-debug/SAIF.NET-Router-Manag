@@ -24,7 +24,7 @@ class ControlPanelScreen extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'CONTROL PANEL',
+          'NOVA | لوحة التحكم',
           style: TextStyle(
             fontFamily: 'monospace',
             fontWeight: FontWeight.w900,
@@ -43,7 +43,7 @@ class ControlPanelScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
 
             _buildSectionHeader(
-              'NETWORK ENGINES',
+              'NOVA NETWORK ENGINES',
               Icons.speed_rounded,
               _cyan,
             ),
@@ -77,7 +77,7 @@ class ControlPanelScreen extends StatelessWidget {
             ),
 
             _buildSectionHeader(
-              'CLOUD & SECURITY',
+              'NOVA CLOUD & SECURITY',
               Icons.cloud_done_outlined,
               _green,
             ),
@@ -117,7 +117,7 @@ class ControlPanelScreen extends StatelessWidget {
             ),
 
             _buildSectionHeader(
-              'SYSTEM MAINTENANCE',
+              'NOVA SYSTEM MAINTENANCE',
               Icons.build_circle_outlined,
               _purple,
             ),
