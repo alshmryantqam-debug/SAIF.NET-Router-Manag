@@ -1,5 +1,5 @@
-name: tikplus_ultra
-description: SAIF.NET - منصة احترافية لإدارة شبكات MikroTik
+name: nova_router_manager
+description: NOVA - منصة موحدة لإدارة ومراقبة شبكات MikroTik
 publish_to: "none"
 version: 1.0.0+1
 
