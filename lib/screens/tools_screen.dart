@@ -491,7 +491,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
                   child: Center(
                     child: Text(
-                      'SAIF.NET  •  CYBER OPERATIONS',
+                      'NOVA  •  NETWORK OPERATIONS',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         fontSize: 9,
