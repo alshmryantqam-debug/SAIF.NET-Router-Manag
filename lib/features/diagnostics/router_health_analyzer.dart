@@ -190,9 +190,10 @@ class RouterHealthAnalyzer {
 /// audit deliberately does not guess which interfaces carry production traffic.
 class RouterHealthAuditService {
   const RouterHealthAuditService(
-    this._service, {
-    this._analyzer = const RouterHealthAnalyzer(),
-  });
+    MikrotikService service, {
+    RouterHealthAnalyzer analyzer = const RouterHealthAnalyzer(),
+  })  : _service = service,
+        _analyzer = analyzer;
 
   final MikrotikService _service;
   final RouterHealthAnalyzer _analyzer;
