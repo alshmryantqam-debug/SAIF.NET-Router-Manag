@@ -256,27 +256,6 @@ const List<_ToolCategory> _toolCategories = <_ToolCategory>[
         accent: _violet,
         route: '/settings',
       ),
-      _ToolEntry(
-        title: 'النسخ الاحتياطي وسجل العمليات',
-        subtitle: 'خزنة النسخ والاستعادة',
-        icon: Icons.backup_rounded,
-        accent: _cyan,
-        route: '/quantum-backup',
-      ),
-      _ToolEntry(
-        title: 'مركز القيادة المداري',
-        subtitle: 'مراقبة الارتباط والباكهول',
-        icon: Icons.satellite_alt_rounded,
-        accent: _cyan,
-        route: '/orbital-uplink',
-      ),
-      _ToolEntry(
-        title: 'وضع الطوارئ الآمن',
-        subtitle: 'أدوات التحكم المتقدمة',
-        icon: Icons.bolt_rounded,
-        accent: _pink,
-        route: '/god-mode',
-      ),
     ],
   ),
 ];
