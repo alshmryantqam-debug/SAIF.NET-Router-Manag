@@ -166,7 +166,7 @@ class MainShell extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'SAIF.NET',
+                    'NOVA',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -231,7 +231,7 @@ class MainShell extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'SAIF.NET · v1.0.0',
+              'NOVA · v1.0.0',
               style: TextStyle(
                 color: AppColors.textMuted.withOpacity(0.7),
                 fontSize: 11,
