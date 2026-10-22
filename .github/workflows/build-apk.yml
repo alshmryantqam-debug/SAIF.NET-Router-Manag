@@ -1,4 +1,4 @@
-name: Build SAIF.NET Router Manager APK
+name: Build NOVA Router Manager APK
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: saifnet-router-manager-build-${{ github.ref }}
+  group: nova-router-manager-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,7 +47,7 @@ jobs:
         run: |
           if [ ! -f android/app/src/main/AndroidManifest.xml ]; then
             rm -rf android
-            flutter create --project-name tikplus_ultra --platforms=android --org com.tikplus.ultra .
+            flutter create --project-name nova_router_manager --platforms=android --org com.nova.network .
           fi
 
       - name: Set Android app display name
@@ -57,9 +57,9 @@ jobs:
           import re
           path = Path("android/app/src/main/AndroidManifest.xml")
           content = path.read_text()
-          content, count = re.subn(r'android:label="[^"]*"', 'android:label="SAIF.NET"', content, count=1)
+          content, count = re.subn(r'android:label="[^"]*"', 'android:label="NOVA"', content, count=1)
           if count == 0:
-              content = content.replace("<application", '<application android:label="SAIF.NET"', 1)
+              content = content.replace("<application", '<application android:label="NOVA"', 1)
           path.write_text(content)
           PY
 
@@ -112,7 +112,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SAIF.NET-Router-Manager-APK
+          name: NOVA-Router-Manager-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
