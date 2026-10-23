@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 import '../models/hotspot_user.dart';
 import '../models/pppoe_user.dart';
@@ -1623,7 +1624,7 @@ class PccFusionEngine {
         final data = rows.first['data']?.toString() ?? '';
         if (data.isEmpty) break;
         output.write(data);
-        final bytes = data.length; // RouterOS text exports are UTF-8; bounded below.
+        final bytes = utf8.encode(data).length;
         offset += bytes;
         if (data.length < chunkSize) break;
       }
