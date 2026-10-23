@@ -962,6 +962,211 @@ class MikrotikService {
     return [];
   }
 
+  /// Reads an allowlisted RouterOS v7 REST menu. No demo data is returned.
+  Future<List<Map<String, dynamic>>> readMenu(String path) async {
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'لا يوجد اتصال REST فعّال. اتصل براوتر RouterOS v7 أولاً.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    const allowedReadMenus = <String>{
+      '/system/resource', '/system/health', '/system/identity',
+      '/system/routerboard', '/system/log', '/interface',
+      '/interface/ethernet', '/ip/address', '/ip/route',
+      '/ip/dhcp-server/lease', '/ip/arp', '/ip/firewall/filter',
+      '/ip/firewall/nat', '/ip/firewall/mangle',
+      '/ip/firewall/address-list', '/ip/firewall/connection',
+      '/queue/simple', '/queue/tree', '/ppp/secret', '/ppp/active',
+      '/ppp/profile', '/ip/hotspot/user', '/ip/hotspot/active',
+      '/ip/hotspot/host', '/ip/hotspot/profile',
+      '/ip/hotspot/user/profile', '/ip/dns', '/ip/pool',
+      '/ip/dhcp-server', '/system/scheduler', '/system/script',
+      '/routing/table', '/routing/rule',
+    };
+    if (!allowedReadMenus.contains(path)) {
+      throw RouterOsException(
+        'مسار القراءة غير مسموح به من خلال هذه الواجهة: $path',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final response = await api.get(path);
+    return _asList(response);
+  }
+
+  /// Runs the actual RouterOS ping tool via REST.
+  Future<List<Map<String, dynamic>>> pingHost(
+    String address, {
+    int count = 4,
+    int intervalMs = 500,
+  }) async {
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'يتطلب Ping اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final target = address.trim();
+    if (target.isEmpty || target.length > 253 ||
+        RegExp(r'[\s;|\x00-\x1f]').hasMatch(target)) {
+      throw const RouterOsException('عنوان الهدف غير صالح.',
+          kind: RouterOsErrorKind.badRequest);
+    }
+    if (count < 1 || count > 10 || intervalMs < 100 || intervalMs > 5000) {
+      throw const RouterOsException(
+        'عدد المحاولات أو الفاصل الزمني خارج الحدود المسموحة.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    final response = await api.post('/ping', <String, dynamic>{
+      'address': target,
+      'count': count.toString(),
+      'interval': '${intervalMs}ms',
+    });
+    return _asList(response);
+  }
+
+  /// Creates a non-sensitive RouterOS text export, reads it in bounded chunks,
+  /// and attempts to remove the temporary router-side file in all cases.
+  /// This does not include passwords/private keys and is only available on REST v7.
+  Future<String> exportConfigurationText() async {
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'تصدير الإعدادات يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+
+    final fileBase = 'nova-export-${DateTime.now().millisecondsSinceEpoch}';
+    final fileName = '$fileBase.rsc';
+    var exportRequested = false;
+    try {
+      await api.post('/export', <String, dynamic>{'file': fileBase});
+      exportRequested = true;
+
+      final output = StringBuffer();
+      var offset = 0;
+      const chunkSize = 32768;
+      // Safety cap: refuse to pull unexpectedly large configuration dumps.
+      const maxBytes = 8 * 1024 * 1024;
+      while (offset < maxBytes) {
+        final response = await api.post('/file/read', <String, dynamic>{
+          'file': fileName,
+          'chunk-size': chunkSize.toString(),
+          'offset': offset.toString(),
+        });
+        final rows = _asList(response);
+        if (rows.isEmpty) break;
+        final data = rows.first['data']?.toString() ?? '';
+        if (data.isEmpty) break;
+        output.write(data);
+        final bytes = utf8.encode(data).length;
+        offset += bytes;
+        if (data.length < chunkSize) break;
+      }
+      final result = output.toString();
+      if (result.trim().isEmpty) {
+        throw const RouterOsException(
+          'عاد التصدير فارغاً؛ لم يتم اعتماد النسخة.',
+          kind: RouterOsErrorKind.protocol,
+        );
+      }
+      if (result.length >= maxBytes) {
+        throw const RouterOsException(
+          'تجاوز ملف التصدير الحد الآمن (8 MiB)، أوقفنا القراءة.',
+          kind: RouterOsErrorKind.badRequest,
+        );
+      }
+      return result;
+    } finally {
+      if (exportRequested) {
+        try {
+          await api.delete('/file/$fileName');
+        } catch (_) {
+          // Do not hide the primary export/read failure; caller should warn that
+          // router-side cleanup may need manual review if delete failed.
+        }
+      }
+    }
+  }
+
+  /// Narrow, explicit mutation. UI must confirm and attest backup/rollback.
+  Future<void> setObjectDisabled({
+    required String menu,
+    required String id,
+    required bool disabled,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'تعديل الإعدادات يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    const mutableMenus = <String>{
+      '/interface', '/queue/simple', '/queue/tree', '/ppp/secret',
+      '/ip/hotspot/user', '/ip/firewall/filter', '/ip/firewall/nat',
+      '/ip/firewall/mangle', '/ip/firewall/address-list',
+      '/ip/dhcp-server/lease',
+    };
+    if (!mutableMenus.contains(menu) || id.isEmpty ||
+        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
   Future<void> disconnect() async {
     try {
       _binary?.close();
@@ -1523,210 +1728,7 @@ class PccFusionEngine {
     if (data is Map) return [Map<String, dynamic>.from(data)];
     return <Map<String, dynamic>>[];
   }
-  /// Reads an allowlisted RouterOS v7 REST menu. No demo data is returned.
-  Future<List<Map<String, dynamic>>> readMenu(String path) async {
-    final api = _rest;
-    if (api == null) {
-      throw const RouterOsException(
-        'لا يوجد اتصال REST فعّال. اتصل براوتر RouterOS v7 أولاً.',
-        kind: RouterOsErrorKind.network,
-      );
-    }
-    const allowedReadMenus = <String>{
-      '/system/resource', '/system/health', '/system/identity',
-      '/system/routerboard', '/system/log', '/interface',
-      '/interface/ethernet', '/ip/address', '/ip/route',
-      '/ip/dhcp-server/lease', '/ip/arp', '/ip/firewall/filter',
-      '/ip/firewall/nat', '/ip/firewall/mangle',
-      '/ip/firewall/address-list', '/ip/firewall/connection',
-      '/queue/simple', '/queue/tree', '/ppp/secret', '/ppp/active',
-      '/ppp/profile', '/ip/hotspot/user', '/ip/hotspot/active',
-      '/ip/hotspot/host', '/ip/hotspot/profile',
-      '/ip/hotspot/user/profile', '/ip/dns', '/ip/pool',
-      '/ip/dhcp-server', '/system/scheduler', '/system/script',
-      '/routing/table', '/routing/rule',
-    };
-    if (!allowedReadMenus.contains(path)) {
-      throw RouterOsException(
-        'مسار القراءة غير مسموح به من خلال هذه الواجهة: $path',
-        kind: RouterOsErrorKind.badRequest,
-      );
-    }
-    final response = await api.get(path);
-    return _asList(response);
-  }
 
-  /// Runs the actual RouterOS ping tool via REST.
-  Future<List<Map<String, dynamic>>> pingHost(
-    String address, {
-    int count = 4,
-    int intervalMs = 500,
-  }) async {
-    final api = _rest;
-    if (api == null) {
-      throw const RouterOsException(
-        'يتطلب Ping اتصال REST فعالاً مع RouterOS v7.',
-        kind: RouterOsErrorKind.network,
-      );
-    }
-    final target = address.trim();
-    if (target.isEmpty || target.length > 253 ||
-        RegExp(r'[\s;|\x00-\x1f]').hasMatch(target)) {
-      throw const RouterOsException('عنوان الهدف غير صالح.',
-          kind: RouterOsErrorKind.badRequest);
-    }
-    if (count < 1 || count > 10 || intervalMs < 100 || intervalMs > 5000) {
-      throw const RouterOsException(
-        'عدد المحاولات أو الفاصل الزمني خارج الحدود المسموحة.',
-        kind: RouterOsErrorKind.badRequest,
-      );
-    }
-    final response = await api.post('/ping', <String, dynamic>{
-      'address': target,
-      'count': count.toString(),
-      'interval': '${intervalMs}ms',
-    });
-    return _asList(response);
-  }
-
-  /// Creates a non-sensitive RouterOS text export, reads it in bounded chunks,
-  /// and attempts to remove the temporary router-side file in all cases.
-  /// This does not include passwords/private keys and is only available on REST v7.
-  Future<String> exportConfigurationText() async {
-    final api = _rest;
-    if (api == null) {
-      throw const RouterOsException(
-        'تصدير الإعدادات يتطلب اتصال REST فعالاً مع RouterOS v7.',
-        kind: RouterOsErrorKind.network,
-      );
-    }
-
-    final fileBase = 'nova-export-${DateTime.now().millisecondsSinceEpoch}';
-    final fileName = '$fileBase.rsc';
-    var exportRequested = false;
-    try {
-      await api.post('/export', <String, dynamic>{'file': fileBase});
-      exportRequested = true;
-
-      final output = StringBuffer();
-      var offset = 0;
-      const chunkSize = 32768;
-      // Safety cap: refuse to pull unexpectedly large configuration dumps.
-      const maxBytes = 8 * 1024 * 1024;
-      while (offset < maxBytes) {
-        final response = await api.post('/file/read', <String, dynamic>{
-          'file': fileName,
-          'chunk-size': chunkSize.toString(),
-          'offset': offset.toString(),
-        });
-        final rows = _asList(response);
-        if (rows.isEmpty) break;
-        final data = rows.first['data']?.toString() ?? '';
-        if (data.isEmpty) break;
-        output.write(data);
-        final bytes = utf8.encode(data).length;
-        offset += bytes;
-        if (data.length < chunkSize) break;
-      }
-      final result = output.toString();
-      if (result.trim().isEmpty) {
-        throw const RouterOsException(
-          'عاد التصدير فارغاً؛ لم يتم اعتماد النسخة.',
-          kind: RouterOsErrorKind.protocol,
-        );
-      }
-      if (result.length >= maxBytes) {
-        throw const RouterOsException(
-          'تجاوز ملف التصدير الحد الآمن (8 MiB)، أوقفنا القراءة.',
-          kind: RouterOsErrorKind.badRequest,
-        );
-      }
-      return result;
-    } finally {
-      if (exportRequested) {
-        try {
-          await api.delete('/file/$fileName');
-        } catch (_) {
-          // Do not hide the primary export/read failure; caller should warn that
-          // router-side cleanup may need manual review if delete failed.
-        }
-      }
-    }
-  }
-
-  /// Narrow, explicit mutation. UI must confirm and attest backup/rollback.
-  Future<void> setObjectDisabled({
-    required String menu,
-    required String id,
-    required bool disabled,
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    RouterOperationGuard.requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    final api = _rest;
-    if (api == null) {
-      throw const RouterOsException(
-        'تعديل الإعدادات يتطلب اتصال REST فعالاً مع RouterOS v7.',
-        kind: RouterOsErrorKind.network,
-      );
-    }
-    const mutableMenus = <String>{
-      '/interface', '/queue/simple', '/queue/tree', '/ppp/secret',
-      '/ip/hotspot/user', '/ip/firewall/filter', '/ip/firewall/nat',
-      '/ip/firewall/mangle', '/ip/firewall/address-list',
-      '/ip/dhcp-server/lease',
-    };
-    if (!mutableMenus.contains(menu) || id.isEmpty ||
-        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
-      throw const RouterOsException(
-        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
-        kind: RouterOsErrorKind.badRequest,
-      );
-    }
-    await api.patch('$menu/$id', <String, dynamic>{
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
-  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
-  Future<void> disconnectActiveSession({
-    required String kind,
-    required String id,
-    required bool explicitlyConfirmed,
-    required bool backupVerified,
-    required bool rollbackPlanAvailable,
-  }) async {
-    RouterOperationGuard.requireWriteApproval(
-      explicitlyConfirmed: explicitlyConfirmed,
-      backupVerified: backupVerified,
-      rollbackPlanAvailable: rollbackPlanAvailable,
-    );
-    final api = _rest;
-    if (api == null) {
-      throw const RouterOsException(
-        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
-        kind: RouterOsErrorKind.network,
-      );
-    }
-    final menu = switch (kind) {
-      'ppp' => '/ppp/active',
-      'hotspot' => '/ip/hotspot/active',
-      _ => '',
-    };
-    if (menu.isEmpty || id.isEmpty ||
-        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
-      throw const RouterOsException(
-        'نوع الجلسة أو معرّفها غير صالح.',
-        kind: RouterOsErrorKind.badRequest,
-      );
-    }
-    await api.delete('$menu/$id');
-  }
 
 
 }
