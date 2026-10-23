@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/connection_provider.dart';
@@ -85,7 +86,7 @@ class _HologramDashboardScreenState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'SAIF.NET',
+                                  'NOVA',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 21,
@@ -276,6 +277,182 @@ class _HologramDashboardScreenState
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 2),
+                      const Text(
+                        'مركز التحكم',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        'كل أدوات NOVA في مكان واحد',
+                        style: TextStyle(color: Colors.white54, fontSize: 11),
+                      ),
+                      const SizedBox(height: 14),
+                      _DashboardFeatureGrid(
+                        items: const [
+                          _DashboardFeature('البرودباند', 'إدارة خطوط الإنترنت', Icons.public_rounded, Color(0xFF8D7BFF), '/load-balancing-wizard'),
+                          _DashboardFeature('Hotspot', 'المستخدمون والجلسات', Icons.wifi_rounded, Color(0xFF00D9FF), '/hotspot'),
+                          _DashboardFeature('الأكتف', 'الأجهزة المتصلة', Icons.devices_rounded, Color(0xFF65F0B5), '/interfaces'),
+                          _DashboardFeature('يوزر منجر', 'كروت واشتراكات', Icons.people_alt_rounded, Color(0xFFFF79B8), '/voucher'),
+                          _DashboardFeature('النسخ والاستعادة', 'نسخ احتياطي آمن', Icons.cloud_sync_rounded, Color(0xFFFFC857), '/quantum-backup'),
+                          _DashboardFeature('حركة البيانات', 'مراقبة RX وTX', Icons.show_chart_rounded, Color(0xFF00D9FF), '/live-traffic'),
+                          _DashboardFeature('رادار الأبراج', 'فحص أجهزة البث', Icons.radar_rounded, Color(0xFFFF79B8), '/radio-radar'),
+                          _DashboardFeature('الجدار الناري', 'قواعد الحماية', Icons.shield_rounded, Color(0xFFFF8A65), '/firewall'),
+                          _DashboardFeature('الذكاء الاصطناعي', 'تحليل وتشخيص', Icons.auto_awesome_rounded, Color(0xFF8D7BFF), '/advanced-ai'),
+                          _DashboardFeature('الإضافات', 'عرض جميع الأدوات', Icons.extension_rounded, Color(0xFF65F0B5), '/tools'),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      _DashboardWideAction(
+                        icon: Icons.manage_search_rounded,
+                        title: 'البحث عن مشاكل الشبكة',
+                        subtitle: 'افتح أدوات التشخيص ومراقبة الراوتر',
+                        onTap: () => context.go('/nova-core-engine'),
+                      ),
+                      const SizedBox(height: 18),
+                      _DashboardWideAction(
+                        icon: Icons.lan_rounded,
+                        title: 'واجهات ومنافذ الراوتر',
+                        subtitle: 'حالة المنافذ وحركة المرور',
+                        onTap: () => context.go('/interfaces'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardFeature {
+  const _DashboardFeature(this.title, this.subtitle, this.icon, this.accent, this.route);
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final String route;
+}
+
+class _DashboardFeatureGrid extends StatelessWidget {
+  const _DashboardFeatureGrid({required this.items});
+  final List<_DashboardFeature> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: items.map((item) => SizedBox(
+            width: width,
+            child: _DashboardFeatureCard(item: item),
+          )).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _DashboardFeatureCard extends StatelessWidget {
+  const _DashboardFeatureCard({required this.item});
+  final _DashboardFeature item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(19),
+        onTap: () => context.go(item.route),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xC817172A),
+            borderRadius: BorderRadius.circular(19),
+            border: Border.all(color: item.accent.withOpacity(.27)),
+            boxShadow: [
+              BoxShadow(color: item.accent.withOpacity(.055), blurRadius: 20, spreadRadius: -4),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 39,
+                height: 39,
+                decoration: BoxDecoration(
+                  color: item.accent.withOpacity(.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: item.accent.withOpacity(.32)),
+                ),
+                child: Icon(item.icon, color: item.accent, size: 21),
+              ),
+              const SizedBox(height: 13),
+              Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 5),
+              Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white54, fontSize: 10)),
+              const SizedBox(height: 9),
+              Align(alignment: Alignment.centerLeft, child: Icon(Icons.arrow_back_rounded, color: item.accent, size: 16)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardWideAction extends StatelessWidget {
+  const _DashboardWideAction({required this.icon, required this.title, required this.subtitle, required this.onTap});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xC817172A),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _cyan.withOpacity(.24)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: _cyan, size: 26),
+              const SizedBox(width: 13),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                ],
+              )),
+              const Icon(Icons.chevron_left_rounded, color: _cyan),
             ],
           ),
         ),
