@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,10 +51,41 @@ class _QuantumBackupScreenState extends ConsumerState<QuantumBackupScreen> {
   }
 
   Future<void> _executeBackup() async {
-    // يمنع تشغيل عمليتين متزامنتين، حتى لو استُدعيت الدالة من مصدر آخر.
     if (_isBackingUp) return;
 
     final connected = ref.read(connectionProvider).isConnected;
+    if (!connected) {
+      _addLog('لا يوجد اتصال نشط بالراوتر؛ لم يبدأ التصدير.', isError: true);
+      setState(() {
+        _isFailed = true;
+        _isSuccess = false;
+      });
+      return;
+    }
+
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد تصدير الإعدادات'),
+        content: const Text(
+          'سيُنشأ ملف تصدير نصي مؤقت على الراوتر ثم يُقرأ ويُحذف. '
+          'التصدير لا يتضمن كلمات المرور والمفاتيح الخاصة. '
+          'لا تغيّر هذه العملية إعدادات الشبكة، لكنها تتطلب صلاحية الملفات والتصدير.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('موافق وابدأ'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true || !mounted) return;
+
     setState(() {
       _isBackingUp = true;
       _isSuccess = false;
@@ -62,28 +94,60 @@ class _QuantumBackupScreenState extends ConsumerState<QuantumBackupScreen> {
     });
 
     try {
-      _addLog('تهيئة بروتوكول النسخ الاحتياطي...');
-      await Future<void>.delayed(const Duration(milliseconds: 450));
+      _addLog('تم تأكيد العملية؛ بدء تصدير RouterOS v7.');
+      final exportText =
+          await ref.read(mikrotikProvider).exportConfigurationText();
       if (!mounted) return;
 
-      if (!connected) {
-        throw StateError('لا يوجد اتصال نشط بالراوتر. لم تبدأ عملية النسخ.');
-      }
-
-      _addLog('تم التحقق من وجود جلسة اتصال.');
-      _addLog('النسخ الاحتياطي الفعلي غير موصول بخدمة التصدير بعد.');
-      _addLog(
-        'إيقاف آمن: لم يتم إنشاء ملف أو الادعاء بنجاح العملية.',
-        isError: true,
-      );
-      if (!mounted) return;
+      _addLog('استُلم ملف التصدير النصي وتحققنا أنه غير فارغ.');
+      _addLog('ملاحظة: لا يحتوي هذا التصدير على كلمات المرور أو المفاتيح الخاصة.');
       setState(() {
         _isBackingUp = false;
-        _isFailed = true;
+        _isSuccess = true;
+        _isFailed = false;
       });
+
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('اكتمل تصدير الإعدادات'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                exportText,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إغلاق'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: exportText));
+                Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم نسخ التصدير إلى الحافظة')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('نسخ النص'),
+            ),
+          ],
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
-      _addLog(error.toString(), isError: true);
+      _addLog('فشل التصدير: $error', isError: true);
+      _addLog(
+        'إذا تعذّر حذف الملف المؤقت بسبب صلاحيات الراوتر، راجع Files على الراوتر.',
+        isError: true,
+      );
       setState(() {
         _isBackingUp = false;
         _isFailed = true;
@@ -275,7 +339,7 @@ class _QuantumBackupScreenState extends ConsumerState<QuantumBackupScreen> {
               const Padding(
                 padding: EdgeInsets.fromLTRB(22, 0, 22, 12),
                 child: Text(
-                  'هذه الشاشة لا تنشئ نسخة فعلية بعد؛ يلزم ربط خدمة RouterOS لتصدير الإعدادات وحفظ الملف والتحقق منه.',
+                  'يُصدّر إعدادات RouterOS كنص غير حساس، ويتيح نسخها للحافظة. هذا ليس ملف .backup ثنائياً لاستعادة كاملة.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.5),
                 ),
