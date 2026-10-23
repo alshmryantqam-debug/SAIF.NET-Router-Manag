@@ -1682,7 +1682,7 @@ class PccFusionEngine {
       '/ip/dhcp-server/lease',
     };
     if (!mutableMenus.contains(menu) || id.isEmpty ||
-        !RegExp(r'^\*[0-9A-Fa-f]+ {
+        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
       throw const RouterOsException(
         'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
         kind: RouterOsErrorKind.badRequest,
