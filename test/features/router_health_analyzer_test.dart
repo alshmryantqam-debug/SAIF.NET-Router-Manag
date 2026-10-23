@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tikplus_ultra/features/diagnostics/router_health_analyzer.dart';
-import 'package:tikplus_ultra/services/mikrotik_service.dart';
+import 'package:nova_router_manager/features/diagnostics/router_health_analyzer.dart';
+import 'package:nova_router_manager/services/mikrotik_service.dart';
 
 void main() {
   const analyzer = RouterHealthAnalyzer();
