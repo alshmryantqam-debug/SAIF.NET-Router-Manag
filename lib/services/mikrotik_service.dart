@@ -1583,7 +1583,7 @@ class PccFusionEngine {
     final response = await api.post('/ping', <String, dynamic>{
       'address': target,
       'count': count.toString(),
-      'interval': '\${intervalMs}ms',
+      'interval': '${intervalMs}ms',
     });
     return _asList(response);
   }
