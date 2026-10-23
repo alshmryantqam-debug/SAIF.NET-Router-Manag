@@ -345,7 +345,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'SAIF.NET / TOOL MATRIX',
+                                  'NOVA / TOOL MATRIX',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
