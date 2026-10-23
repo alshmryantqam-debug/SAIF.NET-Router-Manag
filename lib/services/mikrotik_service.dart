@@ -1730,17 +1730,6 @@ class PccFusionEngine {
 
 
 }
-).hasMatch(id)) {
-      throw const RouterOsException(
-        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
-        kind: RouterOsErrorKind.badRequest,
-      );
-    }
-    await api.patch('$menu/$id', <String, dynamic>{
-      'disabled': disabled ? 'true' : 'false',
-    });
-  }
-
   /// Disconnects one active PPP/Hotspot session with explicit confirmation.
   Future<void> disconnectActiveSession({
     required String kind,
