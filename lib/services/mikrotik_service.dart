@@ -1719,7 +1719,7 @@ class PccFusionEngine {
       _ => '',
     };
     if (menu.isEmpty || id.isEmpty ||
-        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+        !RegExp(r'^\*[0-9A-Fa-f]+$').hasMatch(id)) {
       throw const RouterOsException(
         'نوع الجلسة أو معرّفها غير صالح.',
         kind: RouterOsErrorKind.badRequest,
