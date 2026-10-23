@@ -8,9 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/connection_provider.dart';
 import '../widgets/particle_matrix_bg.dart';
 
-const _cyan = Color(0xFF9C8AFF);
-const _pink = Color(0xFFFF78B7);
-const _panel = Color(0xD910172B);
+const _cyan = Color(0xFF00D9FF);
+const _pink = Color(0xFFFF62C0);
+const _panel = Color(0xE6091028);
 
 class HologramDashboardScreen extends ConsumerStatefulWidget {
   const HologramDashboardScreen({super.key});
@@ -50,7 +50,7 @@ class _HologramDashboardScreenState
     final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070914),
+      backgroundColor: const Color(0xFF050817),
       body: ParticleMatrixBg(
         child: SafeArea(
           child: CustomScrollView(
@@ -96,7 +96,7 @@ class _HologramDashboardScreenState
                                 ),
                                 SizedBox(height: 3),
                                 Text(
-                                  'مركز القيادة الهولوغرافي',
+                                  'ROUTER MANAGER • مركز القيادة',
                                   style: TextStyle(
                                     color: _cyan,
                                     fontSize: 9,
@@ -122,7 +122,7 @@ class _HologramDashboardScreenState
                       ),
                       const SizedBox(height: 7),
                       const Text(
-                        'مراقبة النظام لحظياً',
+                        'مراقبة الشبكة لحظياً',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -300,16 +300,16 @@ class _HologramDashboardScreenState
                       const SizedBox(height: 14),
                       _DashboardFeatureGrid(
                         items: const [
-                          _DashboardFeature('البرودباند', 'إدارة خطوط الإنترنت', Icons.public_rounded, Color(0xFF8D7BFF), '/load-balancing-wizard'),
+                          _DashboardFeature('توزيع الخطوط', 'إدارة PCC والإنترنت', Icons.public_rounded, Color(0xFF8D7BFF), '/load-balancing-wizard'),
                           _DashboardFeature('Hotspot', 'المستخدمون والجلسات', Icons.wifi_rounded, Color(0xFF00D9FF), '/hotspot'),
-                          _DashboardFeature('الأكتف', 'الأجهزة المتصلة', Icons.devices_rounded, Color(0xFF65F0B5), '/interfaces'),
-                          _DashboardFeature('يوزر منجر', 'كروت واشتراكات', Icons.people_alt_rounded, Color(0xFFFF79B8), '/voucher'),
-                          _DashboardFeature('النسخ والاستعادة', 'نسخ احتياطي آمن', Icons.cloud_sync_rounded, Color(0xFFFFC857), '/quantum-backup'),
+                          _DashboardFeature('الواجهات', 'المنافذ وحركة المرور', Icons.devices_rounded, Color(0xFF65F0B5), '/interfaces'),
+                          _DashboardFeature('البطاقات', 'توليد وإدارة الاشتراكات', Icons.people_alt_rounded, Color(0xFFFF79B8), '/voucher'),
+                          _DashboardFeature('النسخ الاحتياطي', 'الحفظ والاستعادة', Icons.cloud_sync_rounded, Color(0xFFFFC857), '/quantum-backup'),
                           _DashboardFeature('حركة البيانات', 'مراقبة RX وTX', Icons.show_chart_rounded, Color(0xFF00D9FF), '/live-traffic'),
-                          _DashboardFeature('رادار الأبراج', 'فحص أجهزة البث', Icons.radar_rounded, Color(0xFFFF79B8), '/radio-radar'),
+                          _DashboardFeature('رادار الأبراج', 'مراقبة أجهزة البث', Icons.radar_rounded, Color(0xFFFF79B8), '/radio-radar'),
                           _DashboardFeature('الجدار الناري', 'قواعد الحماية', Icons.shield_rounded, Color(0xFFFF8A65), '/firewall'),
                           _DashboardFeature('الذكاء الاصطناعي', 'تحليل وتشخيص', Icons.auto_awesome_rounded, Color(0xFF8D7BFF), '/advanced-ai'),
-                          _DashboardFeature('الإضافات', 'عرض جميع الأدوات', Icons.extension_rounded, Color(0xFF65F0B5), '/tools'),
+                          _DashboardFeature('مركز الأدوات', 'جميع الإضافات والميزات', Icons.extension_rounded, Color(0xFF65F0B5), '/tools'),
                         ],
                       ),
                       const SizedBox(height: 18),
