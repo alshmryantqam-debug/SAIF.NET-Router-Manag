@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// Shared visual language for SAIF.NET. Kept dependency-free so the first
+/// Shared NOVA visual system: midnight navy, electric violet and cyan. Kept dependency-free so the first
 /// frame can render without waiting for network or platform services.
 class AppColors {
-  static const bgDeep = Color(0xFF070914);
-  static const bgSurface = Color(0xFF0D1222);
-  static const bgCard = Color(0xFF121A2C);
-  static const bgElevated = Color(0xFF1B2540);
-  static const glass = Color(0xE6121B2D);
-  static const border = Color(0xFF2A3855);
-  static const primary = Color(0xFFB9A2FF);
-  static const primaryStrong = Color(0xFF7657F6);
-  static const secondary = Color(0xFF56E4F4);
-  static const accent = Color(0xFFFFD28A);
+  static const bgDeep = Color(0xFF050817);
+  static const bgSurface = Color(0xFF0A1024);
+  static const bgCard = Color(0xFF101831);
+  static const bgElevated = Color(0xFF182345);
+  static const glass = Color(0xE60A1530);
+  static const border = Color(0xFF263B67);
+  static const primary = Color(0xFFB56BFF);
+  static const primaryStrong = Color(0xFF782BFF);
+  static const secondary = Color(0xFF00D9FF);
+  static const accent = Color(0xFFFF79B8);
   static const success = Color(0xFF54E6B0);
   static const warning = Color(0xFFFFC56F);
   static const danger = Color(0xFFFF6D91);
@@ -25,25 +25,25 @@ class AppGradients {
   static const glass = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF202A46), Color(0xFF11182A)],
+    colors: [Color(0xFF17264B), Color(0xFF0C122A), Color(0xFF080C1D)],
   );
 
   static const primary = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFFD5C7FF), Color(0xFF9A7BFF), Color(0xFF5A43D6)],
+    colors: [Color(0xFFE7A0FF), Color(0xFF9C35FF), Color(0xFF5825FF)],
   );
 
   static const command = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF273052), Color(0xFF151D31), Color(0xFF0D1222)],
+    colors: [Color(0xFF123B63), Color(0xFF101A3C), Color(0xFF080C1D)],
   );
 
   static const aqua = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
-    colors: [Color(0xFF8AF4F0), Color(0xFF42BBD9)],
+    colors: [Color(0xFF5CF5FF), Color(0xFF00B9F0)],
   );
 }
 
