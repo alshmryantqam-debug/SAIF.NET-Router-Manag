@@ -27,9 +27,12 @@ class MainShell extends StatelessWidget {
   ];
 
   int _indexOf(String location) {
-    final i = _destinations.indexWhere((d) => location.startsWith(d.route));
+    final i = _destinations.indexWhere((d) => _matchesRoute(location, d.route));
     return i;
   }
+
+  bool _matchesRoute(String location, String route) =>
+      location == route || location.startsWith('$route/');
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +253,7 @@ class MainShell extends StatelessWidget {
     required String route,
   }) {
     final location = GoRouterState.of(context).matchedLocation;
-    final selected = location.startsWith(route);
+    final selected = location == route || location.startsWith('$route/');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
