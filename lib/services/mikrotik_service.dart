@@ -1682,7 +1682,199 @@ class PccFusionEngine {
       '/ip/dhcp-server/lease',
     };
     if (!mutableMenus.contains(menu) || id.isEmpty ||
-        !RegExp(r'^\*[0-9A-Fa-f]+) {
+        !RegExp(r'^\*[0-9A-Fa-f]+ {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id)) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id)) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id)) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id) {
       throw const RouterOsException(
         'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
         kind: RouterOsErrorKind.badRequest,
