@@ -1588,6 +1588,71 @@ class PccFusionEngine {
     return _asList(response);
   }
 
+  /// Creates a non-sensitive RouterOS text export, reads it in bounded chunks,
+  /// and attempts to remove the temporary router-side file in all cases.
+  /// This does not include passwords/private keys and is only available on REST v7.
+  Future<String> exportConfigurationText() async {
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'تصدير الإعدادات يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+
+    final fileBase = 'nova-export-${DateTime.now().millisecondsSinceEpoch}';
+    final fileName = '$fileBase.rsc';
+    var exportRequested = false;
+    try {
+      await api.post('/export', <String, dynamic>{'file': fileBase});
+      exportRequested = true;
+
+      final output = StringBuffer();
+      var offset = 0;
+      const chunkSize = 32768;
+      // Safety cap: refuse to pull unexpectedly large configuration dumps.
+      const maxBytes = 8 * 1024 * 1024;
+      while (offset < maxBytes) {
+        final response = await api.post('/file/read', <String, dynamic>{
+          'file': fileName,
+          'chunk-size': chunkSize.toString(),
+          'offset': offset.toString(),
+        });
+        final rows = _asList(response);
+        if (rows.isEmpty) break;
+        final data = rows.first['data']?.toString() ?? '';
+        if (data.isEmpty) break;
+        output.write(data);
+        final bytes = data.length; // RouterOS text exports are UTF-8; bounded below.
+        offset += bytes;
+        if (data.length < chunkSize) break;
+      }
+      final result = output.toString();
+      if (result.trim().isEmpty) {
+        throw const RouterOsException(
+          'عاد التصدير فارغاً؛ لم يتم اعتماد النسخة.',
+          kind: RouterOsErrorKind.protocol,
+        );
+      }
+      if (result.length >= maxBytes) {
+        throw const RouterOsException(
+          'تجاوز ملف التصدير الحد الآمن (8 MiB)، أوقفنا القراءة.',
+          kind: RouterOsErrorKind.badRequest,
+        );
+      }
+      return result;
+    } finally {
+      if (exportRequested) {
+        try {
+          await api.delete('/file/$fileName');
+        } catch (_) {
+          // Do not hide the primary export/read failure; caller should warn that
+          // router-side cleanup may need manual review if delete failed.
+        }
+      }
+    }
+  }
+
   /// Narrow, explicit mutation. UI must confirm and attest backup/rollback.
   Future<void> setObjectDisabled({
     required String menu,
@@ -1616,7 +1681,103 @@ class PccFusionEngine {
       '/ip/dhcp-server/lease',
     };
     if (!mutableMenus.contains(menu) || id.isEmpty ||
-        !RegExp(r'^\*[0-9A-Fa-f]+).hasMatch(id)) {
+        !RegExp(r'^\*[0-9A-Fa-f]+) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id)) {
+      throw const RouterOsException(
+        'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.patch('$menu/$id', <String, dynamic>{
+      'disabled': disabled ? 'true' : 'false',
+    });
+  }
+
+  /// Disconnects one active PPP/Hotspot session with explicit confirmation.
+  Future<void> disconnectActiveSession({
+    required String kind,
+    required String id,
+    required bool explicitlyConfirmed,
+    required bool backupVerified,
+    required bool rollbackPlanAvailable,
+  }) async {
+    RouterOperationGuard.requireWriteApproval(
+      explicitlyConfirmed: explicitlyConfirmed,
+      backupVerified: backupVerified,
+      rollbackPlanAvailable: rollbackPlanAvailable,
+    );
+    final api = _rest;
+    if (api == null) {
+      throw const RouterOsException(
+        'إنهاء الجلسة يتطلب اتصال REST فعالاً مع RouterOS v7.',
+        kind: RouterOsErrorKind.network,
+      );
+    }
+    final menu = switch (kind) {
+      'ppp' => '/ppp/active',
+      'hotspot' => '/ip/hotspot/active',
+      _ => '',
+    };
+    if (menu.isEmpty || id.isEmpty ||
+        !RegExp(r'^\\*[0-9A-Fa-f]+$').hasMatch(id)) {
+      throw const RouterOsException(
+        'نوع الجلسة أو معرّفها غير صالح.',
+        kind: RouterOsErrorKind.badRequest,
+      );
+    }
+    await api.delete('$menu/$id');
+  }
+
+
+}
+).hasMatch(id)) {
       throw const RouterOsException(
         'المورد أو معرّف RouterOS غير صالح لهذه العملية.',
         kind: RouterOsErrorKind.badRequest,
