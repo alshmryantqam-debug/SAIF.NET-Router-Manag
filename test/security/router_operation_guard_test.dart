@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tikplus_ultra/core/security/router_operation_guard.dart';
+import 'package:nova_router_manager/core/security/router_operation_guard.dart';
 
 void main() {
   group('RouterOperationGuard', () {
