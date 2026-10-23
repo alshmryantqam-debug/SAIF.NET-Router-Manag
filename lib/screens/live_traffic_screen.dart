@@ -22,7 +22,8 @@ class LiveTrafficScreen extends ConsumerStatefulWidget {
   ConsumerState<LiveTrafficScreen> createState() => _LiveTrafficScreenState();
 }
 
-class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
+class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen>
+    with WidgetsBindingObserver {
   Timer? _timer;
   final List<double> _rxHistory = List<double>.filled(30, 0);
   final List<double> _txHistory = List<double>.filled(30, 0);
@@ -41,11 +42,44 @@ class _LiveTrafficScreenState extends ConsumerState<LiveTrafficScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadInterfaces();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isMonitoring) return;
+    if (state == AppLifecycleState.resumed) {
+      // Reset the baseline so background time is never counted as live traffic.
+      _previousRx = null;
+      _previousTx = null;
+      _lastSample = null;
+      _timer?.cancel();
+      _sampleTraffic().whenComplete(() {
+        if (mounted && _isMonitoring &&
+            WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+          _timer?.cancel();
+          _timer = Timer.periodic(
+            const Duration(seconds: 1),
+            (_) => _sampleTraffic(),
+          );
+        }
+      });
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      _timer?.cancel();
+      _timer = null;
+      _previousRx = null;
+      _previousTx = null;
+      _lastSample = null;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
   }
